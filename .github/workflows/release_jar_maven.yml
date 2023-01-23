@@ -1,9 +1,9 @@
-name: Build jar with maven
+name: Build and release jar with maven
 
 on:
   push:
     tags:
-      - '**' # Only if the commit has a tag
+      - '*' # Only if the commit has a tag
 
 jobs:
   build:
@@ -20,4 +20,6 @@ jobs:
         cache: maven
     - name: Build with Maven
       run: mvn -B package --file tool/pom.xml
-      
+    - uses: ncipollo/release-action@v1
+      with:
+        artifacts: "tool/target/mig-t*.jar"
