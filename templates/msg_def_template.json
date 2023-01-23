@@ -1,0 +1,211 @@
+{
+    "message_types": [
+        {
+            "name": "authorization request",
+            "is request": true,
+            "response name": "authorization response",
+            "checks": [
+                {
+                    "in": "url",
+                    "check param": "response_type",
+                    "is present": "true"
+                }
+            ]
+        },
+        {
+            "name": "token request",
+            "is request": true,
+            "response name": "token response",
+            "checks": [
+                {
+                    "in": "url",
+                    "check param": "code",
+                    "is present": "true"
+                }
+            ]
+        },
+        {
+            "name": "coda landing request",
+            "is request": true,
+            "response name": "coda landing response",
+            "checks": [
+                {
+                    "in": "url",
+                    "check": "/welcome",
+                    "is present": "true"
+                },
+                {
+                    "in": "head",
+                    "check param": "Host",
+                    "is": "coda.io"
+                }
+            ]
+        },
+        {
+            "name": "saml request",
+            "is request": true,
+            "checks": [
+                {
+                    "in": "url",
+                    "check param": "SAMLRequest",
+                    "is present": true
+                }
+            ]
+        },
+        {
+            "name": "saml response",
+            "is request": true,
+            "checks": [
+                {
+                    "in": "body",
+                    "check param": "SAMLResponse",
+                    "is present": true
+                }
+            ]
+        },
+        {
+            "name": "fb_login",
+            "is request": true,
+            "response name": "fb_login_resp",
+            "checks": [
+                {
+                    "in": "url",
+                    "check": "/auth/facebook-login-callback",
+                    "is present": true
+                },
+                {
+                    "in": "url",
+                    "check param": "code",
+                    "is present": true
+                }
+            ]
+        },
+        {
+            "name": "fb_sso",
+            "is request": true,
+            "checks": [
+                {
+                    "in": "url",
+                    "check": "login.php",
+                    "is present": true
+                },
+                {
+                    "in": "head",
+                    "check param": "Host",
+                    "contains": "facebook"
+                }
+            ]
+        },
+        {
+            "name": "nytimes_settings_page",
+            "is request": true,
+            "checks": [
+                {
+                    "in": "url",
+                    "check": "/seg/settings",
+                    "is present": true
+                },
+                {
+                    "in": "head",
+                    "check param": "Host",
+                    "contains": "nytimes"
+                }
+            ]
+        },
+        {
+            "name": "nytimes_accoun_info_req",
+            "is request": true,
+            "response name": "nytimes_account_info_resp",
+            "checks": [
+                {
+                    "in": "url",
+                    "check": "/svc/account/query",
+                    "is present": true
+                },
+                {
+                    "in": "head",
+                    "check param": "Host",
+                    "contains": "nytimes"
+                },
+                {
+                    "in": "body",
+                    "check": "getSettingsPageInfo",
+                    "is present": true
+                }
+            ]
+        },
+        {
+            "name": "fb_acc_link_confirm_req",
+            "is request": true,
+            "response name": "fb_acc_link_confirm_resp",
+            "checks": [
+                {
+                    "in": "url",
+                    "check": "/dialog/oauth",
+                    "is present": true
+                },
+                {
+                    "in": "head",
+                    "check param": "Host",
+                    "contains": "facebook.com"
+                }
+            ]
+        },
+        {
+            "name": "linking_url",
+            "is request": true,
+            "checks": [
+                {
+                    "in": "url",
+                    "check param": "code",
+                    "is present": true
+                },
+                {
+                    "in": "head",
+                    "check param": "Referer",
+                    "contains": "facebook.com"
+                }
+            ]
+        },
+        {
+            "name": "message_insert_point",
+            "is request": true,
+            "checks": [
+                {
+                    "in": "url",
+                    "check": "insertmessagehere",
+                    "is present": "true"
+                }
+            ]
+        },
+        {
+            "name": "association_link_req",
+            "is request": true,
+            "response name": "association_link_resp",
+            "checks": [
+                {
+                    "in": "url",
+                    "check": "dialog/oauth?",
+                    "is present": "true"
+                },
+                {
+                    "in": "head",
+                    "check param": "Host",
+                    "contains": "facebook.com"
+                }
+            ]
+        },
+        {
+            "name": "association_inter_link_res",
+            "is request": false,
+            "request name": "association_inter_link_req",
+            "checks": [
+                {
+                    "in": "head",
+                    "check": "dialog/oauth?",
+                    "is present": true
+                }
+            ]
+        }
+    ]
+}

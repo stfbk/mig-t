@@ -1,0 +1,129 @@
+# TO-DO and Progress tracker
+
+## TO-DO
+
+-   [x] Add messages file as input, instead of the execution of the track
+-   [x] Learn the oracle from the previous implementation
+-   [x] Define the **variable saving** in the language
+-   [x] Define in the language some session-conrol tag, such as: pause, stop, run, resume, clear cookies
+-   [x] Define in the language the possible actions associated to the intercept tag (drop, forward,..)
+-   [x] Add a tab in the plugin with the metadata of the OAuth authentication server
+-   [x] Define all the basic operations for the language
+-   [x] Add the buttons to save and load a saved message track for passive tests
+-   [x] Add the possibility of negating the search of a string in a check (if string not present)
+-   [x] Test the functionality of the GUI and the logic of the buttons
+-   [x] Comment code
+-   [x] Add and implement the message type "oauth request" "oauth response"
+-   [x] Adapt old code to the new parsing for static tests
+-   [x] Implement passive tests with new language
+-   [x] Add the visualization of messages that maked fail the test
+-   [x] Define sessions and active test in the markdown
+-   [x] Define all passive tests in JSON
+-   [x] Define all the classes for storing the parsed objects
+-   [x] Implement active tests with new language
+-   [x] Add new message types for filtering messages (define them)
+-   [x] Implement the different ports
+-   [x] Implement the oracle using checks/regex in actives
+-   [x] Define the oracle for active tests
+-   [x] Implement the pause of the session
+-   [x] Add message definition JSON
+-   [x] Write documentation for language (actives, msgtype JSON, ..)
+-   [x] Write documentation for code
+-   [x] Move the association of the port to the session out of the json, in a tab of the GUI
+-   [x] Make invalid the URL section in the response
+-   [x] For the body section, make possible the use of a regex to find and do (add, substitute,...)
+-   [x] Add encode/ decode functionality to operations
+-   [x] Add JWT token as a message section, implement the decoding
+-   [x] Multiple operation execution to be tested
+-   [x] Implement XML operations
+-   [x] Finish and test XML Operation execution
+-   [x] resign assertion instead of message
+-   [x] resign with the incoming certificate
+-   [x] Add a command to specify a delay in the web drivertrough the track
+-   [x] Passive tests with SAML are ok if failing, but if they should pass there is an error
+-   [x] Add an option in the track to wait tot seconds, and add more selecting options to click (i.e. classname)
+-   [x] add decoded param section to passives tests (checks and regex)
+-   [x] fix getBodyParameter()
+-   [x] In Decode parameter, when the section is body, use a regex instead of a parameter (as in other body sections)
+-   [x] Add clear cookies functionality both by language or by track
+-   [x] Add a note to the documentation saying that when typing something in a field that accepts regex, the regex operators should be backslashed (\?)
+-   [x] Implement the saving of the position of the last used driver, in a way that it automatically use it
+-   [x] Build a graphic visualization of the language components
+-   [x] Remove the session tabs if changed in the json, and fix other session tabs issues
+-   [x] Verify that is possible to save a decoded parameter: wiith txt save
+-   [x] Verify that is possible (or find a way) to save pieces of a decoded parameter
+-   [x] Verify that is possible to add a saved variable over a decoded parameter
+-   [x] Implement "use" of saved txt in decoded parameters operations
+-   [x] Implement the removing of the SAML signature without the re-sign
+-   [x] Move all dependencies to maven
+-   [x] Fix deprecated dependency having conflicts (org.apache.xml.serialize.OutputFormat and org.apache.xml.serialize.XMLSerializer)
+-   [x] Session configuration tab won't add classnames
+-   [x] Xml tag actions, how to deal with multiple tags having the same name? add a variable to identify which occurency to edit
+-   [x] Fix the fact that message operations don't keep the changes made on the message
+-   [x] Keep track if there are active executions, if not, clear variables
+-   [x] Define and fix windows problem
+-   [x] Remove debug options in the code (default track/driver/ecc)
+-   [x] Release a stable version
+-   [x] Edit the selection of the URL, this method should return the entire URL, not the first row of the message. The headers should contain the first row.
+-   [x] Sometimes if the browser cannot continue the session track, the test result is not displayed
+-   [x] Reload msg_def file before reading the test suite
+-   [x] Set the sessions proxy ports to default sequential value
+-   [x] Fix the starting dimension of the browser, if it starts with small dimensions it could not allow some types of buttons to be shown (and pressed).
+-   [x] Add a listener method for ExecuteTrack that deals with Errors that are not related to the execution of the track (for example an error on the driver selection)
+-   [x] Implement a better message drop
+-   [x] Fix the host editing not working
+-   [x] Regex: add message section "raw" (all message)
+-   [x] Add or edit content type when adding body in message Operations (BurpExtender@921)
+-   [x] the last actions are currently not filtered based on the session they are made
+-   [x] Fix save actions from-to, atm the save action cannot be empty, a new target has to be implemented
+-   [x] Last_url does not take the right last url, it is one url after.
+-   [x] implement the adding of things to the track when starting a session
+-   [x] Add the decode of a parameter in passives
+-   [x] Add columns to test results (Test Name | Test Description | References | Violated Properties | Mitigation |)
+-   [ ] Add oracle description on the test suite
+-   [ ] Add check's from option, from decoded param, in a way that checks could be executed on a decoded param
+-   [ ] Improve the error feedback on the plugin, for example by highlighting the part of the plugin that failed or by writing a string
+    -   [x] JSON Test track
+    -   [x] Tabs of JSON and sessions configs to higlhight red in case of errors
+    -   [ ] Browser track
+-   [ ] Check the add action in message operations
+-   [ ] sessions list in test are updated incorrectly
+-   [ ] Add the anti-proxybypass localhost rule to firefox
+-   [ ] JWT edit and add is applicable only to root keys in the jwt JSON, it is not possible to edit the child elements with these commands.
+-   [ ] JWT raw string methods are not jet implemented
+-   [ ] Implement new session objects in the test
+-   [ ] If session is stopped before the update of the track, the session operations does not have any effect
+-   [ ] sessions list in test are updated incorrectly
+-   [ ] Improve error feedbacks with detailed informations
+-   [ ] Intermittent problem: burp.ParsingException: variable "var_host" not defined. It could be caused by a race condition between threads, has to be checked
+-   [ ] Add an assert on the session to check the text content of an element in the page
+-   [ ] Parse the jwt sections as JSON to avoid inaccessibility of child elements (?)
+-   [ ] Add an optional session action (if the element is not found skip the action without counting as an error)
+-   [ ] Add assert text inside element
+-   [ ] Add assert color
+-   [ ] Think of a way to inject cookies in sessions
+-   [ ] Add a button in the tool to resume the execution after a certain pause action, for example to solve captcha
+-   [ ] Allow passives tests to be executed on a session different from mainSession 
+
+## Discarded
+
+-   [ ] Implement the delay test for token expiration
+-   [ ] Add server's metadata specific passive checks
+-   [ ] divide the self self-sign Assertion or Message command in language
+-   [ ] ??? Fix operation.applicable on all message operations (now is just at the first)
+-   [ ] Save last JSON test in config.json and reload it at the next startup
+-   [ ] Add to the documentation how to disable chrome's warnings over non secure connections (chrome://flags/#allow-insecure-localhost) enable
+
+## IDEAS
+
+-   Think about a way to specify the OR in the check
+-   Define the replay tag as a macro of elementar operations
+-   Define some type of test where given a timeout, a token (or other?) is tested to see if is still valid waiting for the timeout.
+-   make json to specify the checks to be done associated with a message type, i.e. Authentication Request
+-   A JSON config file, like for the filterings
+-   Should remove parameter be available to the body section??
+-   In message section "all" when deleting a param, if the name of a parameter is present more of one time, what should i do? delete them all?
+-   New Actives oracle make sense?
+-   In actives, in message operations, is it really useful to apply an action to the entire message?
+-   in actives, in message operations, what are the possible params? url parameters and HTTP parameters? or url parameters inside the value of an HTTP parameter too?
+-   In actives, in message operations, in ADD, what should i add to BODY?
