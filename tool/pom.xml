@@ -5,7 +5,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>FBK.MIG</groupId>
-    <artifactId>tool</artifactId>
+    <artifactId>mig-t</artifactId>
     <version>beta</version>
 
     <dependencies>
