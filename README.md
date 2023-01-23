@@ -1,5 +1,5 @@
-# MIG-L Pentesting Tool
-MIG-L Pentesting Tool is a plugin for BurpSuite that helps security testers automate their testing activities. It allows the tester to define automations to edit or check correctnees of HTTP messages. It integrates an automated browser used to simulate user actions on a webpage, to trigger specific messages. <br>
+# MIG-T Pentesting Tool
+MIG-T Pentesting Tool is a plugin for BurpSuite that helps security testers automate their testing activities. It allows the tester to define automations to edit or check correctnees of HTTP messages. It integrates an automated browser used to simulate user actions on a webpage, to trigger specific messages. It uses MIG-L language to define tests to be executed by MIG-T<br>
 
 ## Quickstart
 To use the plugin, get the lastest release from the releases page or follow the next section to compile the project.
