@@ -426,7 +426,7 @@ The succes is evaluated with the Boolean operator AND between the result and all
 
 Note that if correct (or incorrect) flow is used without specifying a session name, all the sessions are checked.
 
-Note for the definition of the track: to have a successfull oracle i suggest to define a track that not only does the login of the user, but also performs some actions on the final page, this way the result of the track is more complete. (i.e. if we just tell to login, the track will not try to act on the logged page, this way the plugin has no clue on if the final page contains an error or not)
+Note for the definition of the track: to have a successfull oracle we suggest to define a track that not only does the login of the user, but also performs some actions on the final page, this way the result of the track is more complete. (i.e. if we just tell to login, the track will not try to act on the logged page, this way the plugin has no clue on if the final page contains an error or not)
 
 ## Note on regex
 

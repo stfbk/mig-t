@@ -4,7 +4,7 @@ MIG-T Pentesting Tool is a plugin for BurpSuite that helps security testers auto
 ## Quickstart
 <details>
   <summary>Details</summary>
-I suggest you to download the lastest release of the tool from the release page, otherwise you can compile the last version from the source code by following the steps described in the "how to compile the plugin" section.
+We suggest you to download the lastest release of the tool from the release page, otherwise you can compile the last version from the source code by following the steps described in the "how to compile the plugin" section.
 
 ## Download & start the tool
 
@@ -81,6 +81,9 @@ You can find the documentation about the language used by the tool in the `doc/`
 
 -   Sometimes when re-executing a suite of active tests, the messages are not edited. Restart the plugin
 -   On windows, the re-signing of the SAML messages sometimes will fail
+
+# External / Related projects
+Extended in the context of the industrial collaboration with IPZS and Futuro&Conoscenza
 
 # License
 ```
