@@ -78,7 +78,7 @@ public class BurpExtender implements IBurpExtender, ITab, IProxyListener {
 
     @Override
     public String getTabCaption() {
-        return "Plugin Draft";
+        return "MIG-T";
     }
 
     @Override

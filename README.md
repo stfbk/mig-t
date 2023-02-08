@@ -13,7 +13,7 @@ I suggest you to download the lastest release of the tool from the release page,
 3. Start Burp and go in the *Exstensions* tab
 4. Press *Add* button
 5. In the *Extension file (.jar)* select the tool jar you downloaded before
-6. Now the plugin should be loaded, go to the "Plugin Draft" tab
+6. Now the plugin should be loaded, go to the "MIG-T" tab
 
 ## Download and add browser driver
 Depending on the browser you want to use (firefox or chrome), you will need to specify the corresponding driver. Note that you have to download the driver for the corresponding browser version
@@ -27,6 +27,18 @@ Select the browser you want to use using the buttons in the tool interface.
 To add the driver to the tool, use the "select driver" button in the tool interface and locate the driver file you downloaded before.
 
 ## Run a test
+
+Before starting, make sure you have updated your msg_def.json file in the Burp installation folder. You have to add the definitions of the message_types that you use in your tests in that file.
+
+To run a test you need to fill the "Input JSON" page with the test suite, and click on the "Read JSON" button. Once this has been done, in the upper part of mig-t, you will find all the tabs of the sessions declared in the tests, you need to fill them with the corresponding session track.
+
+If you declared more than one session in one test, you need to specify and start a different proxy for each session used. This is because there has to be a way to differentiate the traffic between the two sessions. To do that, go to "session config" tab in mig-t, (if you have already done the previous part you should see all the sessions you declared in your tests associated with a port) now, you need to change the port according to different proxies that you need to start from the Burp settings. Then press save.
+
+Now go back to Input JSON, and press Execute Test Suite.
+
+Once the tests have been executed, you will see the result in the "Test Suite Result" and by clicking on a result, you can see in details the matched messages in the tab "Test results".
+
+If you want to see the entire history of the messages go to "proxy" tab in Burp, then "HTTP history"
 
 </details><br>
 
