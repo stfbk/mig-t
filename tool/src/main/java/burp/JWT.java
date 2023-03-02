@@ -35,6 +35,7 @@ public class JWT {
 
     /**
      * Function that decodes a raw jwt with Base64 and splitting it into the three parts
+     *
      * @param jwt the raw jwt as string
      * @return an array of length 3 containing the three parts of the decoded JWT in order.
      */
@@ -61,7 +62,7 @@ public class JWT {
     public void parseJWT(String raw_jwt) throws ParsingException {
         int i = raw_jwt.lastIndexOf('.');
         String withoutSignature = raw_jwt.substring(0, i + 1);
-        jwt = Jwts.parser().parseClaimsJwt(withoutSignature);
+        jwt = Jwts.parserBuilder().build().parse(withoutSignature);
 
         singing_alg = (String) jwt.getHeader().get("alg");
 
@@ -148,8 +149,9 @@ public class JWT {
 
     /**
      * Removes a claim from the given jwt section
+     *
      * @param section the section containing the claim to remove
-     * @param what the name of the claim to remove
+     * @param what    the name of the claim to remove
      */
     public void removeClaim(Utils.Jwt_section section, String what) {
         switch (section) {
@@ -174,9 +176,10 @@ public class JWT {
     /**
      * This function add or edit a claim from the given section. If the claim is present, it edits it, otherwise it
      * adds it.
+     *
      * @param section the section containing the claim or that should contain the claim
-     * @param what the name of the claim
-     * @param value the value of the claim to set
+     * @param what    the name of the claim
+     * @param value   the value of the claim to set
      */
     public void editAddClaim(Utils.Jwt_section section, String what, String value) {
         switch (section) {
@@ -200,8 +203,9 @@ public class JWT {
 
     /**
      * Function used to get the value of a claim
+     *
      * @param section the section containing the claim
-     * @param what the name of the claim
+     * @param what    the name of the claim
      * @return the value of the claim
      */
     public String getClaim(Utils.Jwt_section section, String what) {
