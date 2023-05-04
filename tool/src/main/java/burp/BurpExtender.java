@@ -451,8 +451,9 @@ public class BurpExtender implements IBurpExtender, ITab, IProxyListener {
                     decoded_param = Encoding.decodeParam(
                             helpers, mop.from, mop.encodings, messageInfo, isRequest, mop.decode_param);
                 }
+
                 if (mop.self_sign | mop.remove_signature) {
-                    //Remove signatures
+                    //SAML Remove signatures
                     Document document = null;
                     try {
                         document = xmlHelpers.getXMLDocumentOfSAMLMessage(decoded_param);
@@ -468,6 +469,7 @@ public class BurpExtender implements IBurpExtender, ITab, IProxyListener {
                     }
                 }
 
+                // see if a variable value has to be used. Can be moved in mop class (?)
                 if (!mop.use.equals("")) {
                     Var v = getVariableByName(mop.use);
                     if (!v.isMessage) {
@@ -480,7 +482,7 @@ public class BurpExtender implements IBurpExtender, ITab, IProxyListener {
                 switch (mop.type) {
                     case XML: {
                         if (!decode) {
-                            throw new ParsingException("cannot found decoded parameter");
+                            throw new ParsingException("cannot find decoded parameter");
                         }
                         switch (mop.xml_action) {
                             case ADD_TAG:
@@ -760,7 +762,7 @@ public class BurpExtender implements IBurpExtender, ITab, IProxyListener {
                                     op.processed_message = Utils.editMessageParam(
                                             helpers,
                                             mop.what,
-                                            mop,
+                                            mop.from,
                                             messageInfo,
                                             isRequest,
                                             getAdding(mop),
@@ -912,7 +914,7 @@ public class BurpExtender implements IBurpExtender, ITab, IProxyListener {
 
 
                 if (mop.self_sign && !decoded_param.equals("")) {
-                    //re-sign
+                    // SAML re-sign
 
                     decoded_param = SamlTabController.resignAssertion_edit(decoded_param, original_cert);
                     //decoded_param = SamlTabController.resignMessage_edit(decoded_param, original_cert);
@@ -926,7 +928,7 @@ public class BurpExtender implements IBurpExtender, ITab, IProxyListener {
                     String encoded = Encoding.encode(mop.encodings, decoded_param, helpers);
 
                     op.processed_message = Utils.editMessageParam(helpers,
-                            mop.decode_param, mop, messageInfo, isRequest, encoded, true);
+                            mop.decode_param, mop.from, messageInfo, isRequest, encoded, true);
                 }
                 if (op.processed_message != null) {
                     if (isRequest) {

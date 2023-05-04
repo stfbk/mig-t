@@ -1009,6 +1009,25 @@ public class Utils {
         }
     }
 
+    public enum ContentType{
+        JSON,
+        HTTP;
+
+        public static ContentType fromString(String input) throws ParsingException {
+            if (input != null){
+                switch (input){
+                    case "json":
+                        return JSON;
+                    case "http":
+                        return HTTP;
+                    default:
+                        throw new ParsingException("invalid content type " + input);
+                }
+            }
+            throw new ParsingException("invalid content type");
+        }
+    }
+
     /**
      * The possible XML actions are the ones described in this enum
      */
@@ -1699,7 +1718,7 @@ public class Utils {
      * Edit a message parameter
      * @param helpers an instance of Burp's IExtensionHelper
      * @param param_name the name of the parameter to edit
-     * @param mop the message operation containing information about the section containing the parameter to edit
+     * @param message_section the message section to edit
      * @param messageInfo the message as IHttpRequestResponse object
      * @param isRequest specify if the message to consider is the request or response
      * @param new_value the new value of the parameter
@@ -1710,7 +1729,7 @@ public class Utils {
      */
     public static byte[] editMessageParam(IExtensionHelpers helpers,
                                           String param_name,
-                                          MessageOperation mop,
+                                          Utils.MessageSection message_section,
                                           IHttpRequestResponse messageInfo,
                                           boolean isRequest,
                                           String new_value,
@@ -1718,10 +1737,10 @@ public class Utils {
         List<String> splitted = null;
         Pattern pattern = null;
         Matcher matcher = null;
-        switch (mop.from) {
+        switch (message_section) {
             case HEAD:
                 List<String> headers = Utils.getHeaders(messageInfo, isRequest, helpers);
-                headers = Utils.editHeadParameter(headers, mop.what, new_value);
+                headers = Utils.editHeadParameter(headers, param_name, new_value);
                 byte[] message = helpers.buildHttpMessage(
                         headers,
                         Utils.getBody(messageInfo, isRequest, helpers));
