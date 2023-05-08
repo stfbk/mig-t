@@ -1,18 +1,16 @@
 package burp;
 
-import samlraider.application.SamlTabController;
-import samlraider.helpers.XMLHelpers;
-import org.w3c.dom.Document;
-import org.xml.sax.SAXException;
-
 import javax.swing.*;
 import java.awt.*;
 import java.io.*;
-import java.util.Collections;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
+
+import static burp.Utils.executeDecodeOps;
+import static burp.Utils.getVariableByName;
 
 /**
  * Main class executed by Burp
@@ -26,7 +24,6 @@ public class BurpExtender implements IBurpExtender, ITab, IProxyListener {
     public static PrintStream errorStream;
     public IBurpExtenderCallbacks callbacks;
     private GUI mainPane; // The GUI
-    private boolean isOauthflow = false;
 
     /**
      * Main function creating the extension
@@ -123,16 +120,6 @@ public class BurpExtender implements IBurpExtender, ITab, IProxyListener {
                             matchMessage = true;
                         }
                         break;
-                    case "oauth request":
-                        if (messageIsRequest && isOauthflow) {
-                            matchMessage = true;
-                        }
-                        break;
-                    case "oauth response":
-                        if (!messageIsRequest && isOauthflow) {
-                            matchMessage = true;
-                        }
-                        break;
 
                     default:
                         MessageType msg_type = MessageType.getFromList(mainPane.messageTypes,
@@ -207,29 +194,16 @@ public class BurpExtender implements IBurpExtender, ITab, IProxyListener {
             switch (mainPane.act_active_op.getAction()) {
                 // If the operation's action is an intercept
                 case INTERCEPT:
-                    if (!isOauthflow & Utils.isAuthRequest(
-                            helpers.analyzeRequest(messageInfo.getRequest()).getHeaders().get(0))) isOauthflow = true;
-
                     try {
                         switch (mainPane.act_active_op.getMessageType()) {
                             case "request":
                                 if (matchMessage) {
-                                    processMatchedMsg(messageInfo, true, false);
+                                    processMatchedMsg(new MessageType("request", true), messageInfo);
                                 }
                                 break;
                             case "response":
                                 if (matchMessage) {
-                                    processMatchedMsg(messageInfo, false, true);
-                                }
-                                break;
-                            case "oauth request":
-                                if (matchMessage) {
-                                    processMatchedMsg(messageInfo, true, false);
-                                }
-                                break;
-                            case "oauth response":
-                                if (matchMessage) {
-                                    processMatchedMsg(messageInfo, false, true);
+                                    processMatchedMsg(new MessageType("request", false), messageInfo);
                                 }
                                 break;
 
@@ -241,13 +215,13 @@ public class BurpExtender implements IBurpExtender, ITab, IProxyListener {
                                 if (msg_type.getByResponse) {
                                     if (!messageIsRequest) {
                                         if (matchMessage) {
-                                            processMatchedMsg(messageInfo, false, true);
+                                            processMatchedMsg(msg_type, messageInfo);
                                         }
                                     }
                                 } else if (msg_type.getByRequest) {
                                     if (!messageIsRequest) {
                                         if (matchMessage) {
-                                            processMatchedMsg(messageInfo, true, false);
+                                            processMatchedMsg(msg_type, messageInfo);
                                         }
                                     }
                                 } else {
@@ -280,7 +254,6 @@ public class BurpExtender implements IBurpExtender, ITab, IProxyListener {
                                 results = Tools.executePassiveOperation(mainPane.act_active_op,
                                         new HTTPReqRes(messageInfo, helpers, messageIsRequest),
                                         0,
-                                        isOauthflow ? -1 : 1, // this is not good
                                         helpers,
                                         mainPane.messageTypes);
                             } catch (ParsingException e) {
@@ -291,8 +264,8 @@ public class BurpExtender implements IBurpExtender, ITab, IProxyListener {
 
                             mainPane.act_active_op.applicable = results.get(3);
                             if (mainPane.act_active_op.applicable) {
-                                mainPane.act_active_op.passed = results.get(0);
-                                if (!mainPane.act_active_op.passed) resume();
+                                mainPane.act_active_op.result = results.get(0);
+                                if (!mainPane.act_active_op.result) resume();
                                 mainPane.act_active_op.act_matched++;
                             }
                             resume();
@@ -303,7 +276,7 @@ public class BurpExtender implements IBurpExtender, ITab, IProxyListener {
 
         }
         if (mainPane.recording) {
-            if (!messageIsRequest) { // non toglierlo, non so perchè ma serve
+            if (!messageIsRequest) { // do not remove
                 synchronized (mainPane.interceptedMessages) {
                     IHttpRequestResponsePersisted actual = callbacks.saveBuffersToTempFiles(messageInfo);
                     mainPane.interceptedMessages.add(
@@ -317,26 +290,16 @@ public class BurpExtender implements IBurpExtender, ITab, IProxyListener {
         }
     }
 
-    private void processMatchedMsg(IHttpRequestResponse messageInfo, boolean isRequest, boolean isResponse) {
-        messageInfo.setHighlight("red");
-        mainPane.act_active_op = executeOperation(mainPane.act_active_op,
-                messageInfo,
-                isRequest);
-        if (mainPane.act_active_op.processed_message != null) {
-            if (isRequest) messageInfo.setRequest(mainPane.act_active_op.processed_message);
-            else messageInfo.setResponse(mainPane.act_active_op.processed_message);
-        }
-        resume();
-    }
-
     private void processMatchedMsg(MessageType msg_type,
                                    IHttpRequestResponse messageInfo) {
         messageInfo.setHighlight("red");
+        HTTPReqRes message = new HTTPReqRes(messageInfo, helpers, msg_type.isRequest);
         mainPane.act_active_op = executeOperation(mainPane.act_active_op,
-                messageInfo,
+                message,
                 msg_type.isRequest);
         if (mainPane.act_active_op.processed_message != null) {
             if (msg_type.isRequest) {
+                //TODO use replace Burp Message ?
                 messageInfo.setRequest(mainPane.act_active_op.processed_message);
             } else {
                 messageInfo.setResponse(mainPane.act_active_op.processed_message);
@@ -354,12 +317,11 @@ public class BurpExtender implements IBurpExtender, ITab, IProxyListener {
      * @param isRequest   true if the message is a request
      * @return the updated operation, with its result
      */
-    private Operation executeOperation(Operation op, IHttpRequestResponse messageInfo, boolean isRequest) {
+    private Operation executeOperation(Operation op, HTTPReqRes messageInfo, boolean isRequest) {
         if (!op.preconditions.isEmpty()) {
-            HTTPReqRes message = new HTTPReqRes(messageInfo, helpers, isRequest);
             try {
                 op.applicable = Tools.executeChecks(op.preconditions,
-                        message,
+                        messageInfo,
                         helpers,
                         isRequest);
                 if (!op.applicable) return op;
@@ -370,12 +332,13 @@ public class BurpExtender implements IBurpExtender, ITab, IProxyListener {
             }
         }
 
+        // Replace the message with the saved one if asked
         if (isRequest) {
             if (!op.replace_request_name.equals("")) {
                 try {
                     op.applicable = true;
-                    op.processed_message = getVariableByName(op.replace_request_name).message;
-                    op.processed_message_service = getVariableByName(op.replace_request_name).service_info;
+                    op.processed_message = getVariableByName(op.replace_request_name, mainPane).message;
+                    op.processed_message_service = getVariableByName(op.replace_request_name, mainPane).service_info;
                     //return op;
                 } catch (ParsingException e) {
                     e.printStackTrace();
@@ -387,8 +350,8 @@ public class BurpExtender implements IBurpExtender, ITab, IProxyListener {
             if (!op.replace_response_name.equals("")) {
                 try {
                     op.applicable = true;
-                    op.processed_message = getVariableByName(op.replace_response_name).message;
-                    op.processed_message_service = getVariableByName(op.replace_response_name).service_info;
+                    op.processed_message = getVariableByName(op.replace_response_name, mainPane).message;
+                    op.processed_message_service = getVariableByName(op.replace_response_name, mainPane).service_info;
                     //return op;
                 } catch (ParsingException e) {
                     e.printStackTrace();
@@ -398,9 +361,15 @@ public class BurpExtender implements IBurpExtender, ITab, IProxyListener {
             }
         }
 
+        // execute the message operations and the decode ops
         try {
             op.applicable = true;
             op = executeMessageOps(op, messageInfo, isRequest);
+            if (!op.applicable | !op.result)
+                return op;
+            op = executeDecodeOps(op, messageInfo, isRequest, helpers, mainPane);
+            if (!op.applicable | !op.result)
+                return op;
 
         } catch (ParsingException | PatternSyntaxException e) {
             op.applicable = false;
@@ -413,7 +382,7 @@ public class BurpExtender implements IBurpExtender, ITab, IProxyListener {
             v.name = op.save_name;
             v.isMessage = true;
             v.message = isRequest ? messageInfo.getRequest() : messageInfo.getResponse();
-            v.service_info = messageInfo.getHttpService();
+            v.service_info = messageInfo.getHttpService(helpers);
             synchronized (mainPane.lock) {
                 mainPane.act_test_vars.add(v);
             }
@@ -432,420 +401,252 @@ public class BurpExtender implements IBurpExtender, ITab, IProxyListener {
      * @throws ParsingException if parsing of names is not successfull
      */
     public Operation executeMessageOps(Operation op,
-                                       IHttpRequestResponse messageInfo,
+                                       HTTPReqRes messageInfo,
                                        boolean isRequest) throws ParsingException {
         for (MessageOperation mop : op.getMessageOerations()) {
             List<String> splitted;
             Pattern pattern;
             Matcher matcher;
             byte[] new_message;
-            boolean decode = false;
-            String decoded_param = "";
-            String original_cert = "";
-            XMLHelpers xmlHelpers = new XMLHelpers();
 
             try {
-                if (!mop.decode_param.equals("")) {
-                    decode = true;
+                if (mop.type == Utils.MessageOpType.GENERATE_POC) {
+                    if (!isRequest) {
+                        throw new ParsingException("Invalid POC generation, message should be a request");
+                    }
 
-                    decoded_param = Encoding.decodeParam(
-                            helpers, mop.from, mop.encodings, messageInfo, isRequest, mop.decode_param);
-                }
+                    if (!mop.template.equals("csrf")) {
+                        continue; // other templates not supported yet
+                    }
 
-                if (mop.self_sign | mop.remove_signature) {
-                    //SAML Remove signatures
-                    Document document = null;
+                    String poc = Utils.generate_CSRF_POC(messageInfo, helpers);
+
                     try {
-                        document = xmlHelpers.getXMLDocumentOfSAMLMessage(decoded_param);
-                        original_cert = xmlHelpers.getCertificate(document.getDocumentElement());
-                        if (original_cert == null) {
-                            System.out.println("SAML Certificate not found in decoded parameter \"" + mop.decode_param + "\"");
-                            op.applicable = false;
-                        }
-                        decoded_param = SamlTabController.removeSignature_edit(decoded_param);
-
-                    } catch (SAXException e) {
-                        e.printStackTrace();
+                        File myObj = new File(mop.output_path);
+                        myObj.createNewFile();
+                    } catch (IOException e) {
+                        throw new ParsingException("Invalid POC generation output path: "
+                                + mop.output_path + " " + e.getMessage());
                     }
-                }
-
-                // see if a variable value has to be used. Can be moved in mop class (?)
-                if (!mop.use.equals("")) {
-                    Var v = getVariableByName(mop.use);
-                    if (!v.isMessage) {
-                        mop.value = v.value;
-                    } else {
-                        throw new ParsingException("Error while using variable, expected text var, got message var");
+                    try {
+                        FileWriter myWriter = new FileWriter(mop.output_path);
+                        myWriter.write(poc);
+                        myWriter.close();
+                    } catch (IOException e) {
+                        throw new ParsingException("Something went wrong while writing output file for POC generator: "
+                                + mop.output_path + " " + e.getMessage());
                     }
-                }
+                } else {
+                    if (mop.action != null) {
+                        switch (mop.action) {
+                            case REMOVE_PARAMETER:
+                                switch (mop.from) {
+                                    case URL:
+                                        // Works
+                                        if (!isRequest) {
+                                            throw new ParsingException("Searching URL in response");
+                                        }
+                                        String url_header = messageInfo.getUrlHeader();
+                                        pattern = Pattern.compile("&?" + mop.what + "=[^& ]*((?=&)|(?= ))");
+                                        matcher = pattern.matcher(url_header);
+                                        String new_url = matcher.replaceFirst("");
+                                        messageInfo.setUrlHeader(new_url);
+                                        op.processed_message = messageInfo.getMessage(isRequest, helpers);
+                                        break;
 
-                switch (mop.type) {
-                    case XML: {
-                        if (!decode) {
-                            throw new ParsingException("cannot find decoded parameter");
-                        }
-                        switch (mop.xml_action) {
-                            case ADD_TAG:
-                                decoded_param = XML.addTag(decoded_param,
-                                        mop.xml_tag,
-                                        mop.xml_action_name,
-                                        mop.value,
-                                        mop.xml_occurrency);
-                                break;
-                            case ADD_ATTR:
-                                decoded_param = XML.addTagAttribute(decoded_param,
-                                        mop.xml_tag,
-                                        mop.xml_action_name,
-                                        mop.value,
-                                        mop.xml_occurrency);
-                                break;
-                            case EDIT_TAG:
-                                decoded_param = XML.editTagValue(decoded_param,
-                                        mop.xml_action_name,
-                                        mop.value,
-                                        mop.xml_occurrency);
-                                break;
-                            case EDIT_ATTR:
-                                decoded_param = XML.editTagAttributes(decoded_param,
-                                        mop.xml_tag,
-                                        mop.xml_action_name,
-                                        mop.value,
-                                        mop.xml_occurrency);
-                                break;
-                            case REMOVE_TAG:
-                                decoded_param = XML.removeTag(decoded_param,
-                                        mop.xml_action_name,
-                                        mop.xml_occurrency);
-                                break;
-                            case REMOVE_ATTR:
-                                decoded_param = XML.removeTagAttribute(decoded_param,
-                                        mop.xml_tag,
-                                        mop.xml_action_name,
-                                        mop.xml_occurrency);
-                                break;
-                            case SAVE_TAG: {
-                                String to_save = XML.getTagValaue(decoded_param,
-                                        mop.xml_action_name,
-                                        mop.xml_occurrency);
-                                Var v = new Var();
-                                v.name = mop.save_as;
-                                v.isMessage = false;
-                                v.value = to_save;
-                                synchronized (mainPane.lock) {
-                                    mainPane.act_test_vars.add(v);
-                                }
+                                    case HEAD:
+                                        List<String> headers = messageInfo.getHeaders(isRequest);
+                                        headers = Utils.removeHeadParameter(headers, mop.what);
+                                        messageInfo.setHeaders(isRequest, headers);
 
-                                break;
-                            }
-                            case SAVE_ATTR:
-                                String to_save = XML.getTagAttributeValue(decoded_param,
-                                        mop.xml_tag, mop.xml_action_name,
-                                        mop.xml_occurrency);
-                                Var v = new Var();
-                                v.name = mop.save_as;
-                                v.isMessage = false;
-                                v.value = to_save;
-                                synchronized (mainPane.lock) {
-                                    mainPane.act_test_vars.add(v);
+                                        op.processed_message = messageInfo.getMessage(isRequest, helpers);
+                                        break;
+
+                                    case BODY:
+                                        String body = new String(messageInfo.getBody(isRequest));
+                                        pattern = Pattern.compile(mop.what);
+                                        matcher = pattern.matcher(body);
+                                        messageInfo.setBody(isRequest, matcher.replaceAll(""));
+                                        //Automatically update content-lenght
+                                        op.processed_message = messageInfo.getMessage(isRequest, helpers);
+                                        break;
                                 }
                                 break;
-                        }
-                        break;
-                    }
-                    case JWT: {
-                        op.jwt = new JWT();
-                        if (mop.isRawJWT) {
-                            op.jwt.parseJWT_string(decoded_param);
-                        } else {
-                            op.jwt.parseJWT(decoded_param);
-                        }
 
-                        switch (mop.jwt_action) {
-                            case REMOVE:
-                                op.jwt.removeClaim(mop.jwt_section, mop.what);
-                                break;
-                            case EDIT:
                             case ADD:
-                                op.jwt.editAddClaim(mop.jwt_section, mop.what, mop.value);
-                                break;
-                            case SAVE:
-                                Var v = new Var();
-                                v.name = mop.save_as;
-                                v.isMessage = false;
-                                v.value = op.jwt.getClaim(mop.jwt_section, mop.what);
-                                synchronized (mainPane.lock) {
-                                    mainPane.act_test_vars.add(v);
-                                }
-                                break;
-                        }
-
-                        decoded_param = mop.isRawJWT ?
-                                op.jwt.buildJWT_string() :
-                                op.jwt.buildJWT();
-                        break;
-                    }
-                    case TXT: {
-                        Pattern p = Pattern.compile(mop.txt_action_name);
-                        Matcher m = p.matcher(decoded_param);
-
-                        if (mop.txt_action == null) {
-                            throw new ParsingException("txt action not specified");
-                        }
-
-                        switch (mop.txt_action) {
-                            case REMOVE:
-                                decoded_param = m.replaceAll("");
-
-                                break;
-                            case EDIT:
-                                decoded_param = m.replaceAll(mop.value);
-
-                                break;
-                            case ADD:
-                                while (m.find()) {
-                                    int index = m.end();
-                                    String before = decoded_param.substring(0, index);
-                                    String after = decoded_param.substring(index);
-                                    decoded_param = before + mop.value + after;
+                                if (getAdding(mop) == null | getAdding(mop).equals("")) {
+                                    // TODO: should raise exception or set operation not applicable?
                                     break;
                                 }
-                                break;
-                            case SAVE:
-                                String val = "";
-                                while (m.find()) {
-                                    val = m.group();
-                                    break;
-                                }
-
-                                Var v = new Var();
-                                v.name = mop.save_as;
-                                v.isMessage = false;
-                                v.value = val;
-                                synchronized (mainPane.lock) {
-                                    mainPane.act_test_vars.add(v);
-                                }
-                                break;
-                        }
-                        break;
-                    }
-                    case GENERATE_POC: {
-                        //TODO: Finish
-                        if (!isRequest) {
-                            throw new ParsingException("Invalid POC generation, message should be a request");
-                        }
-
-                        if (!mop.template.equals("csrf")){
-                            continue; // other templates not supported yet
-                        }
-
-                        String poc = Utils.generate_CSRF_POC(messageInfo, helpers);
-
-                        try {
-                            File myObj = new File(mop.output_path);
-                            myObj.createNewFile();
-                        } catch (IOException e) {
-                            throw new ParsingException("Invalid POC generation output path: "
-                                    + mop.output_path + " " + e.getMessage());
-                        }
-                        try {
-                            FileWriter myWriter = new FileWriter(mop.output_path);
-                            myWriter.write(poc);
-                            myWriter.close();
-                        } catch (IOException e) {
-                            throw new ParsingException("Something went wrong while writing output file for POC generator: "
-                                    + mop.output_path + " " + e.getMessage());
-                        }
-                    }
-                    default: // HTTP standard
-                        if (mop.action != null) {
-                            switch (mop.action) {
-                                case REMOVE_PARAMETER:
-                                    switch (mop.from) {
-                                        case URL:
-                                            // Works
-                                            if (!isRequest) {
-                                                throw new ParsingException("Searching URL in response");
-                                            }
-                                            List<String> parts = Utils.splitMessage(messageInfo, helpers, isRequest);
-                                            pattern = Pattern.compile("&?" + mop.what + "=[^& ]*((?=&)|(?= ))");
-                                            matcher = pattern.matcher(parts.get(0));
-                                            String new_url = matcher.replaceFirst("");
-
-                                            new_message = Utils.setUrl(new_url, messageInfo, helpers, isRequest);
-
-                                            op.processed_message = new_message;
-                                            break;
-                                        case HEAD:
-                                            List<String> headers = Utils.getHeaders(messageInfo, isRequest, helpers);
-                                            headers = Utils.removeHeadParameter(headers, mop.what);
-                                            byte[] message = helpers.buildHttpMessage(
-                                                    headers,
-                                                    Utils.getBody(messageInfo, isRequest, helpers));
-
-                                            op.processed_message = message;
-                                            break;
-                                        case BODY:
-                                            // Works
-                                            splitted = Utils.splitMessage(messageInfo, helpers, isRequest);
-
-                                            pattern = Pattern.compile(mop.what);
-                                            matcher = pattern.matcher(splitted.get(2));
-                                            splitted.set(2, matcher.replaceAll(""));
-
-                                            List<String> head = Utils.getHeaders(messageInfo, isRequest, helpers);
-                                            //Automatically update content-lenght
-                                            op.processed_message = helpers.buildHttpMessage(
-                                                    head,
-                                                    helpers.stringToBytes(splitted.get(2)));
-                                            break;
-                                    }
-                                    break;
-
-                                case ADD:
-                                    if (getAdding(mop) == null | getAdding(mop).equals("")) {
+                                switch (mop.from) {
+                                    case HEAD: {
+                                        List<String> headers = messageInfo.getHeaders(isRequest);
+                                        headers = Utils.addHeadParameter(headers, mop.what, getAdding(mop));
+                                        messageInfo.setHeaders(isRequest, headers);
+                                        op.processed_message = messageInfo.getMessage(isRequest, helpers);
                                         break;
                                     }
-                                    switch (mop.from) {
-                                        case HEAD: {
-                                            List<String> headers = Utils.getHeaders(messageInfo, isRequest, helpers);
-                                            headers = Utils.addHeadParameter(headers, mop.what, getAdding(mop));
-                                            byte[] message = helpers.buildHttpMessage(
-                                                    headers,
-                                                    Utils.getBody(messageInfo, isRequest, helpers));
-
-                                            op.processed_message = message;
-                                            break;
-                                        }
-                                        case BODY: {
-                                            // Works
-                                            splitted = Utils.splitMessage(messageInfo, helpers, isRequest);
-
-                                            String tmp = splitted.get(2);
-                                            tmp = tmp + getAdding(mop);
-                                            splitted.set(2, tmp);
-
-                                            List<String> head = Utils.getHeaders(messageInfo, isRequest, helpers);
-                                            //Automatically update content-lenght
-                                            op.processed_message = helpers.buildHttpMessage(
-                                                    head,
-                                                    helpers.stringToBytes(splitted.get(2)));
-                                            break;
-                                        }
-                                        case URL:
-                                            // Works
-                                            if (!isRequest) {
-                                                throw new ParsingException("Searching URL in response");
-                                            }
-
-                                            List<String> parts = Utils.splitMessage(messageInfo, helpers, isRequest);
-                                            String header_0 = parts.get(0);
-
-                                            pattern = Pattern.compile("&?" + mop.what + "=[^& ]*((?=&)|(?= ))");
-                                            matcher = pattern.matcher(header_0);
-
-                                            String newHeader_0 = "";
-                                            boolean found = false;
-                                            while (matcher.find() & !found) {
-                                                String before = header_0.substring(0, matcher.end());
-                                                String after = header_0.substring(matcher.end());
-                                                newHeader_0 = before + getAdding(mop) + after;
-                                                found = true;
-                                            }
-
-                                            new_message = Utils.setUrl(newHeader_0, messageInfo, helpers, isRequest);
-                                            op.processed_message = new_message;
-                                            break;
+                                    case BODY: {
+                                        String tmp = new String(messageInfo.getBody(isRequest));
+                                        tmp = tmp + getAdding(mop);
+                                        messageInfo.setBody(isRequest, tmp);
+                                        //Automatically update content-lenght
+                                        op.processed_message = messageInfo.getMessage(isRequest, helpers);
+                                        break;
                                     }
-                                    break;
+                                    case URL:
+                                        if (!isRequest) {
+                                            throw new ParsingException("Searching URL in response");
+                                        }
+                                        String header_0 = messageInfo.getUrlHeader();
 
-                                case EDIT:
-                                    op.processed_message = Utils.editMessageParam(
-                                            helpers,
-                                            mop.what,
-                                            mop.from,
-                                            messageInfo,
-                                            isRequest,
-                                            getAdding(mop),
-                                            true);
-                                    break;
+                                        pattern = Pattern.compile("&?" + mop.what + "=[^& ]*((?=&)|(?= ))");
+                                        matcher = pattern.matcher(header_0);
 
-                                case EDIT_REGEX:
-                                    op.processed_message = Utils.editMessage(
-                                            helpers,
-                                            mop.what,
-                                            mop,
-                                            messageInfo,
-                                            isRequest,
-                                            getAdding(mop),
-                                            true);
-                                    break;
+                                        String newHeader_0 = "";
+                                        boolean found = false;
+                                        while (matcher.find() & !found) {
+                                            String before = header_0.substring(0, matcher.end());
+                                            String after = header_0.substring(matcher.end());
+                                            newHeader_0 = before + getAdding(mop) + after;
+                                            found = true;
+                                        }
+                                        messageInfo.setUrlHeader(newHeader_0);
+                                        op.processed_message = messageInfo.getMessage(isRequest, helpers);
+                                        break;
+                                }
+                                break;
 
-                                case REMOVE_MATCH_WORD:
-                                    switch (mop.from) {
-                                        case HEAD: {
-                                            // Works
+                            case EDIT:
+                                op.processed_message = Utils.editMessageParam(
+                                        helpers,
+                                        mop.what,
+                                        mop.from,
+                                        messageInfo,
+                                        isRequest,
+                                        getAdding(mop),
+                                        true);
+                                break;
+
+                            case EDIT_REGEX:
+                                op.processed_message = Utils.editMessage(
+                                        helpers,
+                                        mop.what,
+                                        mop,
+                                        messageInfo,
+                                        isRequest,
+                                        getAdding(mop));
+                                break;
+
+                            case REMOVE_MATCH_WORD:
+                                switch (mop.from) {
+                                    case HEAD: {
+                                        List<String> headers = messageInfo.getHeaders(isRequest);
+                                        pattern = Pattern.compile(mop.what);
+                                        List<String> new_headers = new ArrayList<>();
+
+                                        for (String header : headers) {
+                                            matcher = pattern.matcher(header);
+                                            new_headers.add(matcher.replaceAll(""));
+                                        }
+
+                                        messageInfo.setHeaders(isRequest, new_headers);
+                                        op.processed_message = messageInfo.getMessage(isRequest, helpers);
+                                        break;
+                                    }
+                                    case BODY: {
+                                        pattern = Pattern.compile(mop.what);
+                                        matcher = pattern.matcher(new String(messageInfo.getBody(isRequest)));
+                                        messageInfo.setBody(isRequest, matcher.replaceAll(""));
+
+                                        //Automatically update content-lenght
+                                        op.processed_message = messageInfo.getMessage(isRequest, helpers);
+                                        break;
+                                    }
+                                    case URL:
+                                        // Works
+                                        if (!isRequest) {
+                                            throw new ParsingException("Searching URL in response");
+                                        }
+                                        String header_0 = messageInfo.getUrlHeader();
+
+                                        pattern = Pattern.compile(mop.what);
+                                        matcher = pattern.matcher(header_0);
+                                        String newHeader_0 = matcher.replaceFirst("");
+
+                                        messageInfo.setUrlHeader(newHeader_0);
+                                        op.processed_message = messageInfo.getMessage(isRequest, helpers);
+                                        break;
+                                }
+                                break;
+
+                            case SAVE:
+                            case SAVE_MATCH:
+                                switch (mop.from) {
+                                    case HEAD: {
+                                        String value = "";
+                                        if (mop.action == Utils.MessageOperationActions.SAVE) {
+                                            List<String> headers = messageInfo.getHeaders(isRequest);
+                                            value = Utils.getHeadParameterValue(headers, mop.what).trim();
+                                        } else {
                                             splitted = Utils.splitMessage(messageInfo, helpers, isRequest);
-
                                             pattern = Pattern.compile(mop.what);
                                             matcher = pattern.matcher(splitted.get(1));
-                                            splitted.set(1, matcher.replaceAll(""));
-
-                                            byte[] message = Utils.buildMessage(splitted, helpers);
-
-                                            op.processed_message = message;
-                                            break;
-                                        }
-                                        case BODY: {
-                                            // Works
-                                            splitted = Utils.splitMessage(messageInfo, helpers, isRequest);
-
-                                            pattern = Pattern.compile(mop.what);
-                                            matcher = pattern.matcher(splitted.get(2));
-                                            splitted.set(2, matcher.replaceAll(""));
-
-                                            List<String> head = Utils.getHeaders(messageInfo, isRequest, helpers);
-                                            //Automatically update content-lenght
-                                            op.processed_message = helpers.buildHttpMessage(
-                                                    head,
-                                                    helpers.stringToBytes(splitted.get(2)));
-                                            break;
-                                        }
-                                        case URL:
-                                            // Works
-                                            if (!isRequest) {
-                                                throw new ParsingException("Searching URL in response");
+                                            value = "";
+                                            while (matcher.find()) {
+                                                value = matcher.group();
+                                                break;
                                             }
-                                            List<String> parts = Utils.splitMessage(messageInfo, helpers, isRequest);
-                                            String header_0 = parts.get(0);
+                                        }
 
-                                            pattern = Pattern.compile(mop.what);
-                                            matcher = pattern.matcher(header_0);
-                                            String newHeader_0 = matcher.replaceFirst("");
-
-                                            new_message = Utils.setUrl(newHeader_0, messageInfo, helpers, isRequest);
-                                            op.processed_message = new_message;
-                                            break;
+                                        Var v = new Var();
+                                        v.name = mop.save_as;
+                                        v.isMessage = false;
+                                        v.value = value;
+                                        synchronized (mainPane.lock) {
+                                            mainPane.act_test_vars.add(v);
+                                        }
+                                        break;
                                     }
-                                    break;
+                                    case BODY: {
+                                        // Works
+                                        splitted = Utils.splitMessage(messageInfo, helpers, isRequest);
+                                        String tmp = splitted.get(2);
+                                        pattern = Pattern.compile(mop.what);
+                                        matcher = pattern.matcher(tmp);
+                                        Var v = new Var();
 
-                                case SAVE:
-                                case SAVE_MATCH:
-                                    switch (mop.from) {
-                                        case HEAD: {
-                                            String value = "";
-                                            if (mop.action == Utils.MessageOperationActions.SAVE) {
-                                                List<String> headers = Utils.getHeaders(messageInfo, isRequest, helpers);
-                                                value = Utils.getHeadParameterValue(headers, mop.what).trim();
-                                            } else {
-                                                splitted = Utils.splitMessage(messageInfo, helpers, isRequest);
-                                                pattern = Pattern.compile(mop.what);
-                                                matcher = pattern.matcher(splitted.get(1));
-                                                value = "";
-                                                while (matcher.find()) {
-                                                    value = matcher.group();
-                                                    break;
-                                                }
-                                            }
+                                        while (matcher.find()) {
+                                            v.name = mop.save_as;
+                                            v.isMessage = false;
+                                            v.value = matcher.group();
+                                            break;
+                                        }
+                                        synchronized (mainPane.lock) {
+                                            mainPane.act_test_vars.add(v);
+                                        }
+                                        break;
+                                    }
+                                    case URL: {
+                                        // works
+                                        if (!isRequest) {
+                                            throw new ParsingException("Searching URL in response");
+                                        }
+                                        List<String> parts = Utils.splitMessage(messageInfo, helpers, isRequest);
+                                        String header_0 = parts.get(0);
+
+                                        pattern = mop.action == Utils.MessageOperationActions.SAVE ?
+                                                Pattern.compile(mop.what + "=[^& ]*(?=(&| ))") :
+                                                Pattern.compile(mop.what);
+
+                                        matcher = pattern.matcher(header_0);
+                                        String value = "";
+
+                                        if (matcher.find()) {
+                                            String matched = matcher.group();
+                                            value = mop.action == Utils.MessageOperationActions.SAVE ?
+                                                    matched.split("=")[1] :
+                                                    matched;
 
                                             Var v = new Var();
                                             v.name = mop.save_as;
@@ -854,82 +655,15 @@ public class BurpExtender implements IBurpExtender, ITab, IProxyListener {
                                             synchronized (mainPane.lock) {
                                                 mainPane.act_test_vars.add(v);
                                             }
-                                            break;
                                         }
-                                        case BODY: {
-                                            // Works
-                                            splitted = Utils.splitMessage(messageInfo, helpers, isRequest);
-                                            String tmp = splitted.get(2);
-                                            pattern = Pattern.compile(mop.what);
-                                            matcher = pattern.matcher(tmp);
-                                            Var v = new Var();
-
-                                            while (matcher.find()) {
-                                                v.name = mop.save_as;
-                                                v.isMessage = false;
-                                                v.value = matcher.group();
-                                                break;
-                                            }
-                                            synchronized (mainPane.lock) {
-                                                mainPane.act_test_vars.add(v);
-                                            }
-                                            break;
-                                        }
-                                        case URL: {
-                                            // works
-                                            if (!isRequest) {
-                                                throw new ParsingException("Searching URL in response");
-                                            }
-                                            List<String> parts = Utils.splitMessage(messageInfo, helpers, isRequest);
-                                            String header_0 = parts.get(0);
-
-                                            pattern = mop.action == Utils.MessageOperationActions.SAVE ?
-                                                    Pattern.compile(mop.what + "=[^& ]*(?=(&| ))") :
-                                                    Pattern.compile(mop.what);
-
-                                            matcher = pattern.matcher(header_0);
-                                            String value = "";
-
-                                            if (matcher.find()) {
-                                                String matched = matcher.group();
-                                                value = mop.action == Utils.MessageOperationActions.SAVE ?
-                                                        matched.split("=")[1] :
-                                                        matched;
-
-                                                Var v = new Var();
-                                                v.name = mop.save_as;
-                                                v.isMessage = false;
-                                                v.value = value;
-                                                synchronized (mainPane.lock) {
-                                                    mainPane.act_test_vars.add(v);
-                                                }
-                                            }
-                                            break;
-                                        }
+                                        break;
                                     }
-                                    break;
-                            }
+                                }
+                                break;
                         }
+                    }
                 }
 
-
-                if (mop.self_sign && !decoded_param.equals("")) {
-                    // SAML re-sign
-
-                    decoded_param = SamlTabController.resignAssertion_edit(decoded_param, original_cert);
-                    //decoded_param = SamlTabController.resignMessage_edit(decoded_param, original_cert);
-
-                }
-
-                if (decode && !decoded_param.equals("")) {
-                    // encode the edited param and substitute it in the right place
-
-                    Collections.reverse(mop.encodings); // Set the right order for encoding
-                    String encoded = Encoding.encode(mop.encodings, decoded_param, helpers);
-
-                    op.processed_message = Utils.editMessageParam(helpers,
-                            mop.decode_param, mop.from, messageInfo, isRequest, encoded, true);
-                }
                 if (op.processed_message != null) {
                     if (isRequest) {
                         messageInfo.setRequest(op.processed_message);
@@ -937,7 +671,8 @@ public class BurpExtender implements IBurpExtender, ITab, IProxyListener {
                         messageInfo.setResponse(op.processed_message);
                     }
                     if (op.processed_message_service != null) {
-                        messageInfo.setHttpService(op.processed_message_service);
+                        // TODO: check if ok to remove
+                        //messageInfo.setHttpService(op.processed_message_service);
                     }
                 }
             } catch (StackOverflowError e) {
@@ -957,29 +692,11 @@ public class BurpExtender implements IBurpExtender, ITab, IProxyListener {
      */
     private String getAdding(MessageOperation m) throws ParsingException {
         if (!m.use.isEmpty()) {
-            return getVariableByName(m.use).value;
+            return getVariableByName(m.use, mainPane).value;
         } else {
 
             return m.to;
         }
-    }
-
-    /**
-     * Given a name, returns the corresponding variable
-     *
-     * @param name the name of the variable
-     * @return the Var object
-     * @throws ParsingException if the variable cannot be found
-     */
-    private Var getVariableByName(String name) throws ParsingException {
-        synchronized (mainPane.lock) {
-            for (Var act : mainPane.act_test_vars) {
-                if (act.name.equals(name)) {
-                    return act;
-                }
-            }
-        }
-        throw new ParsingException("variable not defined");
     }
 
     /**

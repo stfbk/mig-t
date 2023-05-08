@@ -21,10 +21,11 @@ public class ExecutePassives implements Runnable {
 
     /**
      * Used to instantiate an ExecutePassives object
-     * @param helpers IExtensionHelpers instance of Burp
+     *
+     * @param helpers      IExtensionHelpers instance of Burp
      * @param passiveTests The list of passive tests to execute
-     * @param listener the listener for this ExecutePassives Object, used to communicate with the thread
-     * @param msg_types the list of message types needed by the tests
+     * @param listener     the listener for this ExecutePassives Object, used to communicate with the thread
+     * @param msg_types    the list of message types needed by the tests
      */
     public ExecutePassives(IExtensionHelpers helpers,
                            List<Test> passiveTests,
@@ -86,7 +87,7 @@ public class ExecutePassives implements Runnable {
                 executedSession = executePassiveTestSession(act_session);
                 for (Test t : actual_batch) {
                     // TODO: limit one session for active tests
-                    t.sessions.set(0,executedSession);
+                    t.sessions.set(0, executedSession);
                 }
                 batch.put(sessionName, actual_batch);
                 if (execution_error) {
@@ -117,6 +118,7 @@ public class ExecutePassives implements Runnable {
     /**
      * Executes a passive test's session, to gather messages needed to execute the passive
      * tests.
+     *
      * @param session the session to be executed
      * @return the same session, executed, that will contain the intercepted messages
      */

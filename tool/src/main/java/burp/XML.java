@@ -204,10 +204,10 @@ public class XML {
     /**
      * This function adds an attribute in a tag from an xml string
      *
-     * @param input     the xml string
-     * @param tag       the tag to add the attribute
-     * @param attribute the attribute name to be added
-     * @param value     the attribute value to be added
+     * @param input      the xml string
+     * @param tag        the tag to add the attribute
+     * @param attribute  the attribute name to be added
+     * @param value      the attribute value to be added
      * @param occurrency tells the index of the matched occurency to do the thing on, set it to -1 to do for all occurencies
      * @return the edited xml string
      */

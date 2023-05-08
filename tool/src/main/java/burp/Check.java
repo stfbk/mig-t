@@ -1,7 +1,5 @@
 package burp;
 
-import com.jayway.jsonpath.JsonPath;
-
 import java.util.Arrays;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -22,6 +20,7 @@ public class Check {
 
     /**
      * Execute the check if it is http
+     *
      * @param message
      * @param helpers
      * @param isRequest
@@ -29,8 +28,8 @@ public class Check {
      * @throws ParsingException
      */
     private boolean execute_http(HTTPReqRes message,
-                                IExtensionHelpers helpers,
-                                boolean isRequest) throws ParsingException {
+                                 IExtensionHelpers helpers,
+                                 boolean isRequest) throws ParsingException {
         String msg_str = "";
         IRequestInfo req_info = null;
         IResponseInfo res_info = null;
@@ -104,7 +103,7 @@ public class Check {
                         }
                         break;
                     case IS_NOT:
-                        if (!!this.op_val.equals(val)) {
+                        if (this.op_val.equals(val)) {
                             return false;
                         }
                         break;
@@ -114,7 +113,7 @@ public class Check {
                         }
                         break;
                     case NOT_CONTAINS:
-                        if (!!val.contains(this.op_val)) {
+                        if (val.contains(this.op_val)) {
                             return false;
                         }
                         break;
@@ -136,15 +135,13 @@ public class Check {
         } else {
             if (!msg_str.contains(this.what)) {
                 if (this.op != null) {
-                    if (this.op != Utils.CheckOps.IS_NOT_PRESENT) {
-                        return false;
-                    }
+                    return this.op == Utils.CheckOps.IS_NOT_PRESENT;
                 } else {
                     return false;
                 }
             } else {
                 if (this.op != null) {
-                    if (this.op == Utils.CheckOps.IS_NOT_PRESENT) return false;
+                    return this.op != Utils.CheckOps.IS_NOT_PRESENT;
                 }
             }
         }
@@ -152,8 +149,8 @@ public class Check {
     }
 
     private boolean execute_json(HTTPReqRes message,
-                                IExtensionHelpers helpers,
-                                boolean isRequest) throws ParsingException {
+                                 IExtensionHelpers helpers,
+                                 boolean isRequest) throws ParsingException {
         return true;
         // https://github.com/json-path/JsonPath
         // TODO
@@ -164,6 +161,7 @@ public class Check {
 
     /**
      * Executes the given check
+     *
      * @param message
      * @param helpers
      * @param isRequest

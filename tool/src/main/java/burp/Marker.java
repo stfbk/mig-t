@@ -1,5 +1,7 @@
 package burp;
 
+import java.util.Objects;
+
 /**
  * Class used to mark User Actions to be managed by session actions
  *
@@ -10,6 +12,7 @@ public class Marker {
 
     /**
      * Constructor to instantiate a new marker object
+     *
      * @param _name name of the marker
      */
     public Marker(String _name) {
@@ -23,6 +26,6 @@ public class Marker {
 
         Marker marker = (Marker) o;
 
-        return name != null ? name.equals(marker.name) : marker.name == null;
+        return Objects.equals(name, marker.name);
     }
 }

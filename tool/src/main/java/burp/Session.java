@@ -129,6 +129,7 @@ public class Session {
 
     /**
      * Set the track of this session by parsing a string track
+     *
      * @param raw_track the track in string format
      * @return the parsed track as a Track object
      * @throws ParsingException if the track is malformed

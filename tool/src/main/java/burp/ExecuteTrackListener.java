@@ -44,6 +44,7 @@ public interface ExecuteTrackListener {
 
     /**
      * The thread asks if it has to stop the execution, the listener responds
+     *
      * @param sessionName The name of the session that is executing
      * @return true if the execution should stop
      */
@@ -51,6 +52,7 @@ public interface ExecuteTrackListener {
 
     /**
      * The thread asks if it has to clear the cookies, the listener responds
+     *
      * @param sessionName The name of the session that is executing
      * @return true if the browser that is executing should clear the cookies
      */
@@ -59,10 +61,11 @@ public interface ExecuteTrackListener {
     /**
      * Called whether a new session action is executed. This is used to update the listener on the actions that are
      * being executed
-     * @param last_action the last User action executed at this point
-     * @param last_open the last open User action executed to this point
-     * @param last_click the last click User action executed to this point
-     * @param last_url the last url User action executed to this point
+     *
+     * @param last_action  the last User action executed at this point
+     * @param last_open    the last open User action executed to this point
+     * @param last_click   the last click User action executed to this point
+     * @param last_url     the last url User action executed to this point
      * @param session_name the name of the session that is executing
      * @throws ParsingException If problems are encounter retrieving these parameters
      */
@@ -74,6 +77,7 @@ public interface ExecuteTrackListener {
 
     /**
      * With this method is possible to update the Session track during execution
+     *
      * @param sessionName the name of the session that is executing
      * @return the updated track
      * @throws ParsingException if problems are encountered in updating the session track
@@ -82,6 +86,7 @@ public interface ExecuteTrackListener {
 
     /**
      * Called whether a variable is set using a User action
+     *
      * @param v the variable that has been set
      */
     void onSetVar(Var v);

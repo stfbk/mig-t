@@ -3,7 +3,6 @@ package burp;
 import be.quodlibet.boxable.BaseTable;
 import be.quodlibet.boxable.Cell;
 import be.quodlibet.boxable.Row;
-import be.quodlibet.boxable.datatable.DataTable;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.pdmodel.PDPage;
 import org.apache.pdfbox.pdmodel.PDPageContentStream;
@@ -11,9 +10,6 @@ import org.apache.pdfbox.pdmodel.font.PDType1Font;
 
 import java.awt.*;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
 
 /**
  * Class used to generate a report for a test
@@ -24,13 +20,11 @@ public class Report {
 
     public void toPdf() throws IOException {
         String message = "Test Report";
-        try (PDDocument doc = new PDDocument())
-        {
+        try (PDDocument doc = new PDDocument()) {
             PDPage page = new PDPage();
 
 
-            try (PDPageContentStream contents = new PDPageContentStream(doc, page))
-            {
+            try (PDPageContentStream contents = new PDPageContentStream(doc, page)) {
                 contents.beginText();
                 contents.setFont(PDType1Font.HELVETICA_BOLD, 12);
                 contents.newLineAtOffset(100, 700);

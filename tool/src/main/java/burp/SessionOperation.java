@@ -28,6 +28,7 @@ public class SessionOperation {
 
     /**
      * Parses a list of session operations from json
+     *
      * @param act_operation the session operations as JSON object
      * @return the list of tession operations
      * @throws ParsingException if the parsing goes wrong
@@ -73,7 +74,7 @@ public class SessionOperation {
                             break;
                         case "remove":
                             sop.action = Utils.SessOperationAction.REMOVE;
-                            if (sop.at == null || sop.at.length()==0) {
+                            if (sop.at == null || sop.at.length() == 0) {
                                 sop.at = act_session_op.getString("remove");
                             }
                             break;
@@ -100,6 +101,7 @@ public class SessionOperation {
     /**
      * Parse a string containing a range in the form of [number, number] or (number,number], based on the type of
      * parenthesis you can say that the rance is included [ or excluded (
+     *
      * @param range The string containing the range to parse
      * @return Position 0, true if from included.
      * Position 1: true if to included.

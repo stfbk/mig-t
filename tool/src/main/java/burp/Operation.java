@@ -8,7 +8,7 @@ import java.util.List;
  *
  * @author Matteo Bitussi
  */
-public class Operation {
+public class Operation extends Module {
     public List<MessageOperation> messageOerations;
     public String from_session;
     public String to_session;
@@ -27,15 +27,14 @@ public class Operation {
     public IHttpService processed_message_service;  // null if it is not changed
     public String decode_param;
     public List<Utils.Encoding> encodings;
-    public JWT jwt;
     public List<IInterceptedProxyMessage> log_messages;
 
     // Session operation
 
     public List<SessionOperation> session_operations;
 
-    boolean applicable = false; // if the operation can't find a matching message, is not applicable
-    boolean passed = true; // defalult true
+    //boolean applicable = false; // if the operation can't find a matching message, is not applicable
+    //boolean result = true; // defalult true
     private List<Check> checks;
     private String messageType;
     private String regex;
@@ -43,6 +42,9 @@ public class Operation {
     private Utils.Action action;
     private String session;
     private Utils.SessionAction sessionAction;
+
+    // Decode operations
+    private List<DecodeOperation> decodeOperations;
 
     /**
      * Instantiate an operation
@@ -56,6 +58,7 @@ public class Operation {
         this.encodings = new ArrayList<>();
         this.session_operations = new ArrayList<>();
         this.log_messages = new ArrayList<>();
+        this.decodeOperations = new ArrayList<>();
         this.to_match = 0;
         this.act_matched = 0;
         this.from_session = "";
@@ -70,7 +73,6 @@ public class Operation {
         this.decode_param = "";
         this.processed_message_service = null;
         this.processed_message = null;
-        this.jwt = null;
     }
 
     public String getMessageType() {
@@ -79,8 +81,9 @@ public class Operation {
 
     /**
      * Set the message type of the message the operation needs to deal with
+     *
      * @param messageType the name of the message type
-     * @param msg_types the list of message types
+     * @param msg_types   the list of message types
      * @throws Exception Thrown if the message type is not found
      */
     public void setMessageType(String messageType, List<MessageType> msg_types) throws Exception {
@@ -152,6 +155,17 @@ public class Operation {
         this.sessionAction = sessionAction;
     }
 
+    public boolean hasChecks() {
+        return this.checks.size() > 0;
+    }
+
+    public List<DecodeOperation> getDecodeOperations() {
+        return decodeOperations;
+    }
+
+    public void setDecodeOperations(List<DecodeOperation> decodeOperations) {
+        this.decodeOperations = decodeOperations;
+    }
 
     /**
      * Class to store the index and some information about matched messages (with regex or check) in an operation

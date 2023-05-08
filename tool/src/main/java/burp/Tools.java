@@ -42,7 +42,7 @@ public class Tools {
 
                 List<Boolean> result = null;
                 try {
-                    result = executePassiveOperation(currentOP, messageList.get(i), i, first_message_index, helpers, msg_types);
+                    result = executePassiveOperation(currentOP, messageList.get(i), i, helpers, msg_types);
                 } catch (ParsingException e) {
                     e.printStackTrace();
                     res = false;
@@ -75,12 +75,11 @@ public class Tools {
     /**
      * Còass that executes a passive operation
      *
-     * @param op                  The operation to be executed
-     * @param message             the message to be used in the execution
-     * @param messageIndex        the index of that message w.r.t. the list of messages ( if present ) otherwise write 0
-     * @param first_message_index the index of the first OAuth message, to enable the filtering for oauth messages
-     * @param helpers             An istance of the IExtensionHelpers
-     * @param msg_types           the list of msg_types available
+     * @param op           The operation to be executed
+     * @param message      the message to be used in the execution
+     * @param messageIndex the index of that message w.r.t. the list of messages ( if present ) otherwise write 0
+     * @param helpers      An istance of the IExtensionHelpers
+     * @param msg_types    the list of msg_types available
      * @return a list of booleans, containing in order: the result of the operation, if the actual message is a request,
      * if the actual message is a response, if the operation is applicable
      * <p>
@@ -89,7 +88,6 @@ public class Tools {
     public static List<Boolean> executePassiveOperation(Operation op,
                                                         HTTPReqRes message,
                                                         int messageIndex,
-                                                        int first_message_index,
                                                         IExtensionHelpers helpers,
                                                         List<MessageType> msg_types) throws ParsingException {
         boolean res = true;
@@ -99,26 +97,12 @@ public class Tools {
             case "request":
                 op.applicable = true;
                 actisreq = true;
-                res = processOperation(op, message, messageIndex, helpers, true, false);
+                res = processOperation(op, message, messageIndex, helpers, true);
                 break;
             case "response":
                 op.applicable = true;
                 actisreq = true;
-                res = processOperation(op, message, messageIndex, helpers, false, true);
-                break;
-            case "oauth request":
-                if (messageIndex >= first_message_index) {
-                    op.applicable = true;
-                    actisreq = true;
-                    res = processOperation(op, message, messageIndex, helpers, true, false);
-                }
-                break;
-            case "oauth response":
-                if (messageIndex >= first_message_index) {
-                    op.applicable = true;
-                    actisreq = true;
-                    res = processOperation(op, message, messageIndex, helpers, false, true);
-                }
+                res = processOperation(op, message, messageIndex, helpers, false);
                 break;
             default:
                 try {
@@ -146,7 +130,7 @@ public class Tools {
                             actisreq = false;
                             actisresp = true;
 
-                            res = processOperation(op, message, messageIndex, helpers, false, true);
+                            res = processOperation(op, message, messageIndex, helpers, false);
                         }
                     } else if (msg_type.getByRequest) {
                         if (msg_type.isRegex) {
@@ -164,7 +148,7 @@ public class Tools {
                             actisreq = false;
                             actisresp = true;
 
-                            res = processOperation(op, message, messageIndex, helpers, true, false);
+                            res = processOperation(op, message, messageIndex, helpers, true);
                         }
                     } else {
                         if (msg_type.isRegex) {
@@ -184,7 +168,7 @@ public class Tools {
                             actisreq = msg_type.isRequest;
                             actisresp = !msg_type.isRequest;
 
-                            res = processOperation(op, message, messageIndex, helpers, msg_type.isRequest, !msg_type.isRequest);
+                            res = processOperation(op, message, messageIndex, helpers, msg_type.isRequest);
                         }
                     }
 
@@ -208,19 +192,15 @@ public class Tools {
      * @param act_message   the message over which the operation has to be executed
      * @param message_index the index of the <code>act_message</code> in the messages list
      * @param helpers       An istance of the helpers
-     * @param request       set true if the request has to be processed
-     * @param response      set true if the response has to be processed
+     * @param isRequest     set true if the request has to be processed
      * @return the result of the operation
      */
     public static boolean processOperation(Operation currentOP,
                                            HTTPReqRes act_message,
                                            int message_index,
                                            IExtensionHelpers helpers,
-                                           boolean request,
-                                           boolean response) throws ParsingException {
-        String decode_param = currentOP.decode_param;
-        String decoded_param = "";
-
+                                           boolean isRequest) throws ParsingException {
+        //Operation_API api = new Operation_API(act_message, isRequest); //TODO: to change
         HTTPReqRes message = null;
         boolean res = true;
 
@@ -232,79 +212,40 @@ public class Tools {
             return false;
         }
 
-        if (!decode_param.equals("")) {
-            try {
-                if (!currentOP.decode_param.equals("")) {
-
-                    decoded_param = Encoding.decodeParam(
-                            helpers,
-                            currentOP.getMessageSection(),
-                            currentOP.encodings,
-                            act_message,
-                            request,
-                            decode_param);
-
-                    if (!currentOP.isRegex) {
-                        throw new ParsingException("Checks cannot be executed on decode parameters");
-                    }
-
-                    Pattern p = Pattern.compile(currentOP.getRegex());
-                    Matcher m = p.matcher(decoded_param);
-
-                    boolean match = m.find();
-
-                    if (request)
-                        currentOP.matchedMessages.add(
-                                new Operation.MatchedMessage(
-                                        message,
-                                        message_index,
-                                        true,
-                                        false,
-                                        false));
-                    if (!request || response)
-                        currentOP.matchedMessages.add(
-                                new Operation.MatchedMessage(
-                                        message,
-                                        message_index,
-                                        false,
-                                        true,
-                                        false));
-
-                    return match;
-                }
-            } catch (StackOverflowError e) {
-                e.printStackTrace();
-                currentOP.applicable = false;
-                return false;
-            }
-        }
+        currentOP = Utils.executeDecodeOps(
+                currentOP,
+                act_message,
+                isRequest,
+                helpers,
+                null
+        );
 
         if (currentOP.isRegex) {
             try {
-                res = !request || Tools.findInMessage(
+                res = !isRequest || Tools.findInMessage(
                         currentOP.getMessageSection(), currentOP.getRegex(), message, helpers, true);
                 if (!res) {
-                    if (request)
+                    if (isRequest)
                         currentOP.matchedMessages.add(
                                 new Operation.MatchedMessage(
                                         message, message_index, true, false, true));
                     return false;
                 }
-                res = !response || Tools.findInMessage(
+                res = isRequest || Tools.findInMessage(
                         currentOP.getMessageSection(), currentOP.getRegex(), message, helpers, false);
                 if (!res) {
-                    if (response)
+                    if (!isRequest)
                         currentOP.matchedMessages.add(
                                 new Operation.MatchedMessage(
                                         message, message_index, false, true, true));
                     return false;
                 }
 
-                if (request)
+                if (isRequest)
                     currentOP.matchedMessages.add(
                             new Operation.MatchedMessage(
                                     message, message_index, true, false, false));
-                if (response)
+                if (!isRequest)
                     currentOP.matchedMessages.add(
                             new Operation.MatchedMessage(
                                     message, message_index, false, true, false));
@@ -313,32 +254,33 @@ public class Tools {
                 System.err.println(e);
             }
 
-        } else {
+        }
+        if (currentOP.hasChecks()) {
             try {
-                res = !request || Tools.executeChecks(
+                res = !isRequest || Tools.executeChecks(
                         currentOP.getChecks(), message, helpers, true);
                 if (!res) {
-                    if (request)
+                    if (isRequest)
                         currentOP.matchedMessages.add(
                                 new Operation.MatchedMessage(
                                         message, message_index, true, false, true));
                     return false;
                 }
-                res = !response || Tools.executeChecks(
+                res = isRequest || Tools.executeChecks(
                         currentOP.getChecks(), message, helpers, false);
                 if (!res) {
-                    if (response)
+                    if (!isRequest)
                         currentOP.matchedMessages.add(
                                 new Operation.MatchedMessage(
                                         message, message_index, false, true, true));
                     return false;
                 }
 
-                if (request)
+                if (isRequest)
                     currentOP.matchedMessages.add(
                             new Operation.MatchedMessage(
                                     message, message_index, true, false, false));
-                if (response)
+                if (!isRequest)
                     currentOP.matchedMessages.add(
                             new Operation.MatchedMessage(
                                     message, message_index, false, true, false));

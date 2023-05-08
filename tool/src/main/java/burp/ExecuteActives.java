@@ -256,9 +256,9 @@ public class ExecuteActives implements Runnable {
                         listener.onAfterExSessionOps((List<Var>) res[1]);
 
                         if (op.applicable) {
-                            actual_test.success = op.passed;
+                            actual_test.success = op.result;
                             actual_test.applicable = true;
-                            if (!op.passed) {
+                            if (!op.result) {
                                 for (String key : executions.keySet()) {
                                     executions.get(key).interrupt();
                                 }

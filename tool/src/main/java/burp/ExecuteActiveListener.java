@@ -44,18 +44,21 @@ public interface ExecuteActiveListener {
 
     /**
      * This method is called during an ExecuteActive execution, when a new test is being executed
+     *
      * @param actual_test The test that was being executed
      */
     void onNewTest(Test actual_test);
 
     /**
      * This method is called during an ExecuteActive execution, when a test has finished
+     *
      * @param actual_test The test that was being executed
      */
     void onTestDone(Test actual_test);
 
     /**
      * This method is called whether an error occurs during the execution of the active tests
+     *
      * @param actual_test The test that was being executed
      */
     void onError(Test actual_test);
@@ -63,6 +66,7 @@ public interface ExecuteActiveListener {
     /**
      * This method is called before the execution of the SessionOperations in a test. It is used to update the list
      * of variables with the thread
+     *
      * @return the updated list of variables
      */
     List<Var> onBeforeExSessionOps();
@@ -70,12 +74,14 @@ public interface ExecuteActiveListener {
     /**
      * This method is called after the execution of the SessionOperations in a test. It is used to updated the list of
      * variables with the thread
+     *
      * @param re the list of variables to update
      */
     void onAfterExSessionOps(List<Var> re);
 
     /**
      * This method is called when a variable has to been set during the test
+     *
      * @param v the new set variable
      */
     void onAddVar(Var v);

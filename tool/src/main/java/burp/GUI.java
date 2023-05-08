@@ -10,7 +10,10 @@ import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.awt.event.MouseEvent;
-import java.io.*;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.util.List;
 import java.util.*;
 import java.util.regex.Matcher;
@@ -95,7 +98,7 @@ public class GUI extends JSplitPane {
     List<MessageType> messageTypes;
     private String DRIVER_PATH = "";
     private Thread active_ex;
-    private Object lock2 = new Object();
+    private final Object lock2 = new Object();
     private boolean active_ex_finished = false;
 
     /**
@@ -1091,7 +1094,8 @@ public class GUI extends JSplitPane {
 
     /**
      * Function that edits the config file.
-     * @param key the key of the config to change
+     *
+     * @param key   the key of the config to change
      * @param value the new value of the config
      */
     private void editConfigFile(String key, String value) {
@@ -1428,100 +1432,6 @@ public class GUI extends JSplitPane {
                                                         Utils.Encoding.fromString(act_enc));
                                             }
                                             break;
-
-                                        case "value":
-                                            // value of xml or other edits
-                                            message_op.value = act_message_op.getString("value");
-                                            break;
-                                        case "add tag":
-                                            message_op.xml_action = Utils.XmlAction.ADD_TAG;
-                                            message_op.xml_action_name = act_message_op.getString(key);
-                                            break;
-                                        case "add attribute":
-                                            message_op.xml_action = Utils.XmlAction.ADD_ATTR;
-                                            message_op.xml_action_name = act_message_op.getString(key);
-                                            break;
-                                        case "edit tag":
-                                            message_op.xml_action = Utils.XmlAction.EDIT_TAG;
-                                            message_op.xml_action_name = act_message_op.getString(key);
-                                            break;
-                                        case "edit attribute":
-                                            message_op.xml_action = Utils.XmlAction.EDIT_ATTR;
-                                            message_op.xml_action_name = act_message_op.getString(key);
-                                            break;
-                                        case "remove tag":
-                                            message_op.xml_action = Utils.XmlAction.REMOVE_TAG;
-                                            message_op.xml_action_name = act_message_op.getString(key);
-                                            break;
-                                        case "remove attribute":
-                                            message_op.xml_action = Utils.XmlAction.REMOVE_ATTR;
-                                            message_op.xml_action_name = act_message_op.getString(key);
-                                            break;
-                                        case "save tag":
-                                            message_op.xml_action = Utils.XmlAction.SAVE_TAG;
-                                            message_op.xml_action_name = act_message_op.getString(key);
-                                            break;
-                                        case "save attribute":
-                                            message_op.xml_action = Utils.XmlAction.SAVE_ATTR;
-                                            message_op.xml_action_name = act_message_op.getString(key);
-                                            break;
-                                        case "self-sign":
-                                            message_op.self_sign = act_message_op.getBoolean("self-sign");
-                                            break;
-                                        case "remove signature":
-                                            message_op.remove_signature = act_message_op.getBoolean("remove signature");
-                                            break;
-                                        case "xml tag":
-                                            message_op.xml_tag = act_message_op.getString("xml tag");
-                                            break;
-                                        case "xml occurrency":
-                                            message_op.xml_occurrency = act_message_op.getInt("xml occurrency");
-                                            break;
-                                        case "xml attribute":
-                                            message_op.xml_attr = act_message_op.getString("xml attribute");
-                                            break;
-                                        case "txt remove":
-                                            message_op.txt_action = Utils.TxtAction.REMOVE;
-                                            message_op.txt_action_name = act_message_op.getString("txt remove");
-                                            break;
-                                        case "txt edit":
-                                            message_op.txt_action = Utils.TxtAction.EDIT;
-                                            message_op.txt_action_name = act_message_op.getString("txt edit");
-                                            break;
-                                        case "txt add":
-                                            message_op.txt_action = Utils.TxtAction.ADD;
-                                            message_op.txt_action_name = act_message_op.getString("txt add");
-                                            break;
-                                        case "txt save":
-                                            message_op.txt_action = Utils.TxtAction.SAVE;
-                                            message_op.txt_action_name = act_message_op.getString("txt save");
-                                            break;
-                                        case "jwt from":
-                                            message_op.jwt_section = Utils.Jwt_section.getFromString(
-                                                    act_message_op.getString("jwt from"));
-                                            if (act_message_op.getString("jwt from").contains("raw")) {
-                                                message_op.isRawJWT = true;
-                                            }
-                                            break;
-                                        case "jwt remove":
-                                            message_op.jwt_action = Utils.Jwt_action.REMOVE;
-                                            message_op.what = act_message_op.getString("jwt remove");
-                                            break;
-                                        case "jwt edit":
-                                            message_op.jwt_action = Utils.Jwt_action.EDIT;
-                                            message_op.what = act_message_op.getString("jwt edit");
-                                            break;
-                                        case "jwt add":
-                                            message_op.jwt_action = Utils.Jwt_action.ADD;
-                                            message_op.what = act_message_op.getString("jwt add");
-                                            break;
-                                        case "jwt save":
-                                            message_op.jwt_action = Utils.Jwt_action.SAVE;
-                                            message_op.what = act_message_op.getString("jwt save");
-                                            break;
-                                        case "jwt sign":
-                                            message_op.sign = act_message_op.getBoolean("jwt sign");
-                                            break;
                                         case "template":
                                             message_op.template = act_message_op.getString("template");
                                             break;
@@ -1534,6 +1444,115 @@ public class GUI extends JSplitPane {
                                     }
                                 }
                                 op.messageOerations.add(message_op);
+                            }
+                        }
+
+                        // Decode Operations
+                        if (act_operation.has("decode operations")) {
+                            JSONArray decode_ops = act_operation.getJSONArray("decode operations");
+                            for (int k = 0; k < decode_ops.length(); k++) {
+                                JSONObject act_decode_op = decode_ops.getJSONObject(k);
+                                DecodeOperation decode_op = new DecodeOperation();
+                                keys = act_decode_op.keys();
+                                while (keys.hasNext()) {
+                                    String key = keys.next();
+
+                                    switch (key) {
+                                        case "value":
+                                            // value of xml or other edits
+                                            decode_op.value = act_decode_op.getString("value");
+                                            break;
+                                        case "add tag":
+                                            decode_op.xml_action = Utils.XmlAction.ADD_TAG;
+                                            decode_op.xml_action_name = act_decode_op.getString(key);
+                                            break;
+                                        case "add attribute":
+                                            decode_op.xml_action = Utils.XmlAction.ADD_ATTR;
+                                            decode_op.xml_action_name = act_decode_op.getString(key);
+                                            break;
+                                        case "edit tag":
+                                            decode_op.xml_action = Utils.XmlAction.EDIT_TAG;
+                                            decode_op.xml_action_name = act_decode_op.getString(key);
+                                            break;
+                                        case "edit attribute":
+                                            decode_op.xml_action = Utils.XmlAction.EDIT_ATTR;
+                                            decode_op.xml_action_name = act_decode_op.getString(key);
+                                            break;
+                                        case "remove tag":
+                                            decode_op.xml_action = Utils.XmlAction.REMOVE_TAG;
+                                            decode_op.xml_action_name = act_decode_op.getString(key);
+                                            break;
+                                        case "remove attribute":
+                                            decode_op.xml_action = Utils.XmlAction.REMOVE_ATTR;
+                                            decode_op.xml_action_name = act_decode_op.getString(key);
+                                            break;
+                                        case "save tag":
+                                            decode_op.xml_action = Utils.XmlAction.SAVE_TAG;
+                                            decode_op.xml_action_name = act_decode_op.getString(key);
+                                            break;
+                                        case "save attribute":
+                                            decode_op.xml_action = Utils.XmlAction.SAVE_ATTR;
+                                            decode_op.xml_action_name = act_decode_op.getString(key);
+                                            break;
+                                        case "self-sign":
+                                            decode_op.self_sign = act_decode_op.getBoolean("self-sign");
+                                            break;
+                                        case "remove signature":
+                                            decode_op.remove_signature = act_decode_op.getBoolean("remove signature");
+                                            break;
+                                        case "xml tag":
+                                            decode_op.xml_tag = act_decode_op.getString("xml tag");
+                                            break;
+                                        case "xml occurrency":
+                                            decode_op.xml_occurrency = act_decode_op.getInt("xml occurrency");
+                                            break;
+                                        case "xml attribute":
+                                            decode_op.xml_attr = act_decode_op.getString("xml attribute");
+                                            break;
+                                        case "txt remove":
+                                            decode_op.txt_action = Utils.TxtAction.REMOVE;
+                                            decode_op.txt_action_name = act_decode_op.getString("txt remove");
+                                            break;
+                                        case "txt edit":
+                                            decode_op.txt_action = Utils.TxtAction.EDIT;
+                                            decode_op.txt_action_name = act_decode_op.getString("txt edit");
+                                            break;
+                                        case "txt add":
+                                            decode_op.txt_action = Utils.TxtAction.ADD;
+                                            decode_op.txt_action_name = act_decode_op.getString("txt add");
+                                            break;
+                                        case "txt save":
+                                            decode_op.txt_action = Utils.TxtAction.SAVE;
+                                            decode_op.txt_action_name = act_decode_op.getString("txt save");
+                                            break;
+                                        case "jwt from":
+                                            decode_op.jwt_section = Utils.Jwt_section.getFromString(
+                                                    act_decode_op.getString("jwt from"));
+                                            if (act_decode_op.getString("jwt from").contains("raw")) {
+                                                decode_op.isRawJWT = true;
+                                            }
+                                            break;
+                                        case "jwt remove":
+                                            decode_op.jwt_action = Utils.Jwt_action.REMOVE;
+                                            decode_op.what = act_decode_op.getString("jwt remove");
+                                            break;
+                                        case "jwt edit":
+                                            decode_op.jwt_action = Utils.Jwt_action.EDIT;
+                                            decode_op.what = act_decode_op.getString("jwt edit");
+                                            break;
+                                        case "jwt add":
+                                            decode_op.jwt_action = Utils.Jwt_action.ADD;
+                                            decode_op.what = act_decode_op.getString("jwt add");
+                                            break;
+                                        case "jwt save":
+                                            decode_op.jwt_action = Utils.Jwt_action.SAVE;
+                                            decode_op.what = act_decode_op.getString("jwt save");
+                                            break;
+                                        case "jwt sign":
+                                            decode_op.sign = act_decode_op.getBoolean("jwt sign");
+                                            break;
+                                    }
+                                }
                             }
                         }
 
@@ -1673,7 +1692,7 @@ public class GUI extends JSplitPane {
 
                     @Override
                     public void onExecuteDone() {
-                        if (passives.size() == 0){
+                        if (passives.size() == 0) {
                             update_gui_test_results();
 
                             lblOutput.setText("Passive Tests: "
@@ -1778,7 +1797,7 @@ public class GUI extends JSplitPane {
 
             } catch (Exception er) {
                 er.printStackTrace();
-                System.out.println("" + er.getLocalizedMessage() + "nad" + er.getMessage() + "2" + er);
+                System.out.println(er.getLocalizedMessage() + "nad" + er.getMessage() + "2" + er);
 
                 lblOutput.setText("PROBLEM IN Executing Suite, check it please");
             }
@@ -1901,7 +1920,7 @@ public class GUI extends JSplitPane {
             String tmp = "";
             for (String s : session_port.keySet()) {
                 tmp += s;
-                tmp += ":"+ session_port.get(s) +";\n";
+                tmp += ":" + session_port.get(s) + ";\n";
             }
             txtSessionConfig.setText(tmp);
             return;
@@ -1969,8 +1988,9 @@ public class GUI extends JSplitPane {
 
     /**
      * Function used to set the JSON textbox with a red colour to highlight an error.
+     *
      * @param isInError true to highlight an error, false to remove the highlight
-     * @param msg the error message to display
+     * @param msg       the error message to display
      */
     private void setJSONError(boolean isInError, String msg) {
         if (isInError) {
@@ -1986,8 +2006,9 @@ public class GUI extends JSplitPane {
 
     /**
      * Function used to set the session config textbox with a red border to highlight an error.
+     *
      * @param isInError true to highlight an error, false to remove highlight
-     * @param msg The error message to display
+     * @param msg       The error message to display
      */
     private void setSession_configError(boolean isInError, String msg) {
         if (isInError) {

@@ -33,12 +33,13 @@ public class ExecuteTrack implements Runnable {
 
     /**
      * Instantiate the ExecuteTrack Object
+     *
      * @param isHeadless
      * @param chrome_selected tells if chrome is selected as a browser to be used, otherwise firefox is used
-     * @param driver_path the path to the chosen browser's driver
-     * @param track the track to be executed
-     * @param port the port set in the browser that the HTTP(S) proxy is listening to
-     * @param sessionName The name of the session to be executed
+     * @param driver_path     the path to the chosen browser's driver
+     * @param track           the track to be executed
+     * @param port            the port set in the browser that the HTTP(S) proxy is listening to
+     * @param sessionName     The name of the session to be executed
      */
     public ExecuteTrack(boolean isHeadless,
                         boolean chrome_selected,
@@ -178,15 +179,14 @@ public class ExecuteTrack implements Runnable {
                         continue;
                     }
                     case ALERT: {
-                        if (action.elem != null ) {
+                        if (action.elem != null) {
                             Alert alert = null;
-                            int c=0;
-                            while(c++<10) {
+                            int c = 0;
+                            while (c++ < 10) {
                                 try {
                                     alert = driver.switchTo().alert();
                                     break;
-                                }
-                                catch(NoAlertPresentException e) {
+                                } catch (NoAlertPresentException e) {
                                     Thread.sleep(1000);
                                     continue;
                                 }
@@ -229,8 +229,7 @@ public class ExecuteTrack implements Runnable {
                     case ASSERT_ELEM_CLASS_HAS:
                     case ASSERT_ELEM_CLASS_IS:
                     case ASSERT_ELEM_HAS_ATTRIBUTE:
-                    case ASSERT_ELEM_NOT_HAS_ATTRIBUTE:
-                    {
+                    case ASSERT_ELEM_NOT_HAS_ATTRIBUTE: {
                         String searchBy = action.elem_type;
                         String identifier = action.elem_source;
 
@@ -292,7 +291,7 @@ public class ExecuteTrack implements Runnable {
                         }
                         if (currentElement == null) {
                             if (action.action == Utils.SessAction.ASSERT_CLICKABLE
-                                || action.action == Utils.SessAction.ASSERT_VISIBLE) {
+                                    || action.action == Utils.SessAction.ASSERT_VISIBLE) {
                                 listener.onExecuteDone(false, sessionName);
                                 driver.close();
                                 return;

@@ -2,6 +2,7 @@ package burp;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * This class represents an user action in a session
@@ -33,6 +34,7 @@ public class SessionTrackAction {
 
     /**
      * Constructor parsing a raw action in string format
+     *
      * @param raw_action The user action in string format
      * @throws ParsingException If the user action is written wrongly
      */
@@ -43,6 +45,7 @@ public class SessionTrackAction {
 
     /**
      * Function used to parse a string containing a raw user action in string format
+     *
      * @param raw_action the user action in string format
      * @throws ParsingException if user action is not written properly
      */
@@ -79,6 +82,7 @@ public class SessionTrackAction {
 
     /**
      * Prints the user action as it was in string format. Compliant with the language.
+     *
      * @return
      */
     @Override
@@ -167,10 +171,10 @@ public class SessionTrackAction {
 
         if (isAssert != that.isAssert) return false;
         if (action != that.action) return false;
-        if (elem_type != null ? !elem_type.equals(that.elem_type) : that.elem_type != null) return false;
-        if (elem_source != null ? !elem_source.equals(that.elem_source) : that.elem_source != null) return false;
-        if (elem != null ? !elem.equals(that.elem) : that.elem != null) return false;
-        if (content != null ? !content.equals(that.content) : that.content != null) return false;
-        return markers != null ? markers.equals(that.markers) : that.markers == null;
+        if (!Objects.equals(elem_type, that.elem_type)) return false;
+        if (!Objects.equals(elem_source, that.elem_source)) return false;
+        if (!Objects.equals(elem, that.elem)) return false;
+        if (!Objects.equals(content, that.content)) return false;
+        return Objects.equals(markers, that.markers);
     }
 }

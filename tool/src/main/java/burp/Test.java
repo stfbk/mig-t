@@ -136,6 +136,7 @@ public class Test {
 
     /**
      * Function used to log the test informations, such as matched messages, all the messages intercepted, and sessions
+     *
      * @param log_folder The folder where to log the test
      */
     public void logTest(String log_folder) {

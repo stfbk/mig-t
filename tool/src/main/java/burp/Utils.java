@@ -1,19 +1,12 @@
 package burp;
 
 import org.json.JSONArray;
-import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.zip.DataFormatException;
-import java.util.zip.Deflater;
-import java.util.zip.Inflater;
 
 /**
  * class containing useful methods and enums to be used in other classes
@@ -113,6 +106,7 @@ public class Utils {
      * @return the builded message
      */
     public static byte[] buildMessage(List<String> parts, IExtensionHelpers helpers) {
+        //TODO: this is probably broken, does it updates the content length?
         String tmp = parts.get(0) + parts.get(1) + parts.get(2);
 
         //return helpers.stringToBytes(tmp);
@@ -158,7 +152,7 @@ public class Utils {
     }
 
     /**
-     * Given a message, split it in 3 parts, url, head, body
+     * Given a message, split it in 3 parts, first line of head (HTTP url), head, body
      *
      * @param message   the message to be splitted
      * @param helpers   an istance of IExtensionHelpers
@@ -166,6 +160,7 @@ public class Utils {
      * @return a List of Strings containing the three parts
      */
     public static List<String> splitMessage(HTTPReqRes message, IExtensionHelpers helpers, boolean isRequest) {
+        // TODO convert with other methods
         int body_offset = isRequest ?
                 helpers.analyzeRequest(message.getRequest()).getBodyOffset() :
                 helpers.analyzeResponse(message.getResponse()).getBodyOffset();
@@ -360,9 +355,10 @@ public class Utils {
 
     /**
      * Get the headers of an HTTP message
-     * @param message the message
+     *
+     * @param message   the message
      * @param isRequest true if it is a request
-     * @param helpers The Burp IExtensionHelpers
+     * @param helpers   The Burp IExtensionHelpers
      * @return a list of Strings, each one is a header
      */
     public static List<String> getHeaders(IHttpRequestResponse message, boolean isRequest, IExtensionHelpers helpers) {
@@ -375,9 +371,10 @@ public class Utils {
 
     /**
      * Get the body of a message
-     * @param message the message
+     *
+     * @param message   the message
      * @param isRequest true if the message is a request
-     * @param helpers The Burp IExtensionHelpers
+     * @param helpers   The Burp IExtensionHelpers
      * @return the body of the message as byte array
      */
     public static byte[] getBody(IHttpRequestResponse message, boolean isRequest, IExtensionHelpers helpers) {
@@ -394,7 +391,8 @@ public class Utils {
 
     /**
      * Removes a head parameter from a list of headers
-     * @param headers the list of headers
+     *
+     * @param headers    the list of headers
      * @param param_name the name of the header to remove
      * @return The list without the removed header
      */
@@ -410,9 +408,10 @@ public class Utils {
 
     /**
      * Add a header to a list of headers
-     * @param headers the header list
+     *
+     * @param headers    the header list
      * @param param_name the name of the header to add
-     * @param value the value of the header to add
+     * @param value      the value of the header to add
      * @return the edited header list
      */
     public static List<String> addHeadParameter(List<String> headers, String param_name, String value) {
@@ -430,9 +429,10 @@ public class Utils {
 
     /**
      * Edit a header ina a list of headers
-     * @param headers the header list
+     *
+     * @param headers    the header list
      * @param param_name the name of the header to edit
-     * @param value the value of the header to add
+     * @param value      the value of the header to add
      * @return the edited header list
      */
     public static List<String> editHeadParameter(List<String> headers, String param_name, String value) {
@@ -449,7 +449,8 @@ public class Utils {
 
     /**
      * Get the value of a header from a header list
-     * @param headers the list of headers
+     *
+     * @param headers    the list of headers
      * @param param_name the name of the header to get the value from
      * @return the value of the header
      */
@@ -467,8 +468,9 @@ public class Utils {
 
     /**
      * Builds a string, substituting variables names with values
+     *
      * @param vars the list of variables to use
-     * @param s the string
+     * @param s    the string
      * @return the builded string
      * @throws ParsingException if a variable is not found
      */
@@ -631,7 +633,7 @@ public class Utils {
                                 getStasIndexFromRange(sop.at, sop.to, sop.is_from_included, sop.is_to_included);
 
 
-                        t.getSession(sop.from_session).track.getTrack().subList(range[0], range[1]+1).clear();
+                        t.getSession(sop.from_session).track.getTrack().subList(range[0], range[1] + 1).clear();
                     } else {
                         track.remove(new Marker(sop.at));
                     }
@@ -645,6 +647,7 @@ public class Utils {
 
     /**
      * Finds the parent div of an http element
+     *
      * @param in the http element in xpath format
      * @return the xpath of the parent div
      * @throws ParsingException if no parent div present or input is malformed
@@ -974,10 +977,7 @@ public class Utils {
      * The possible types of messageOps
      */
     public enum MessageOpType {
-        XML,
-        JWT,
         HTTP,
-        TXT,
         GENERATE_POC;
 
         /**
@@ -990,14 +990,8 @@ public class Utils {
         public static MessageOpType fromString(String input) throws ParsingException {
             if (input != null) {
                 switch (input) {
-                    case "xml":
-                        return XML;
-                    case "jwt":
-                        return JWT;
                     case "http":
                         return HTTP;
-                    case "txt":
-                        return TXT;
                     case "generate_poc":
                         return GENERATE_POC;
                     default:
@@ -1009,13 +1003,36 @@ public class Utils {
         }
     }
 
-    public enum ContentType{
+    public enum DecodeOpType {
+        JWT,
+        TXT,
+        XML;
+
+        public static DecodeOpType fromString(String input) throws ParsingException {
+            if (input != null) {
+                switch (input) {
+                    case "jwt":
+                        return JWT;
+                    case "txt":
+                        return TXT;
+                    case "xml":
+                        return XML;
+                    default:
+                        throw new ParsingException("invalid message Op Type");
+                }
+            } else {
+                throw new NullPointerException();
+            }
+        }
+    }
+
+    public enum ContentType {
         JSON,
         HTTP;
 
         public static ContentType fromString(String input) throws ParsingException {
-            if (input != null){
-                switch (input){
+            if (input != null) {
+                switch (input) {
                     case "json":
                         return JSON;
                     case "http":
@@ -1125,6 +1142,7 @@ public class Utils {
 
         /**
          * Get the JWT section enum value from a string
+         *
          * @param s the string to parse
          * @return the enum value
          * @throws ParsingException if the string is invalid
@@ -1186,6 +1204,7 @@ public class Utils {
 
         /**
          * Get a session action enum value from a string
+         *
          * @param s the string
          * @return the enum value
          * @throws ParsingException if the string is invalid
@@ -1269,6 +1288,7 @@ public class Utils {
 
         /**
          * Parse a string containing a session operation target
+         *
          * @param s the string to parse
          * @throws ParsingException if the string is malformed, or no session operation target is found
          */
@@ -1324,14 +1344,15 @@ public class Utils {
 
     /**
      * Generates a CSRF POC from an HTTP request message
+     *
      * @param message the message to generate the POC from
      * @param helpers Burp's IExtensionHelper instance
      * @return the html poc as a string
      */
-    public static String generate_CSRF_POC(IHttpRequestResponse message,
-                                  IExtensionHelpers helpers){
+    public static String generate_CSRF_POC(HTTPReqRes message,
+                                           IExtensionHelpers helpers) {
 
-        String CSFR_TEMPLATE= "<!DOCTYPE html>\n" +
+        String CSFR_TEMPLATE = "<!DOCTYPE html>\n" +
                 "<html>\n" +
                 "  <body>\n" +
                 "    <h2>Attack Page</h2>\n" +
@@ -1349,25 +1370,24 @@ public class Utils {
 
         String POST_TEMPLATE =
                 "  <form enctype=\"$ENCODING_TYPE$\" method=\"$METHOD$\" action=\"$URL$\">\n" +
-                "    <table>\n" +
-                "        $BODY_PARAMETERS$\n" +
-                "    </table>\n" +
-                "    <input type=\"submit\" value=\"Link vulnerable to CSRF account association with IdP\">\n" +
-                "  </form>\n";
+                        "    <table>\n" +
+                        "        $BODY_PARAMETERS$\n" +
+                        "    </table>\n" +
+                        "    <input type=\"submit\" value=\"Link vulnerable to CSRF account association with IdP\">\n" +
+                        "  </form>\n";
 
-        String TEMPLATE_BODY_PARAMS = "" +
-                "       <tr>\n" +
+        String TEMPLATE_BODY_PARAMS = "       <tr>\n" +
                 "        <td>$PARAM_NAME$</td>\n" +
                 "        <td>\n" +
                 "          <input type=\"text\" value=\"$PARAM_VALUE$\" name=\"$PARAM_NAME$\">\n" +
                 "        </td>\n" +
                 "      </tr>";
 
-        List<String> headers = Utils.getHeaders(message, true, helpers);
+        List<String> headers = message.getHeaders(true);
         String encoding = getHeadParameterValue(headers, "Content-Type").strip();
-        String body = splitMessage(message,helpers,true).get(2);
-        String url = helpers.analyzeRequest(message).getUrl().toString();
-        String method = splitMessage(message,helpers,true).get(0).split(" ")[0];
+        String body = splitMessage(message, helpers, true).get(2);
+        String url = message.getUrl();
+        String method = splitMessage(message, helpers, true).get(0).split(" ")[0];
 
         Pattern p = Pattern.compile("");
         Matcher m = p.matcher(body);
@@ -1393,7 +1413,7 @@ public class Utils {
                 while (m.find()) {
                     String name = m.group(1);
                     String value = m.group(2);
-                    if (name.length() != 0 ) {
+                    if (name.length() != 0) {
                         body_params.put(name,
                                 value.length() != 0 ? value : "");
                     }
@@ -1457,7 +1477,7 @@ public class Utils {
 
             p = Pattern.compile("\\$URL\\$");
             m = p.matcher(res);
-            res = m.replaceAll( has_query_params ? url.split("\\?")[0] : url);
+            res = m.replaceAll(has_query_params ? url.split("\\?")[0] : url);
 
             p = Pattern.compile("\\$BODY_PARAMETERS\\$");
             m = p.matcher(res);
@@ -1474,6 +1494,7 @@ public class Utils {
 
     /**
      * Create batches of passive tests, grouping them by the session they need to execute.
+     *
      * @return An HashMap object having as keys, Strings representing the sessions names, and as value a list of tests
      * that need to execute that session
      */
@@ -1484,7 +1505,7 @@ public class Utils {
                 throw new ParsingException("Undefined session in test " + t.name);
             }
 
-            if(!batch.containsKey(t.sessions.get(0).name)){
+            if (!batch.containsKey(t.sessions.get(0).name)) {
                 List<Test> n = new ArrayList<>();
                 n.add(t);
                 batch.put(t.sessions.get(0).name, n);
@@ -1499,13 +1520,14 @@ public class Utils {
 
     /**
      * From a batch of tests grouped by sessions, return a list containing all the tests
+     *
      * @param batch the batch of tests in the form of a MAP<String, List<Test>>
      * @return
      * @throws ParsingException
      */
     public static List<Test> debatchPassive(HashMap<String, List<Test>> batch) {
         List<Test> res = new ArrayList<>();
-        for (String sessionName : batch.keySet()){
+        for (String sessionName : batch.keySet()) {
             for (Test t : batch.get(sessionName)) {
                 res.add(t);
             }
@@ -1653,62 +1675,57 @@ public class Utils {
 
     /**
      * Edit a message treating it as a string using a regex
-     * @param helpers an instance of Burp's IExtensionHelper
-     * @param regex the regex used to match the things to change
-     * @param mop the message operation containing information about the section to match the regex
+     *
+     * @param helpers     an instance of Burp's IExtensionHelper
+     * @param regex       the regex used to match the things to change
+     * @param mop         the message operation containing information about the section to match the regex
      * @param messageInfo the message as IHttpRequestResponse object
-     * @param isRequest specify if the message to consider is the request or response
-     * @param new_value the new value to substitute to the message section
-     * @param isBodyRegex not used, to remove
+     * @param isRequest   specify if the message to consider is the request or response
+     * @param new_value   the new value to substitute to the message section
      * @return the edited message as byte array
      * @throws ParsingException if problems are encountered in editing the message
      */
     public static byte[] editMessage(IExtensionHelpers helpers,
                                      String regex,
                                      MessageOperation mop,
-                                     IHttpRequestResponse messageInfo,
+                                     HTTPReqRes messageInfo,
                                      boolean isRequest,
-                                     String new_value,
-                                     boolean isBodyRegex) throws ParsingException {
-        List<String> splitted = null;
+                                     String new_value) throws ParsingException {
+        // TODO: remove dependency from Helpers
         Pattern pattern = null;
         Matcher matcher = null;
         switch (mop.from) {
             case HEAD:
-                splitted = Utils.splitMessage(messageInfo, helpers, isRequest);
-
+                List<String> head = messageInfo.getHeaders(isRequest);
                 pattern = Pattern.compile(regex);
-                matcher = pattern.matcher(splitted.get(1));
-                splitted.set(1, matcher.replaceAll(new_value));
+                List<String> new_head = new ArrayList<>();
 
-                return Utils.buildMessage(splitted, helpers);
+                for (String act_header : head) {
+                    matcher = pattern.matcher(act_header);
+                    new_head.add(matcher.replaceAll(new_value));
+                }
+                messageInfo.setHeaders(isRequest, new_head);
+                return messageInfo.getMessage(isRequest, helpers);
 
             case BODY:
-                splitted = Utils.splitMessage(messageInfo, helpers, isRequest);
-
                 pattern = Pattern.compile(regex);
 
-                matcher = pattern.matcher(splitted.get(2));
-                splitted.set(2, matcher.replaceAll(new_value));
-
-                List<String> head = Utils.getHeaders(messageInfo, isRequest, helpers);
+                matcher = pattern.matcher(new String(messageInfo.getBody(isRequest)));
+                messageInfo.setBody(isRequest, matcher.replaceAll(new_value));
                 //Automatically update content-lenght
-                return helpers.buildHttpMessage(head, helpers.stringToBytes(splitted.get(2)));
+                return messageInfo.getMessage(isRequest, helpers);
 
             case URL:
                 if (!isRequest) {
                     throw new ParsingException("Encoding URL in response");
                 }
-                splitted = Utils.splitMessage(messageInfo, helpers, isRequest);
 
                 pattern = Pattern.compile(regex);
-                matcher = pattern.matcher(splitted.get(0));
-
+                matcher = pattern.matcher(messageInfo.getUrlHeader());
                 String replaced = matcher.replaceAll(new_value);
+                messageInfo.setUrlHeader(replaced);
 
-                splitted.set(0, replaced); // problema
-
-                return Utils.buildMessage(splitted, helpers);
+                return messageInfo.getMessage(isRequest, helpers);
         }
 
         return null;
@@ -1716,21 +1733,22 @@ public class Utils {
 
     /**
      * Edit a message parameter
-     * @param helpers an instance of Burp's IExtensionHelper
-     * @param param_name the name of the parameter to edit
+     *
+     * @param helpers         an instance of Burp's IExtensionHelper
+     * @param param_name      the name of the parameter to edit
      * @param message_section the message section to edit
-     * @param messageInfo the message as IHttpRequestResponse object
-     * @param isRequest specify if the message to consider is the request or response
-     * @param new_value the new value of the parameter
-     * @param isBodyRegex when the section is body, set it to true if you want to use a regex to substitute the value,
-     *                    otherwise a parameter param=... is searched
+     * @param messageInfo     the message as IHttpRequestResponse object
+     * @param isRequest       specify if the message to consider is the request or response
+     * @param new_value       the new value of the parameter
+     * @param isBodyRegex     when the section is body, set it to true if you want to use a regex to substitute the value,
+     *                        otherwise a parameter param=... is searched
      * @return the edited message as byte array
      * @throws ParsingException if problems are encountered in editing the message
      */
     public static byte[] editMessageParam(IExtensionHelpers helpers,
                                           String param_name,
                                           Utils.MessageSection message_section,
-                                          IHttpRequestResponse messageInfo,
+                                          HTTPReqRes messageInfo,
                                           boolean isRequest,
                                           String new_value,
                                           boolean isBodyRegex) throws ParsingException {
@@ -1739,22 +1757,10 @@ public class Utils {
         Matcher matcher = null;
         switch (message_section) {
             case HEAD:
-                List<String> headers = Utils.getHeaders(messageInfo, isRequest, helpers);
+                List<String> headers = messageInfo.getHeaders(isRequest);
                 headers = Utils.editHeadParameter(headers, param_name, new_value);
-                byte[] message = helpers.buildHttpMessage(
-                        headers,
-                        Utils.getBody(messageInfo, isRequest, helpers));
-
-                if (param_name.equals("Host")) {
-                    messageInfo.setHttpService(
-                            helpers.buildHttpService(
-                                    new_value,
-                                    messageInfo.getHttpService().getPort(),
-                                    messageInfo.getHttpService().getProtocol()
-                            )
-                    );
-                }
-
+                byte[] message = messageInfo.getMessage(isRequest, helpers);
+                messageInfo.setHost(new_value); // this should be set when the message is converted to the burp class
                 return message;
 
             case BODY:
@@ -1766,27 +1772,71 @@ public class Utils {
                     pattern = Pattern.compile(param_name);
                 }
 
-                matcher = pattern.matcher(splitted.get(2));
-                splitted.set(2, matcher.replaceAll(new_value));
-
-                List<String> head = Utils.getHeaders(messageInfo, isRequest, helpers);
+                matcher = pattern.matcher(new String(messageInfo.getBody(isRequest)));
+                messageInfo.setBody(isRequest, matcher.replaceAll(new_value));
                 //Automatically update content-lenght
-                return helpers.buildHttpMessage(head, helpers.stringToBytes(splitted.get(2)));
+                return messageInfo.getMessage(isRequest, helpers);
 
             case URL:
                 if (!isRequest) {
                     throw new ParsingException("Encoding URL in response");
                 }
-                splitted = Utils.splitMessage(messageInfo, helpers, isRequest);
+                String url_header = messageInfo.getUrlHeader();
 
                 pattern = Pattern.compile(param_name + "=[^& ]*((?=&)|(?= ))");
-                matcher = pattern.matcher(splitted.get(0));
+                matcher = pattern.matcher(url_header);
 
-                splitted.set(0, matcher.replaceAll(param_name + "=" + new_value)); // problema
+                messageInfo.setUrlHeader(matcher.replaceAll(param_name + "=" + new_value)); // problema
 
-                return Utils.buildMessage(splitted, helpers);
+                return messageInfo.getMessage(isRequest, helpers);
+        }
+        return null;
+    }
+
+    /**
+     * Given a name, returns the corresponding variable
+     *
+     * @param name the name of the variable
+     * @return the Var object
+     * @throws ParsingException if the variable cannot be found
+     */
+    public static Var getVariableByName(String name, GUI mainPane) throws ParsingException {
+        synchronized (mainPane.lock) {
+            for (Var act : mainPane.act_test_vars) {
+                if (act.name.equals(name)) {
+                    return act;
+                }
+            }
+        }
+        throw new ParsingException("variable not defined");
+    }
+
+    /**
+     * Executes the decode operations in an operation
+     *
+     * @param op
+     * @param messageInfo
+     * @param isRequest
+     * @param helpers
+     * @param mainPane
+     * @return
+     * @throws ParsingException
+     */
+    public static Operation executeDecodeOps(Operation op,
+                                             HTTPReqRes messageInfo,
+                                             boolean isRequest,
+                                             IExtensionHelpers helpers,
+                                             GUI mainPane) throws ParsingException {
+        Operation_API api = new Operation_API(messageInfo, isRequest);
+        for (DecodeOperation dop : op.getDecodeOperations()) {
+            // TODO: add to parser the decode operations list
+            dop.loader(api, helpers);
+            dop.execute(mainPane);
+            if (!op.setResult(dop))
+                break;
+            api = dop.exporter();
         }
 
-        return null;
+        return op;
     }
 }
