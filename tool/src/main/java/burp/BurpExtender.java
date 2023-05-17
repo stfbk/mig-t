@@ -3,6 +3,7 @@ package burp;
 import javax.swing.*;
 import java.awt.*;
 import java.io.*;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Matcher;
@@ -455,10 +456,7 @@ public class BurpExtender implements IBurpExtender, ITab, IProxyListener {
                                         break;
 
                                     case HEAD:
-                                        List<String> headers = messageInfo.getHeaders(isRequest);
-                                        headers = Utils.removeHeadParameter(headers, mop.what);
-                                        messageInfo.setHeaders(isRequest, headers);
-
+                                        messageInfo.removeHeadParameter(isRequest, mop.what);
                                         op.processed_message = messageInfo.getMessage(isRequest, helpers);
                                         break;
 
@@ -480,9 +478,7 @@ public class BurpExtender implements IBurpExtender, ITab, IProxyListener {
                                 }
                                 switch (mop.from) {
                                     case HEAD: {
-                                        List<String> headers = messageInfo.getHeaders(isRequest);
-                                        headers = Utils.addHeadParameter(headers, mop.what, getAdding(mop));
-                                        messageInfo.setHeaders(isRequest, headers);
+                                        messageInfo.addHeadParameter(isRequest, mop.what, getAdding(mop));
                                         op.processed_message = messageInfo.getMessage(isRequest, helpers);
                                         break;
                                     }
@@ -586,16 +582,17 @@ public class BurpExtender implements IBurpExtender, ITab, IProxyListener {
                                     case HEAD: {
                                         String value = "";
                                         if (mop.action == Utils.MessageOperationActions.SAVE) {
-                                            List<String> headers = messageInfo.getHeaders(isRequest);
-                                            value = Utils.getHeadParameterValue(headers, mop.what).trim();
+                                            value = messageInfo.getHeadParam(isRequest, mop.what).trim();
                                         } else {
-                                            splitted = Utils.splitMessage(messageInfo, helpers, isRequest);
+                                            List<String> headers = messageInfo.getHeaders(isRequest);
                                             pattern = Pattern.compile(mop.what);
-                                            matcher = pattern.matcher(splitted.get(1));
-                                            value = "";
-                                            while (matcher.find()) {
-                                                value = matcher.group();
-                                                break;
+                                            for (String h : headers) {
+                                                matcher = pattern.matcher(h);
+                                                value = "";
+                                                while (matcher.find()) {
+                                                    value = matcher.group();
+                                                    break;
+                                                }
                                             }
                                         }
 
@@ -609,9 +606,7 @@ public class BurpExtender implements IBurpExtender, ITab, IProxyListener {
                                         break;
                                     }
                                     case BODY: {
-                                        // Works
-                                        splitted = Utils.splitMessage(messageInfo, helpers, isRequest);
-                                        String tmp = splitted.get(2);
+                                        String tmp = new String(messageInfo.getBody(isRequest), StandardCharsets.UTF_8);
                                         pattern = Pattern.compile(mop.what);
                                         matcher = pattern.matcher(tmp);
                                         Var v = new Var();
@@ -632,8 +627,7 @@ public class BurpExtender implements IBurpExtender, ITab, IProxyListener {
                                         if (!isRequest) {
                                             throw new ParsingException("Searching URL in response");
                                         }
-                                        List<String> parts = Utils.splitMessage(messageInfo, helpers, isRequest);
-                                        String header_0 = parts.get(0);
+                                        String header_0 = messageInfo.getUrlHeader();
 
                                         pattern = mop.action == Utils.MessageOperationActions.SAVE ?
                                                 Pattern.compile(mop.what + "=[^& ]*(?=(&| ))") :

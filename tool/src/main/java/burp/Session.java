@@ -18,17 +18,11 @@ public class Session {
     public String last_url;
     public String name = "";
     String port;
-
-    public Track getTrack() {
-        return track;
-    }
-
     Track track;
     int index = 0;
     List<HTTPReqRes> messages;
     boolean isOffline = false;
     ExecuteTrack ex;
-
     /**
      * Instantiate the session
      */
@@ -74,6 +68,10 @@ public class Session {
         } catch (ParsingException e) {
             e.printStackTrace();
         }
+    }
+
+    public Track getTrack() {
+        return track;
     }
 
     /**

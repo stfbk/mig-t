@@ -4,7 +4,10 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.nio.charset.StandardCharsets;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -14,17 +17,6 @@ import java.util.regex.Pattern;
  * @author Matteo Bitussi
  */
 public class Utils {
-    /**
-     * Function that checks if a message's url is an authorization request
-     *
-     * @param url the url of the request message to be checked
-     * @return true if the message is an authorization request
-     */
-    public static boolean isAuthRequest(String url) {
-        boolean d = url.contains("response_type");
-        return d;
-    }
-
     /**
      * Function that parses checks from a JSON array
      *
@@ -36,177 +28,14 @@ public class Utils {
         List<Check> res = new ArrayList<>();
         for (int k = 0; k < checks_array.length(); k++) {
             JSONObject act_check = checks_array.getJSONObject(k);
-            Check check = new Check();
-            Iterator<String> keys = act_check.keys();
-            while (keys.hasNext()) {
-                String key = keys.next();
+            Check check = new Check(act_check);
 
-
-                switch (key) {
-                    case "in":
-                        if (key.equals("in")) {
-                            check.in = Utils.MessageSection.fromString(act_check.getString("in"));
-                        }
-                    case "check param":
-                        if (key.equals("check param")) {
-                            check.isParamCheck = true;
-                            check.setWhat(act_check.getString("check param"));
-                            break;
-                        }
-                    case "check":
-                        if (key.equals("check")) {
-                            check.setWhat(act_check.getString("check"));
-                            break;
-                        }
-                    case "is":
-                        if (key.equals("is")) {
-                            check.setOp(Utils.CheckOps.IS);
-                            check.op_val = act_check.getString("is");
-                            break;
-                        }
-                    case "is not":
-                        if (key.equals("is not")) {
-                            check.setOp(Utils.CheckOps.IS_NOT);
-                            check.op_val = act_check.getString("is not");
-                            break;
-                        }
-                    case "contains":
-                        if (key.equals("contains")) {
-                            check.setOp(Utils.CheckOps.CONTAINS);
-                            check.op_val = act_check.getString("contains");
-                            break;
-                        }
-                    case "not contains":
-                        if (key.equals("not contains")) {
-                            check.setOp(Utils.CheckOps.NOT_CONTAINS);
-                            check.op_val = act_check.getString("not contains");
-                            break;
-                        }
-                    case "is present":
-                        if (key.equals("is present")) {
-                            check.op = act_check.getBoolean("is present") ? Utils.CheckOps.IS_PRESENT :
-                                    Utils.CheckOps.IS_NOT_PRESENT;
-                            check.op_val = act_check.getBoolean("is present") ?
-                                    "is present" : "is not present";
-                        }
-                }
-            }
             if (check.in == null) {
                 throw new ParsingException("In tag cannot be empty");
             }
             res.add(check);
         }
         return res;
-    }
-
-    /**
-     * Given a list of message parts url, head, body (in this order), build a message
-     *
-     * @param parts the list of the parts to build the message, has to be url, head, body
-     * @return the builded message
-     */
-    public static byte[] buildMessage(List<String> parts, IExtensionHelpers helpers) {
-        //TODO: this is probably broken, does it updates the content length?
-        String tmp = parts.get(0) + parts.get(1) + parts.get(2);
-
-        //return helpers.stringToBytes(tmp);
-        return tmp.getBytes(StandardCharsets.UTF_8); // verify if is the same as burp
-    }
-
-    /**
-     * Given a message, split it in 3 parts, url, head, body
-     *
-     * @param message   the message to be splitted
-     * @param helpers   an istance of IExtensionHelpers
-     * @param isRequest true if the message is a request
-     * @return a List of Strings containing the three parts
-     */
-    public static List<String> splitMessage(IHttpRequestResponse message, IExtensionHelpers helpers, boolean isRequest) {
-        int body_offset = isRequest ?
-                helpers.analyzeRequest(message.getRequest()).getBodyOffset() :
-                helpers.analyzeResponse(message.getResponse()).getBodyOffset();
-
-        String head = new String(isRequest ?
-                Arrays.copyOfRange(message.getRequest(), 0, body_offset) :
-                Arrays.copyOfRange(message.getResponse(), 0, body_offset));
-        String body = new String(isRequest ?
-                Arrays.copyOfRange(message.getRequest(), body_offset, message.getRequest().length) :
-                Arrays.copyOfRange(message.getResponse(), body_offset, message.getResponse().length));
-
-        String url = head.split("\n")[0] + "\n";
-        //String url = isRequest ? helpers.analyzeRequest(message).getUrl().toString() : "";
-        String[] head_splitted = head.split("\n");
-        String[] head_ok = Arrays.copyOfRange(head_splitted, 1, head_splitted.length);
-
-        head = "";
-        for (String act : head_ok) {
-            head += act + "\n";
-        }
-
-        List<String> res = new ArrayList<>();
-        res.add(url);
-        res.add(head);
-        res.add(body);
-
-        return res;
-    }
-
-    /**
-     * Given a message, split it in 3 parts, first line of head (HTTP url), head, body
-     *
-     * @param message   the message to be splitted
-     * @param helpers   an istance of IExtensionHelpers
-     * @param isRequest true if the message is a request
-     * @return a List of Strings containing the three parts
-     */
-    public static List<String> splitMessage(HTTPReqRes message, IExtensionHelpers helpers, boolean isRequest) {
-        // TODO convert with other methods
-        int body_offset = isRequest ?
-                helpers.analyzeRequest(message.getRequest()).getBodyOffset() :
-                helpers.analyzeResponse(message.getResponse()).getBodyOffset();
-
-        String head = new String(isRequest ?
-                Arrays.copyOfRange(message.getRequest(), 0, body_offset) :
-                Arrays.copyOfRange(message.getResponse(), 0, body_offset));
-        String body = new String(isRequest ?
-                Arrays.copyOfRange(message.getRequest(), body_offset, message.getRequest().length) :
-                Arrays.copyOfRange(message.getResponse(), body_offset, message.getResponse().length));
-
-        String url = head.split("\n")[0] + "\n";
-        //String url = isRequest ? helpers.analyzeRequest(message).getUrl().toString() : "";
-        String[] head_splitted = head.split("\n");
-        String[] head_ok = Arrays.copyOfRange(head_splitted, 1, head_splitted.length);
-
-        head = "";
-        for (String act : head_ok) {
-            head += act + "\n";
-        }
-
-        List<String> res = new ArrayList<>();
-        res.add(url);
-        res.add(head);
-        res.add(body);
-
-        return res;
-    }
-
-    /**
-     * Set an url to a message, note that
-     * with url is intended the entire first row of the head (GET ...path... HTTP)
-     *
-     * @param url       the url to be substituted to the message
-     * @param message   the message
-     * @param helpers   the helpers
-     * @param isRequest true if the message is a request
-     * @return the edited message
-     */
-    public static byte[] setUrl(String url, IHttpRequestResponse message, IExtensionHelpers helpers, boolean isRequest) {
-        List<String> mes_split = splitMessage(message, helpers, isRequest);
-
-        if (!url.endsWith("\n")) url += "\n";
-        mes_split.set(0, url);
-
-        return buildMessage(mes_split, helpers);
     }
 
     /**
@@ -341,7 +170,7 @@ public class Utils {
     }
 
     /**
-     * Set the body to a message
+     * Removes all the newlines from a string
      *
      * @return the edited message
      */
@@ -351,119 +180,6 @@ public class Utils {
 
         String out = m.replaceAll("");
         return out;
-    }
-
-    /**
-     * Get the headers of an HTTP message
-     *
-     * @param message   the message
-     * @param isRequest true if it is a request
-     * @param helpers   The Burp IExtensionHelpers
-     * @return a list of Strings, each one is a header
-     */
-    public static List<String> getHeaders(IHttpRequestResponse message, boolean isRequest, IExtensionHelpers helpers) {
-        if (isRequest) {
-            return helpers.analyzeRequest(message.getRequest()).getHeaders();
-        } else {
-            return helpers.analyzeResponse(message.getResponse()).getHeaders();
-        }
-    }
-
-    /**
-     * Get the body of a message
-     *
-     * @param message   the message
-     * @param isRequest true if the message is a request
-     * @param helpers   The Burp IExtensionHelpers
-     * @return the body of the message as byte array
-     */
-    public static byte[] getBody(IHttpRequestResponse message, boolean isRequest, IExtensionHelpers helpers) {
-        int body_offset = isRequest ?
-                helpers.analyzeRequest(message.getRequest()).getBodyOffset() :
-                helpers.analyzeResponse(message.getResponse()).getBodyOffset();
-
-        byte[] body = isRequest ?
-                Arrays.copyOfRange(message.getRequest(), body_offset, message.getRequest().length) :
-                Arrays.copyOfRange(message.getResponse(), body_offset, message.getResponse().length);
-
-        return body;
-    }
-
-    /**
-     * Removes a head parameter from a list of headers
-     *
-     * @param headers    the list of headers
-     * @param param_name the name of the header to remove
-     * @return The list without the removed header
-     */
-    public static List<String> removeHeadParameter(List<String> headers, String param_name) {
-        for (String s : headers) {
-            if (s.contains(param_name)) {
-                headers.remove(s);
-                break;
-            }
-        }
-        return headers;
-    }
-
-    /**
-     * Add a header to a list of headers
-     *
-     * @param headers    the header list
-     * @param param_name the name of the header to add
-     * @param value      the value of the header to add
-     * @return the edited header list
-     */
-    public static List<String> addHeadParameter(List<String> headers, String param_name, String value) {
-        if (value.equals("")) return headers;
-
-        for (String s : headers) {
-            if (s.contains(param_name)) {
-                headers.set(headers.indexOf(s), param_name + ": " + value);
-                return headers;
-            }
-        }
-        headers.add(param_name + ": " + value);
-        return headers;
-    }
-
-    /**
-     * Edit a header ina a list of headers
-     *
-     * @param headers    the header list
-     * @param param_name the name of the header to edit
-     * @param value      the value of the header to add
-     * @return the edited header list
-     */
-    public static List<String> editHeadParameter(List<String> headers, String param_name, String value) {
-        if (value.equals("")) return headers;
-
-        for (String s : headers) {
-            if (s.contains(param_name)) {
-                headers.set(headers.indexOf(s), param_name + ": " + value);
-                return headers;
-            }
-        }
-        return headers;
-    }
-
-    /**
-     * Get the value of a header from a header list
-     *
-     * @param headers    the list of headers
-     * @param param_name the name of the header to get the value from
-     * @return the value of the header
-     */
-    public static String getHeadParameterValue(List<String> headers, String param_name) {
-        for (String s : headers) {
-            if (s.contains(param_name)) {
-                String[] splitted = s.split(":");
-
-                String value = s.substring(s.indexOf(":") + 1);
-                return value;
-            }
-        }
-        return "";
     }
 
     /**
@@ -515,134 +231,360 @@ public class Utils {
     }
 
     /**
-     * Used to process session operations of a given operation
+     * Generates a CSRF POC from an HTTP request message
      *
-     * @param op the operation containing the session operation
-     * @return An array of Object elements, the first is the edited operation, the second is the updated variables
+     * @param message the message to generate the POC from
+     * @param helpers Burp's IExtensionHelper instance
+     * @return the html poc as a string
      */
-    public static Object[] executeSessionOps(Test t,
-                                             Operation op,
-                                             List<Var> vars) throws ParsingException {
-        Object[] res = new Object[2];
-        List<Var> updated_vars = vars;
-        for (SessionOperation sop : op.session_operations) {
-/*
-            List<Var> vars_new = eal.onBeforeExSessionOps();
+    public static String generate_CSRF_POC(HTTPReqRes message,
+                                           IExtensionHelpers helpers) {
 
-            for (Var v : vars_new) {
-                if (!updated_vars.contains(v)) {
-                    updated_vars.inse
+        String CSFR_TEMPLATE = "<!DOCTYPE html>\n" +
+                "<html>\n" +
+                "  <body>\n" +
+                "    <h2>Attack Page</h2>\n" +
+                "    <p>Service Provider (SP) is your service.</p>\n" +
+                "    <p>Identity Provider (IdP) is the provider with which the SP allows to associate the account.</p>\n" +
+                "    <p>These are the steps to reproduce the attack:</p>\n" +
+                "    <p>1. The victim clicks on button to initiate force-login to IdP and victim logs in as the attacker because IdP suffering of Pre-Authentication Login CSRF. To simulate this step, the victim logs in with the attacker's IdP credentials.</p>\n" +
+                "    <p>2. The victim logins at SP with victim credentials.</p>\n" +
+                "    <p>3. The victim clicks on following link which suffers of CSRF, to associate attacker IdP account with the Victim SP account.</p>\n" +
+                "    $INSERT_HERE$\n" +
+                "    <br>\n" +
+                "    <p>4. If the IdP attacker account has been associated with the victim SP account then the vulnerability has been properly exploited.</p>\n" +
+                "  </body>\n" +
+                "</html>";
+
+        String POST_TEMPLATE =
+                "  <form enctype=\"$ENCODING_TYPE$\" method=\"$METHOD$\" action=\"$URL$\">\n" +
+                        "    <table>\n" +
+                        "        $BODY_PARAMETERS$\n" +
+                        "    </table>\n" +
+                        "    <input type=\"submit\" value=\"Link vulnerable to CSRF account association with IdP\">\n" +
+                        "  </form>\n";
+
+        String TEMPLATE_BODY_PARAMS = "       <tr>\n" +
+                "        <td>$PARAM_NAME$</td>\n" +
+                "        <td>\n" +
+                "          <input type=\"text\" value=\"$PARAM_VALUE$\" name=\"$PARAM_NAME$\">\n" +
+                "        </td>\n" +
+                "      </tr>";
+
+        List<String> headers = message.getHeaders(true);
+        String encoding = message.getHeadParam(true, "Content-Type").strip();
+        String body = new String(message.getBody(true), StandardCharsets.UTF_8); // splitMessage(message, helpers, true).get(2);
+        String url = message.getUrl();
+        String method = message.getUrlHeader().split(" ")[0];
+
+        Pattern p = Pattern.compile("");
+        Matcher m = p.matcher(body);
+
+        String res = "";
+
+        res = POST_TEMPLATE;
+        p = Pattern.compile("\\$ENCODING_TYPE\\$");
+        m = p.matcher(res);
+        res = m.replaceAll(encoding);
+
+        p = Pattern.compile("\\$METHOD\\$");
+        m = p.matcher(res);
+        res = m.replaceAll(method);
+
+        if (method.equals("POST")) {
+            p = Pattern.compile("([^=]*)=([^&\\n$]*)(&|\\n|$)");
+            m = p.matcher(body);
+            String out_body_params = "";
+
+            if (body.length() != 0) {
+                Map<String, String> body_params = new HashMap<>();
+                while (m.find()) {
+                    String name = m.group(1);
+                    String value = m.group(2);
+                    if (name.length() != 0) {
+                        body_params.put(name,
+                                value.length() != 0 ? value : "");
+                    }
+                }
+                for (String key : body_params.keySet()) {
+                    String tmp = TEMPLATE_BODY_PARAMS;
+                    p = Pattern.compile("\\$PARAM_NAME\\$");
+                    m = p.matcher(tmp);
+
+                    tmp = m.replaceAll(key);
+
+                    p = Pattern.compile("\\$PARAM_VALUE\\$");
+                    m = p.matcher(tmp);
+
+                    tmp = m.replaceAll(body_params.get(key));
+
+                    out_body_params += tmp;
                 }
             }
 
+            p = Pattern.compile("\\$URL\\$");
+            m = p.matcher(res);
+            res = m.replaceAll(url);
 
- */
-            Session session = t.getSession(sop.from_session);
-            Track track = session.track;
+            p = Pattern.compile("\\$BODY_PARAMETERS\\$");
+            m = p.matcher(res);
+            res = m.replaceAll(out_body_params);
+        } else {
+            boolean has_query_params = url.split("\\?").length > 1;
+            String out_query_params = "";
 
-            switch (sop.action) {
-                case SAVE:
-                    Var v = new Var();
-                    v.name = sop.as;
-                    v.isMessage = false;
-                    v.value = "";
-                    switch (sop.target) {
-                        case TRACK:
-                            for (SessionTrackAction sa : t.getSession(sop.from_session).track
-                                    .getStasFromMarkers(sop.at, sop.to, sop.is_from_included, sop.is_to_included)) {
-                                v.value += sa.toString() + "\n";
-                            }
-                            break;
-                        case LAST_ACTION:
-                            v.value = session.last_action.toString();
-                            break;
-                        case LAST_ACTION_ELEM:
-                            v.value = session.last_action.elem;
-                            break;
-                        case LAST_ACTION_ELEM_PARENT:
-                            v.value = findParentDiv(session.last_action.elem);
-                            break;
-                        case LAST_CLICK:
-                            v.value = session.last_click.toString();
-                            break;
-                        case LAST_CLICK_ELEM:
-                            v.value = session.last_click.elem;
-                            break;
-                        case LAST_CLICK_ELEM_PARENT:
-                            v.value = findParentDiv(session.last_click.elem);
-                            break;
-                        case LAST_OPEN:
-                            v.value = session.last_open.toString();
-                            break;
-                        case LAST_OPEN_ELEM:
-                            v.value = session.last_open.elem;
-                            break;
-                        case LAST_URL:
-                            v.value = session.last_url;
-                            break;
-                        case ALL_ASSERT:
-                            for (SessionTrackAction sa : t.getSession(sop.from_session).track.getTrack()) {
-                                if (sa.isAssert) {
-                                    v.value += sa + "\n";
-                                }
-                            }
-                            break;
+            if (has_query_params) {
+                String raw_query_params = url.split("\\?")[1];
+
+                p = Pattern.compile("([^=\\n&]*)=([^=\\n&]*)");
+                m = p.matcher(raw_query_params);
+
+                Map<String, String> query_params = new HashMap<>();
+                while (m.find()) {
+                    String name = m.group(1);
+                    String value = m.group(2);
+                    if (name.length() != 0) {
+                        query_params.put(name, value.length() != 0 ? value : "");
                     }
-                    updated_vars.add(v);
-                    break;
+                }
+                for (String key : query_params.keySet()) {
+                    String tmp = TEMPLATE_BODY_PARAMS;
+                    p = Pattern.compile("\\$PARAM_NAME\\$");
+                    m = p.matcher(tmp);
 
-                case INSERT:
-                    String to_be_added = buildStringWithVars(updated_vars, sop.what);
-                    track.insert(new Marker(sop.at), to_be_added);
-                    break;
+                    tmp = m.replaceAll(key);
 
-                case MARKER:
-                    switch (sop.target) {
-                        case LAST_ACTION:
-                        case LAST_ACTION_ELEM:
-                            track.mark(session.last_action, sop.mark_name);
-                            break;
-                        case LAST_CLICK:
-                        case LAST_CLICK_ELEM:
-                            track.mark(session.last_click, sop.mark_name);
-                            break;
-                        case LAST_OPEN:
-                        case LAST_OPEN_ELEM:
-                            track.mark(session.last_open, sop.mark_name);
-                            break;
-                        case ALL_ASSERT:
-                            for (SessionTrackAction sa : t.getSession(sop.from_session).track.getTrack()) {
-                                if (sa.isAssert) {
-                                    track.mark(sa, sop.mark_name);
-                                }
-                            }
-                            break;
-                        case TRACK:
-                        case LAST_URL:
-                            throw new ParsingException("Invalid session operation target: " + sop.target);
-                        default:
-                            throw new ParsingException("Invalid session operation target");
-                    }
-                    break;
-                case REMOVE:
-                    if (sop.to != null && !sop.to.equals("")) {
-                        // TODO: remove interval of indices instead of using the remove construct of lists, because it
-                        // removes duplicated things
+                    p = Pattern.compile("\\$PARAM_VALUE\\$");
+                    m = p.matcher(tmp);
 
-                        int[] range = t.getSession(sop.from_session).track.
-                                getStasIndexFromRange(sop.at, sop.to, sop.is_from_included, sop.is_to_included);
+                    tmp = m.replaceAll(query_params.get(key));
 
+                    out_query_params += tmp;
+                }
+            }
 
-                        t.getSession(sop.from_session).track.getTrack().subList(range[0], range[1] + 1).clear();
-                    } else {
-                        track.remove(new Marker(sop.at));
-                    }
-                    break;
+            p = Pattern.compile("\\$URL\\$");
+            m = p.matcher(res);
+            res = m.replaceAll(has_query_params ? url.split("\\?")[0] : url);
+
+            p = Pattern.compile("\\$BODY_PARAMETERS\\$");
+            m = p.matcher(res);
+            res = m.replaceAll(out_query_params);
+        }
+
+        String tmp = CSFR_TEMPLATE;
+        p = Pattern.compile("\\$INSERT_HERE\\$");
+        m = p.matcher(tmp);
+        tmp = m.replaceAll(res);
+
+        return tmp;
+    }
+
+    /**
+     * Create batches of passive tests, grouping them by the session they need to execute.
+     *
+     * @return An HashMap object having as keys, Strings representing the sessions names, and as value a list of tests
+     * that need to execute that session
+     */
+    public static HashMap<String, List<Test>> batchPassivesFromSession(List<Test> testList) throws ParsingException {
+        HashMap<String, List<Test>> batch = new HashMap<>();
+        for (Test t : testList) {
+            if (t.sessions.size() == 0) {
+                throw new ParsingException("Undefined session in test " + t.name);
+            }
+
+            if (!batch.containsKey(t.sessions.get(0).name)) {
+                List<Test> n = new ArrayList<>();
+                n.add(t);
+                batch.put(t.sessions.get(0).name, n);
+            } else {
+                List<Test> tmp = batch.get(t.sessions.get(0).name);
+                tmp.add(t);
+                batch.put(t.sessions.get(0).name, tmp);
             }
         }
-        res[0] = op;
-        res[1] = updated_vars;
+        return batch;
+    }
+
+    /**
+     * From a batch of tests grouped by sessions, return a list containing all the tests
+     *
+     * @param batch the batch of tests in the form of a MAP<String, List<Test>>
+     * @return
+     * @throws ParsingException
+     */
+    public static List<Test> debatchPassive(HashMap<String, List<Test>> batch) {
+        List<Test> res = new ArrayList<>();
+        for (String sessionName : batch.keySet()) {
+            for (Test t : batch.get(sessionName)) {
+                res.add(t);
+            }
+        }
         return res;
+    }
+
+    /**
+     * Edit a message treating it as a string using a regex
+     *
+     * @param helpers     an instance of Burp's IExtensionHelper
+     * @param regex       the regex used to match the things to change
+     * @param mop         the message operation containing information about the section to match the regex
+     * @param messageInfo the message as IHttpRequestResponse object
+     * @param isRequest   specify if the message to consider is the request or response
+     * @param new_value   the new value to substitute to the message section
+     * @return the edited message as byte array
+     * @throws ParsingException if problems are encountered in editing the message
+     */
+    public static byte[] editMessage(IExtensionHelpers helpers,
+                                     String regex,
+                                     MessageOperation mop,
+                                     HTTPReqRes messageInfo,
+                                     boolean isRequest,
+                                     String new_value) throws ParsingException {
+        // TODO: remove dependency from Helpers
+        Pattern pattern = null;
+        Matcher matcher = null;
+        switch (mop.from) {
+            case HEAD:
+                List<String> head = messageInfo.getHeaders(isRequest);
+                pattern = Pattern.compile(regex);
+                List<String> new_head = new ArrayList<>();
+
+                for (String act_header : head) {
+                    matcher = pattern.matcher(act_header);
+                    new_head.add(matcher.replaceAll(new_value));
+                }
+                messageInfo.setHeaders(isRequest, new_head);
+                return messageInfo.getMessage(isRequest, helpers);
+
+            case BODY:
+                pattern = Pattern.compile(regex);
+
+                matcher = pattern.matcher(new String(messageInfo.getBody(isRequest)));
+                messageInfo.setBody(isRequest, matcher.replaceAll(new_value));
+                //Automatically update content-lenght
+                return messageInfo.getMessage(isRequest, helpers);
+
+            case URL:
+                if (!isRequest) {
+                    throw new ParsingException("Encoding URL in response");
+                }
+
+                pattern = Pattern.compile(regex);
+                matcher = pattern.matcher(messageInfo.getUrlHeader());
+                String replaced = matcher.replaceAll(new_value);
+                messageInfo.setUrlHeader(replaced);
+
+                return messageInfo.getMessage(isRequest, helpers);
+        }
+
+        return null;
+    }
+
+    /**
+     * Edit a message parameter
+     *
+     * @param helpers         an instance of Burp's IExtensionHelper
+     * @param param_name      the name of the parameter to edit
+     * @param message_section the message section to edit
+     * @param messageInfo     the message as IHttpRequestResponse object
+     * @param isRequest       specify if the message to consider is the request or response
+     * @param new_value       the new value of the parameter
+     * @param isBodyRegex     when the section is body, set it to true if you want to use a regex to substitute the value,
+     *                        otherwise a parameter param=... is searched
+     * @return the edited message as byte array
+     * @throws ParsingException if problems are encountered in editing the message
+     */
+    public static byte[] editMessageParam(IExtensionHelpers helpers,
+                                          String param_name,
+                                          Utils.MessageSection message_section,
+                                          HTTPReqRes messageInfo,
+                                          boolean isRequest,
+                                          String new_value,
+                                          boolean isBodyRegex) throws ParsingException {
+        List<String> splitted = null;
+        Pattern pattern = null;
+        Matcher matcher = null;
+        switch (message_section) {
+            case HEAD:
+                messageInfo.editHeadParam(isRequest, param_name, new_value);
+                byte[] message = messageInfo.getMessage(isRequest, helpers);
+                messageInfo.setHost(new_value); // this should be set when the message is converted to the burp class
+                return message;
+
+            case BODY:
+                if (!isBodyRegex) {
+                    pattern = Pattern.compile("(?<=" + param_name + "=)[^$\\n& ]*");
+                } else {
+                    pattern = Pattern.compile(param_name);
+                }
+
+                matcher = pattern.matcher(new String(messageInfo.getBody(isRequest)));
+                messageInfo.setBody(isRequest, matcher.replaceAll(new_value));
+                //Automatically update content-lenght
+                return messageInfo.getMessage(isRequest, helpers);
+
+            case URL:
+                if (!isRequest) {
+                    throw new ParsingException("Encoding URL in response");
+                }
+                String url_header = messageInfo.getUrlHeader();
+
+                pattern = Pattern.compile(param_name + "=[^& ]*((?=&)|(?= ))");
+                matcher = pattern.matcher(url_header);
+
+                messageInfo.setUrlHeader(matcher.replaceAll(param_name + "=" + new_value)); // problema
+
+                return messageInfo.getMessage(isRequest, helpers);
+        }
+        return null;
+    }
+
+    /**
+     * Given a name, returns the corresponding variable
+     *
+     * @param name the name of the variable
+     * @return the Var object
+     * @throws ParsingException if the variable cannot be found
+     */
+    public static Var getVariableByName(String name, GUI mainPane) throws ParsingException {
+        synchronized (mainPane.lock) {
+            for (Var act : mainPane.act_test_vars) {
+                if (act.name.equals(name)) {
+                    return act;
+                }
+            }
+        }
+        throw new ParsingException("variable not defined");
+    }
+
+    /**
+     * Executes the decode operations in an operation
+     *
+     * @param op
+     * @param messageInfo
+     * @param isRequest
+     * @param helpers
+     * @param mainPane
+     * @return
+     * @throws ParsingException
+     */
+    public static Operation executeDecodeOps(Operation op,
+                                             HTTPReqRes messageInfo,
+                                             boolean isRequest,
+                                             IExtensionHelpers helpers,
+                                             GUI mainPane) throws ParsingException {
+        Operation_API api = new Operation_API(messageInfo, isRequest);
+        for (DecodeOperation dop : op.getDecodeOperations()) {
+            // TODO: add to parser the decode operations list
+            dop.loader(api, helpers);
+            dop.execute(mainPane);
+            if (!op.setResult(dop))
+                break;
+            api = dop.exporter();
+        }
+
+        return op;
     }
 
     /**
@@ -1340,503 +1282,5 @@ public class Utils {
                 }
             }
         }
-    }
-
-    /**
-     * Generates a CSRF POC from an HTTP request message
-     *
-     * @param message the message to generate the POC from
-     * @param helpers Burp's IExtensionHelper instance
-     * @return the html poc as a string
-     */
-    public static String generate_CSRF_POC(HTTPReqRes message,
-                                           IExtensionHelpers helpers) {
-
-        String CSFR_TEMPLATE = "<!DOCTYPE html>\n" +
-                "<html>\n" +
-                "  <body>\n" +
-                "    <h2>Attack Page</h2>\n" +
-                "    <p>Service Provider (SP) is your service.</p>\n" +
-                "    <p>Identity Provider (IdP) is the provider with which the SP allows to associate the account.</p>\n" +
-                "    <p>These are the steps to reproduce the attack:</p>\n" +
-                "    <p>1. The victim clicks on button to initiate force-login to IdP and victim logs in as the attacker because IdP suffering of Pre-Authentication Login CSRF. To simulate this step, the victim logs in with the attacker's IdP credentials.</p>\n" +
-                "    <p>2. The victim logins at SP with victim credentials.</p>\n" +
-                "    <p>3. The victim clicks on following link which suffers of CSRF, to associate attacker IdP account with the Victim SP account.</p>\n" +
-                "    $INSERT_HERE$\n" +
-                "    <br>\n" +
-                "    <p>4. If the IdP attacker account has been associated with the victim SP account then the vulnerability has been properly exploited.</p>\n" +
-                "  </body>\n" +
-                "</html>";
-
-        String POST_TEMPLATE =
-                "  <form enctype=\"$ENCODING_TYPE$\" method=\"$METHOD$\" action=\"$URL$\">\n" +
-                        "    <table>\n" +
-                        "        $BODY_PARAMETERS$\n" +
-                        "    </table>\n" +
-                        "    <input type=\"submit\" value=\"Link vulnerable to CSRF account association with IdP\">\n" +
-                        "  </form>\n";
-
-        String TEMPLATE_BODY_PARAMS = "       <tr>\n" +
-                "        <td>$PARAM_NAME$</td>\n" +
-                "        <td>\n" +
-                "          <input type=\"text\" value=\"$PARAM_VALUE$\" name=\"$PARAM_NAME$\">\n" +
-                "        </td>\n" +
-                "      </tr>";
-
-        List<String> headers = message.getHeaders(true);
-        String encoding = getHeadParameterValue(headers, "Content-Type").strip();
-        String body = splitMessage(message, helpers, true).get(2);
-        String url = message.getUrl();
-        String method = splitMessage(message, helpers, true).get(0).split(" ")[0];
-
-        Pattern p = Pattern.compile("");
-        Matcher m = p.matcher(body);
-
-        String res = "";
-
-        res = POST_TEMPLATE;
-        p = Pattern.compile("\\$ENCODING_TYPE\\$");
-        m = p.matcher(res);
-        res = m.replaceAll(encoding);
-
-        p = Pattern.compile("\\$METHOD\\$");
-        m = p.matcher(res);
-        res = m.replaceAll(method);
-
-        if (method.equals("POST")) {
-            p = Pattern.compile("([^=]*)=([^&\\n$]*)(&|\\n|$)");
-            m = p.matcher(body);
-            String out_body_params = "";
-
-            if (body.length() != 0) {
-                Map<String, String> body_params = new HashMap<>();
-                while (m.find()) {
-                    String name = m.group(1);
-                    String value = m.group(2);
-                    if (name.length() != 0) {
-                        body_params.put(name,
-                                value.length() != 0 ? value : "");
-                    }
-                }
-                for (String key : body_params.keySet()) {
-                    String tmp = TEMPLATE_BODY_PARAMS;
-                    p = Pattern.compile("\\$PARAM_NAME\\$");
-                    m = p.matcher(tmp);
-
-                    tmp = m.replaceAll(key);
-
-                    p = Pattern.compile("\\$PARAM_VALUE\\$");
-                    m = p.matcher(tmp);
-
-                    tmp = m.replaceAll(body_params.get(key));
-
-                    out_body_params += tmp;
-                }
-            }
-
-            p = Pattern.compile("\\$URL\\$");
-            m = p.matcher(res);
-            res = m.replaceAll(url);
-
-            p = Pattern.compile("\\$BODY_PARAMETERS\\$");
-            m = p.matcher(res);
-            res = m.replaceAll(out_body_params);
-        } else {
-            boolean has_query_params = url.split("\\?").length > 1;
-            String out_query_params = "";
-
-            if (has_query_params) {
-                String raw_query_params = url.split("\\?")[1];
-
-                p = Pattern.compile("([^=\\n&]*)=([^=\\n&]*)");
-                m = p.matcher(raw_query_params);
-
-                Map<String, String> query_params = new HashMap<>();
-                while (m.find()) {
-                    String name = m.group(1);
-                    String value = m.group(2);
-                    if (name.length() != 0) {
-                        query_params.put(name, value.length() != 0 ? value : "");
-                    }
-                }
-                for (String key : query_params.keySet()) {
-                    String tmp = TEMPLATE_BODY_PARAMS;
-                    p = Pattern.compile("\\$PARAM_NAME\\$");
-                    m = p.matcher(tmp);
-
-                    tmp = m.replaceAll(key);
-
-                    p = Pattern.compile("\\$PARAM_VALUE\\$");
-                    m = p.matcher(tmp);
-
-                    tmp = m.replaceAll(query_params.get(key));
-
-                    out_query_params += tmp;
-                }
-            }
-
-            p = Pattern.compile("\\$URL\\$");
-            m = p.matcher(res);
-            res = m.replaceAll(has_query_params ? url.split("\\?")[0] : url);
-
-            p = Pattern.compile("\\$BODY_PARAMETERS\\$");
-            m = p.matcher(res);
-            res = m.replaceAll(out_query_params);
-        }
-
-        String tmp = CSFR_TEMPLATE;
-        p = Pattern.compile("\\$INSERT_HERE\\$");
-        m = p.matcher(tmp);
-        tmp = m.replaceAll(res);
-
-        return tmp;
-    }
-
-    /**
-     * Create batches of passive tests, grouping them by the session they need to execute.
-     *
-     * @return An HashMap object having as keys, Strings representing the sessions names, and as value a list of tests
-     * that need to execute that session
-     */
-    public static HashMap<String, List<Test>> batchPassivesFromSession(List<Test> testList) throws ParsingException {
-        HashMap<String, List<Test>> batch = new HashMap<>();
-        for (Test t : testList) {
-            if (t.sessions.size() == 0) {
-                throw new ParsingException("Undefined session in test " + t.name);
-            }
-
-            if (!batch.containsKey(t.sessions.get(0).name)) {
-                List<Test> n = new ArrayList<>();
-                n.add(t);
-                batch.put(t.sessions.get(0).name, n);
-            } else {
-                List<Test> tmp = batch.get(t.sessions.get(0).name);
-                tmp.add(t);
-                batch.put(t.sessions.get(0).name, tmp);
-            }
-        }
-        return batch;
-    }
-
-    /**
-     * From a batch of tests grouped by sessions, return a list containing all the tests
-     *
-     * @param batch the batch of tests in the form of a MAP<String, List<Test>>
-     * @return
-     * @throws ParsingException
-     */
-    public static List<Test> debatchPassive(HashMap<String, List<Test>> batch) {
-        List<Test> res = new ArrayList<>();
-        for (String sessionName : batch.keySet()) {
-            for (Test t : batch.get(sessionName)) {
-                res.add(t);
-            }
-        }
-        return res;
-    }
-
-    /**
-     * Given a message, get the given parameter value from the url
-     *
-     * @param message   the message to search into
-     * @param isRequest if the message is a request
-     * @param param     the parameter name to be searched
-     * @return the value of the parameter
-     */
-    public static String getUrlParam(IExtensionHelpers helpers, IHttpRequestResponse message, Boolean isRequest, String param) {
-        List<String> parts = Utils.splitMessage(message, helpers, isRequest);
-        //Pattern pattern = Pattern.compile("(?=&?)" + param + "=[^& ]*((?=&)|(?= ))");
-
-        Pattern pattern = Pattern.compile("(?<=" + param + "=)[^$\\n&\\s]*");
-        Matcher matcher = pattern.matcher(parts.get(0));
-        String res = "";
-        while (matcher.find()) {
-            res = matcher.group();
-            break;
-        }
-        return res;
-    }
-
-    /**
-     * Given a message, get the given parameter value from the url
-     *
-     * @param message   the message to search into
-     * @param isRequest if the message is a request
-     * @param param     the parameter name to be searched
-     * @return the value of the parameter
-     */
-    public static String getUrlParam(IExtensionHelpers helpers, HTTPReqRes message, Boolean isRequest, String param) {
-        List<String> parts = Utils.splitMessage(message, helpers, isRequest);
-        //Pattern pattern = Pattern.compile("(?=&?)" + param + "=[^& ]*((?=&)|(?= ))");
-
-        Pattern pattern = Pattern.compile("(?<=" + param + "=)[^$\\n&\\s]*");
-        Matcher matcher = pattern.matcher(parts.get(0));
-        String res = "";
-        while (matcher.find()) {
-            res = matcher.group();
-            break;
-        }
-        return res;
-    }
-
-    /**
-     * Given a message, get the given parameter value from the head
-     *
-     * @param message   the message to search into
-     * @param isRequest if the message is a request
-     * @param param     the parameter name to be searched
-     * @return the value of the parameter
-     */
-    public static String getHeadParam(IExtensionHelpers helpers, IHttpRequestResponse message, Boolean isRequest, String param) {
-        List<String> parts = Utils.splitMessage(message, helpers, isRequest);
-
-        Pattern pattern = Pattern.compile("(?<=" + param + ":)[^$\\n]*", Pattern.MULTILINE);
-        Matcher matcher = pattern.matcher(parts.get(1));
-        String res = "";
-        while (matcher.find()) {
-            res = matcher.group();
-            res = res;
-            break;
-        }
-        return res;
-    }
-
-    /**
-     * Given a message, get the given parameter value from the head
-     *
-     * @param message   the message to search into
-     * @param isRequest if the message is a request
-     * @param param     the parameter name to be searched
-     * @return the value of the parameter
-     */
-    public static String getHeadParam(IExtensionHelpers helpers, HTTPReqRes message, Boolean isRequest, String param) {
-        List<String> parts = Utils.splitMessage(message, helpers, isRequest);
-
-        Pattern pattern = Pattern.compile("(?<=" + param + ":)[^$\\n]*", Pattern.MULTILINE);
-        Matcher matcher = pattern.matcher(parts.get(1));
-        String res = "";
-        while (matcher.find()) {
-            res = matcher.group();
-            res = res;
-            break;
-        }
-        return res;
-    }
-
-    /**
-     * Given a message, get the given parameter value from the body, note that it accepts a regular expression, and
-     * everything matched will be returned as a value
-     *
-     * @param message   the message to search into
-     * @param isRequest if the message is a request
-     * @param param     the parameter to be searched as a regex, everything matched by this will be returned as a value
-     * @return the value of the parameter
-     */
-    public static String getBodyParam(IExtensionHelpers helpers, IHttpRequestResponse message, Boolean isRequest, String param) {
-        List<String> parts = Utils.splitMessage(message, helpers, isRequest);
-
-        //Pattern pattern = Pattern.compile("(?<=" + param + "=)[^$\\n&]*");
-        Pattern pattern = Pattern.compile(param);
-        Matcher matcher = pattern.matcher(parts.get(2));
-        //parts.set(2, matcher.replaceAll(""));
-
-        String res = "";
-        while (matcher.find()) {
-            res = matcher.group();
-            break;
-        }
-        return res;
-    }
-
-    /**
-     * Given a message, get the given parameter value from the body, note that it accepts a regular expression, and
-     * everything matched will be returned as a value
-     *
-     * @param message   the message to search into
-     * @param isRequest if the message is a request
-     * @param param     the parameter to be searched as a regex, everything matched by this will be returned as a value
-     * @return the value of the parameter
-     */
-    public static String getBodyParam(IExtensionHelpers helpers, HTTPReqRes message, Boolean isRequest, String param) {
-        List<String> parts = Utils.splitMessage(message, helpers, isRequest);
-
-        //Pattern pattern = Pattern.compile("(?<=" + param + "=)[^$\\n&]*");
-        Pattern pattern = Pattern.compile(param);
-        Matcher matcher = pattern.matcher(parts.get(2));
-        //parts.set(2, matcher.replaceAll(""));
-
-        String res = "";
-        while (matcher.find()) {
-            res = matcher.group();
-            break;
-        }
-        return res;
-    }
-
-    /**
-     * Edit a message treating it as a string using a regex
-     *
-     * @param helpers     an instance of Burp's IExtensionHelper
-     * @param regex       the regex used to match the things to change
-     * @param mop         the message operation containing information about the section to match the regex
-     * @param messageInfo the message as IHttpRequestResponse object
-     * @param isRequest   specify if the message to consider is the request or response
-     * @param new_value   the new value to substitute to the message section
-     * @return the edited message as byte array
-     * @throws ParsingException if problems are encountered in editing the message
-     */
-    public static byte[] editMessage(IExtensionHelpers helpers,
-                                     String regex,
-                                     MessageOperation mop,
-                                     HTTPReqRes messageInfo,
-                                     boolean isRequest,
-                                     String new_value) throws ParsingException {
-        // TODO: remove dependency from Helpers
-        Pattern pattern = null;
-        Matcher matcher = null;
-        switch (mop.from) {
-            case HEAD:
-                List<String> head = messageInfo.getHeaders(isRequest);
-                pattern = Pattern.compile(regex);
-                List<String> new_head = new ArrayList<>();
-
-                for (String act_header : head) {
-                    matcher = pattern.matcher(act_header);
-                    new_head.add(matcher.replaceAll(new_value));
-                }
-                messageInfo.setHeaders(isRequest, new_head);
-                return messageInfo.getMessage(isRequest, helpers);
-
-            case BODY:
-                pattern = Pattern.compile(regex);
-
-                matcher = pattern.matcher(new String(messageInfo.getBody(isRequest)));
-                messageInfo.setBody(isRequest, matcher.replaceAll(new_value));
-                //Automatically update content-lenght
-                return messageInfo.getMessage(isRequest, helpers);
-
-            case URL:
-                if (!isRequest) {
-                    throw new ParsingException("Encoding URL in response");
-                }
-
-                pattern = Pattern.compile(regex);
-                matcher = pattern.matcher(messageInfo.getUrlHeader());
-                String replaced = matcher.replaceAll(new_value);
-                messageInfo.setUrlHeader(replaced);
-
-                return messageInfo.getMessage(isRequest, helpers);
-        }
-
-        return null;
-    }
-
-    /**
-     * Edit a message parameter
-     *
-     * @param helpers         an instance of Burp's IExtensionHelper
-     * @param param_name      the name of the parameter to edit
-     * @param message_section the message section to edit
-     * @param messageInfo     the message as IHttpRequestResponse object
-     * @param isRequest       specify if the message to consider is the request or response
-     * @param new_value       the new value of the parameter
-     * @param isBodyRegex     when the section is body, set it to true if you want to use a regex to substitute the value,
-     *                        otherwise a parameter param=... is searched
-     * @return the edited message as byte array
-     * @throws ParsingException if problems are encountered in editing the message
-     */
-    public static byte[] editMessageParam(IExtensionHelpers helpers,
-                                          String param_name,
-                                          Utils.MessageSection message_section,
-                                          HTTPReqRes messageInfo,
-                                          boolean isRequest,
-                                          String new_value,
-                                          boolean isBodyRegex) throws ParsingException {
-        List<String> splitted = null;
-        Pattern pattern = null;
-        Matcher matcher = null;
-        switch (message_section) {
-            case HEAD:
-                List<String> headers = messageInfo.getHeaders(isRequest);
-                headers = Utils.editHeadParameter(headers, param_name, new_value);
-                byte[] message = messageInfo.getMessage(isRequest, helpers);
-                messageInfo.setHost(new_value); // this should be set when the message is converted to the burp class
-                return message;
-
-            case BODY:
-                splitted = Utils.splitMessage(messageInfo, helpers, isRequest);
-
-                if (!isBodyRegex) {
-                    pattern = Pattern.compile("(?<=" + param_name + "=)[^$\\n& ]*");
-                } else {
-                    pattern = Pattern.compile(param_name);
-                }
-
-                matcher = pattern.matcher(new String(messageInfo.getBody(isRequest)));
-                messageInfo.setBody(isRequest, matcher.replaceAll(new_value));
-                //Automatically update content-lenght
-                return messageInfo.getMessage(isRequest, helpers);
-
-            case URL:
-                if (!isRequest) {
-                    throw new ParsingException("Encoding URL in response");
-                }
-                String url_header = messageInfo.getUrlHeader();
-
-                pattern = Pattern.compile(param_name + "=[^& ]*((?=&)|(?= ))");
-                matcher = pattern.matcher(url_header);
-
-                messageInfo.setUrlHeader(matcher.replaceAll(param_name + "=" + new_value)); // problema
-
-                return messageInfo.getMessage(isRequest, helpers);
-        }
-        return null;
-    }
-
-    /**
-     * Given a name, returns the corresponding variable
-     *
-     * @param name the name of the variable
-     * @return the Var object
-     * @throws ParsingException if the variable cannot be found
-     */
-    public static Var getVariableByName(String name, GUI mainPane) throws ParsingException {
-        synchronized (mainPane.lock) {
-            for (Var act : mainPane.act_test_vars) {
-                if (act.name.equals(name)) {
-                    return act;
-                }
-            }
-        }
-        throw new ParsingException("variable not defined");
-    }
-
-    /**
-     * Executes the decode operations in an operation
-     *
-     * @param op
-     * @param messageInfo
-     * @param isRequest
-     * @param helpers
-     * @param mainPane
-     * @return
-     * @throws ParsingException
-     */
-    public static Operation executeDecodeOps(Operation op,
-                                             HTTPReqRes messageInfo,
-                                             boolean isRequest,
-                                             IExtensionHelpers helpers,
-                                             GUI mainPane) throws ParsingException {
-        Operation_API api = new Operation_API(messageInfo, isRequest);
-        for (DecodeOperation dop : op.getDecodeOperations()) {
-            // TODO: add to parser the decode operations list
-            dop.loader(api, helpers);
-            dop.execute(mainPane);
-            if (!op.setResult(dop))
-                break;
-            api = dop.exporter();
-        }
-
-        return op;
     }
 }

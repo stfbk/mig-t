@@ -1,13 +1,12 @@
 import burp.JWT;
 import burp.ParsingException;
 import burp.Utils;
-import io.jsonwebtoken.Claims;
-import io.jsonwebtoken.impl.DefaultClaims;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 
 public class JWT_Test {
     burp.JWT j;
@@ -28,7 +27,7 @@ public class JWT_Test {
 
     @Test
     @DisplayName("Testing default values")
-    void testDefaultValues(){
+    void testDefaultValues() {
         burp.JWT j = new JWT();
         assertEquals("", j.raw);
         assertEquals("", j.signature);
@@ -41,7 +40,7 @@ public class JWT_Test {
     void testJWTParse() {
         burp.JWT j = new burp.JWT();
         boolean errors = false;
-        try{
+        try {
             j.parseJWT(raw_jwt);
 
             String out = j.buildJWT();
@@ -65,9 +64,9 @@ public class JWT_Test {
 
     @Test
     @DisplayName("Testing jwt remove claim")
-    void testJWTRemoveClaim(){
+    void testJWTRemoveClaim() {
         boolean errors = false;
-        try{
+        try {
             burp.JWT j = new burp.JWT();
             j.parseJWT(raw_jwt);
             j.removeClaim(Utils.Jwt_section.HEADER, "typ");
@@ -90,9 +89,9 @@ public class JWT_Test {
 
     @Test
     @DisplayName("Testing jwt edit claim")
-    void testJWTEditClaim(){
+    void testJWTEditClaim() {
         boolean errors = false;
-        try{
+        try {
             burp.JWT j = new burp.JWT();
             j.parseJWT(raw_jwt);
             j.editAddClaim(Utils.Jwt_section.HEADER, "typ", "asdasd");
@@ -130,7 +129,7 @@ public class JWT_Test {
 
     @Test
     @DisplayName("Claims edit")
-    void test_claimEdit(){
+    void test_claimEdit() {
         String in = "eyJhbGciOiJSUzI1NiIsImtpZCI6IllodUlKVTZvMTVFVUN5cUEwTEhFcUpkLXhWUEpnb3lXNXdaMW80cGFkV3MifQ.eyJzY29wZSI6Im9wZW5pZCIsInJlZGlyZWN0X3VyaSI6Imh0dHA6Ly9yZWx5aW5nLXBhcnR5Lm9yZzo4MDAxL29pZGMvcnAvY2FsbGJhY2siLCJyZXNwb25zZV90eXBlIjoiY29kZSIsIm5vbmNlIjoidUNhQkJ6RDNPa3VPbEVVenZUSGJOcWFoOHVZdTRVa3UiLCJzdGF0ZSI6IjZFY3JwdzlYNThZaFVXMVlYSHF4bEVEVUhvbXczNUlxIiwiY2xpZW50X2lkIjoiaHR0cDovL3JlbHlpbmctcGFydHkub3JnOjgwMDEvIiwiZW5kcG9pbnQiOiJodHRwOi8vY2llLXByb3ZpZGVyLm9yZzo4MDAyL29pZGMvb3AvYXV0aG9yaXphdGlvbiIsImFjcl92YWx1ZXMiOiJodHRwczovL3d3dy5zcGlkLmdvdi5pdC9TcGlkTDIiLCJpYXQiOjE2NTM5ODM4NTksImF1ZCI6WyJodHRwOi8vY2llLXByb3ZpZGVyLm9yZzo4MDAyL29pZGMvb3AvIiwiaHR0cDovL2NpZS1wcm92aWRlci5vcmc6ODAwMi9vaWRjL29wL2F1dGhvcml6YXRpb24iXSwiY2xhaW1zIjp7ImlkX3Rva2VuIjp7ImZhbWlseV9uYW1lIjp7ImVzc2VudGlhbCI6dHJ1ZX0sImVtYWlsIjp7ImVzc2VudGlhbCI6dHJ1ZX19LCJ1c2VyaW5mbyI6eyJnaXZlbl9uYW1lIjpudWxsLCJmYW1pbHlfbmFtZSI6bnVsbCwiZW1haWwiOm51bGwsImZpc2NhbF9udW1iZXIiOm51bGx9fSwicHJvbXB0IjoiY29uc2VudCBsb2dpbiIsImNvZGVfY2hhbGxlbmdlIjoiU2hOX0t0U3ZhMEtwS1pZUFZ2MEhVd0lFM1lHclhZeHBuVS1Vb1BGTEluZyIsImNvZGVfY2hhbGxlbmdlX21ldGhvZCI6IlMyNTYiLCJpc3MiOiJodHRwOi8vcmVseWluZy1wYXJ0eS5vcmc6ODAwMS8iLCJzdWIiOiJodHRwOi8vcmVseWluZy1wYXJ0eS5vcmc6ODAwMS8ifQ.mETftfWL9MYrf3BVnahWOilFYItkBSaTw3nhKu0UzfiAI5lFy1orNGatNIR-Dg4hgsFCXgaY9rJSi2TVRSqIsHAJPe0HC5sKfXJ-mka0_w4koGDjbmYRZVN3yI05QWsLpENlsuCk2JEgZfz5BvAuX_MgxytIQHhUgy7DsdoJW-6Bk2DPDUiG_bDrBBjdFYgVocaQrxW49NmVIwtVz3dbhdslGA6g0uX7Dp9lQ9HqyWr1YnHtxUdyfuM2wdwPf11fhZNI8Nu_tpgVUxUMQgyEFA1nAscos2FuvLhpNovuciyh0BAlrYTpbXpZ-hjBv5rbfIrv5wytRNhlK2VxP7DA2g";
         boolean errors = false;
         try {
@@ -142,7 +141,7 @@ public class JWT_Test {
             if (!a) {
                 Object c = j.jwt.getBody().get("claims");
             }
-        } catch (ParsingException e){
+        } catch (ParsingException e) {
             errors = true;
         }
         assertFalse(errors);
@@ -156,10 +155,10 @@ public class JWT_Test {
         String out = JWT.decode_raw_jwt(in);
 
         assertEquals("{" +
-                "\"alg\":\"RS256\"," +
-                "\"kid\":\"YhuIJU6o15EUCyqA0LHEqJd-xVPJgoyW5wZ1o4padWs\"" +
-                "}.{\"scope\":\"openid\",\"redirect_uri\":\"http://relying-party.org:8001/oidc/rp/callback\",\"response_type\":\"code\",\"nonce\":\"9FJqg3d0AKAXMjDp4UFzdlbTtndk81ju\",\"state\":\"hTDuQKKuaF8vuqFMWISx5iqi0e9yfDbb\",\"client_id\":\"http://relying-party.org:8001/\",\"endpoint\":\"http://cie-provider.org:8002/oidc/op/authorization\",\"acr_values\":\"https://www.spid.gov.it/SpidL2\",\"iat\":1656403171,\"aud\":[\"http://cie-provider.org:8002/oidc/op/\",\"http://cie-provider.org:8002/oidc/op/authorization\"],\"claims\":{\"id_token\":{\"family_name\":{\"essential\":true},\"email\":{\"essential\":true}},\"userinfo\":{\"given_name\":null,\"family_name\":null,\"email\":null,\"fiscal_number\":null}},\"prompt\":\"consent login\",\"code_challenge\":\"-rPJB_41OiEsRkWI3Px2f6GZV7iucNBEQy6WW4ZzuS8\",\"code_challenge_method\":\"S256\",\"iss\":\"http://relying-party.org:8001/\"}" +
-                ".hZQdNZoZeLNJrIezuXQIV0C5a9ZOubiYTOUYdtmbsR4F_NFZFKDZccbjYk-ntYa2O7_DgcwQ083kAv5dutwU6nhiHBh3K__W4zct2yxcsLspE2pvBbmMjvq7IqmEYgIR2NEBwtCz9RrV6srnjzygm3XHb7kpfu-Z2eVPzxRTqi1C5l-ZX-xPDr2YFFdpHVB17G3lXTEj_Mm6zr6uNeJkS8Ytscq6SXyni3OTj_bRLTLONjoypLRO-qw8z2d8lY7bYgx9mZCAuUtgS75yRlrHuGu4zsE3Bg3UigfnCO_Pqouq-HZOGEZ_7_Hra0S5V8BPek_fRhRH6K534rFWlApRMQ",
+                        "\"alg\":\"RS256\"," +
+                        "\"kid\":\"YhuIJU6o15EUCyqA0LHEqJd-xVPJgoyW5wZ1o4padWs\"" +
+                        "}.{\"scope\":\"openid\",\"redirect_uri\":\"http://relying-party.org:8001/oidc/rp/callback\",\"response_type\":\"code\",\"nonce\":\"9FJqg3d0AKAXMjDp4UFzdlbTtndk81ju\",\"state\":\"hTDuQKKuaF8vuqFMWISx5iqi0e9yfDbb\",\"client_id\":\"http://relying-party.org:8001/\",\"endpoint\":\"http://cie-provider.org:8002/oidc/op/authorization\",\"acr_values\":\"https://www.spid.gov.it/SpidL2\",\"iat\":1656403171,\"aud\":[\"http://cie-provider.org:8002/oidc/op/\",\"http://cie-provider.org:8002/oidc/op/authorization\"],\"claims\":{\"id_token\":{\"family_name\":{\"essential\":true},\"email\":{\"essential\":true}},\"userinfo\":{\"given_name\":null,\"family_name\":null,\"email\":null,\"fiscal_number\":null}},\"prompt\":\"consent login\",\"code_challenge\":\"-rPJB_41OiEsRkWI3Px2f6GZV7iucNBEQy6WW4ZzuS8\",\"code_challenge_method\":\"S256\",\"iss\":\"http://relying-party.org:8001/\"}" +
+                        ".hZQdNZoZeLNJrIezuXQIV0C5a9ZOubiYTOUYdtmbsR4F_NFZFKDZccbjYk-ntYa2O7_DgcwQ083kAv5dutwU6nhiHBh3K__W4zct2yxcsLspE2pvBbmMjvq7IqmEYgIR2NEBwtCz9RrV6srnjzygm3XHb7kpfu-Z2eVPzxRTqi1C5l-ZX-xPDr2YFFdpHVB17G3lXTEj_Mm6zr6uNeJkS8Ytscq6SXyni3OTj_bRLTLONjoypLRO-qw8z2d8lY7bYgx9mZCAuUtgS75yRlrHuGu4zsE3Bg3UigfnCO_Pqouq-HZOGEZ_7_Hra0S5V8BPek_fRhRH6K534rFWlApRMQ",
                 out);
     }
 }

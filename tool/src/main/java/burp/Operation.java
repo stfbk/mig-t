@@ -3,6 +3,9 @@ package burp;
 import java.util.ArrayList;
 import java.util.List;
 
+import static burp.Utils.buildStringWithVars;
+import static burp.Utils.findParentDiv;
+
 /**
  * Class storing an Operation in a Test
  *
@@ -165,6 +168,132 @@ public class Operation extends Module {
 
     public void setDecodeOperations(List<DecodeOperation> decodeOperations) {
         this.decodeOperations = decodeOperations;
+    }
+
+    /**
+     * Used to process session operations of a given operation
+     *
+     * @return An array of Object elements, the first is the edited operation, the second is the updated variables
+     */
+    public List<Var> executeSessionOps(Test t,
+                                       List<Var> vars) throws ParsingException {
+        Object[] res = new Object[2];
+        List<Var> updated_vars = vars;
+        for (SessionOperation sop : this.session_operations) {
+/*
+            List<Var> vars_new = eal.onBeforeExSessionOps();
+
+            for (Var v : vars_new) {
+                if (!updated_vars.contains(v)) {
+                    updated_vars.inse
+                }
+            }
+ */
+            Session session = t.getSession(sop.from_session);
+            Track track = session.track;
+
+            switch (sop.action) {
+                case SAVE:
+                    Var v = new Var();
+                    v.name = sop.as;
+                    v.isMessage = false;
+                    v.value = "";
+                    switch (sop.target) {
+                        case TRACK:
+                            for (SessionTrackAction sa : t.getSession(sop.from_session).track
+                                    .getStasFromMarkers(sop.at, sop.to, sop.is_from_included, sop.is_to_included)) {
+                                v.value += sa.toString() + "\n";
+                            }
+                            break;
+                        case LAST_ACTION:
+                            v.value = session.last_action.toString();
+                            break;
+                        case LAST_ACTION_ELEM:
+                            v.value = session.last_action.elem;
+                            break;
+                        case LAST_ACTION_ELEM_PARENT:
+                            v.value = findParentDiv(session.last_action.elem);
+                            break;
+                        case LAST_CLICK:
+                            v.value = session.last_click.toString();
+                            break;
+                        case LAST_CLICK_ELEM:
+                            v.value = session.last_click.elem;
+                            break;
+                        case LAST_CLICK_ELEM_PARENT:
+                            v.value = findParentDiv(session.last_click.elem);
+                            break;
+                        case LAST_OPEN:
+                            v.value = session.last_open.toString();
+                            break;
+                        case LAST_OPEN_ELEM:
+                            v.value = session.last_open.elem;
+                            break;
+                        case LAST_URL:
+                            v.value = session.last_url;
+                            break;
+                        case ALL_ASSERT:
+                            for (SessionTrackAction sa : t.getSession(sop.from_session).track.getTrack()) {
+                                if (sa.isAssert) {
+                                    v.value += sa + "\n";
+                                }
+                            }
+                            break;
+                    }
+                    updated_vars.add(v);
+                    break;
+
+                case INSERT:
+                    String to_be_added = buildStringWithVars(updated_vars, sop.what);
+                    track.insert(new Marker(sop.at), to_be_added);
+                    break;
+
+                case MARKER:
+                    switch (sop.target) {
+                        case LAST_ACTION:
+                        case LAST_ACTION_ELEM:
+                            track.mark(session.last_action, sop.mark_name);
+                            break;
+                        case LAST_CLICK:
+                        case LAST_CLICK_ELEM:
+                            track.mark(session.last_click, sop.mark_name);
+                            break;
+                        case LAST_OPEN:
+                        case LAST_OPEN_ELEM:
+                            track.mark(session.last_open, sop.mark_name);
+                            break;
+                        case ALL_ASSERT:
+                            for (SessionTrackAction sa : t.getSession(sop.from_session).track.getTrack()) {
+                                if (sa.isAssert) {
+                                    track.mark(sa, sop.mark_name);
+                                }
+                            }
+                            break;
+                        case TRACK:
+                        case LAST_URL:
+                            throw new ParsingException("Invalid session operation target: " + sop.target);
+                        default:
+                            throw new ParsingException("Invalid session operation target");
+                    }
+                    break;
+                case REMOVE:
+                    if (sop.to != null && !sop.to.equals("")) {
+                        // TODO: remove interval of indices instead of using the remove construct of lists, because it
+                        // removes duplicated things
+
+                        int[] range = t.getSession(sop.from_session).track.
+                                getStasIndexFromRange(sop.at, sop.to, sop.is_from_included, sop.is_to_included);
+
+
+                        t.getSession(sop.from_session).track.getTrack().subList(range[0], range[1] + 1).clear();
+                    } else {
+                        track.remove(new Marker(sop.at));
+                    }
+                    break;
+            }
+        }
+
+        return updated_vars;
     }
 
     /**

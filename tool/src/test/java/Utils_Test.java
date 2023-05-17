@@ -1,6 +1,5 @@
 import burp.*;
 import org.json.JSONObject;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -135,7 +134,7 @@ public class Utils_Test {
                     "open | https://auth.fandom.com/auth/settings |\n" +
                     "click | xpath=/html/body/div[1]/main/div/div[2]/form/section[2]/div[2]/button[1] |");
         } catch (ParsingException e) {
-            assertEquals(1,0);
+            assertEquals(1, 0);
         }
         t.sessions.add(s);
         Operation op = new Operation();
@@ -154,14 +153,14 @@ public class Utils_Test {
         try {
             op.session_operations = SessionOperation.parseFromJson(sop_json);
         } catch (ParsingException e) {
-            assertEquals(1,0);
+            assertEquals(1, 0);
         }
 
         List<Var> vars = new ArrayList<>();
         try {
-            Utils.executeSessionOps(t, op, vars);
+            op.executeSessionOps(t, vars);
         } catch (ParsingException e) {
-            assertEquals(1,0);
+            assertEquals(1, 0);
         }
 
         Session right_output = new Session("s1");
@@ -185,13 +184,13 @@ public class Utils_Test {
                     "click | id=loginbutton |\n" +
                     "click | xpath=/html/body/div[1]/div/div/div/div/div/div/div/div[1]/div/div/div[2]/div[2]/div[1]/div/div |\n");
         } catch (ParsingException e) {
-            assertEquals(1,0);
+            assertEquals(1, 0);
         }
 
         try {
             assertEquals(t.getSession("s1").getTrack().toString(), right_output.getTrack().toString());
         } catch (ParsingException e) {
-            assertEquals(1,0);
+            assertEquals(1, 0);
         }
     }
 }

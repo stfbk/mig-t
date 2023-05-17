@@ -11,11 +11,11 @@ import java.util.List;
  * @author Matteo Bitussi
  */
 public class ExecutePassives implements Runnable {
+    final Object lock = new Object();
     public List<Test> passives;
     IExtensionHelpers helpers;
     ExecutePassiveListener listener;
     List<MessageType> messageTypes;
-    final Object lock = new Object();
     boolean finished;
     boolean execution_error;
 

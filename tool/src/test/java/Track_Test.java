@@ -5,11 +5,11 @@ import burp.Track;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-import javax.management.DescriptorKey;
 import java.util.ArrayList;
 import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 
 public class Track_Test {
 
@@ -17,8 +17,8 @@ public class Track_Test {
     @DisplayName("Test indexes")
     void testIndexes() throws ParsingException {
         Track t = new Track("open | https://www.google.com/ |\n" +
-                                "open | https://www.youtube.com/ |\n" +
-                                "wait | 3000");
+                "open | https://www.youtube.com/ |\n" +
+                "wait | 3000");
 
         int indx_0 = t.indexOfStaFromMarker("M0", false);
         int indx_L = t.indexOfStaFromMarker("ML", true);
@@ -38,12 +38,12 @@ public class Track_Test {
     @DisplayName("Test first and last indexes")
     void testFirstAndLAstIndexes() throws ParsingException {
         Track t = new Track("open | https://www.google.com/ |\n" +
-                                "open | https://www.youtube.com/ |\n" +
-                                "open | https://www.youtube.com/ |\n" +
-                                "open | https://www.youtube.com/ |\n" +
-                                "open | https://www.youtube.com/ |\n" +
-                                "open | https://www.youtube.com/ |\n" +
-                                "wait | 3000");
+                "open | https://www.youtube.com/ |\n" +
+                "open | https://www.youtube.com/ |\n" +
+                "open | https://www.youtube.com/ |\n" +
+                "open | https://www.youtube.com/ |\n" +
+                "open | https://www.youtube.com/ |\n" +
+                "wait | 3000");
 
         int indx_0 = t.indexOfStaFromMarker("M0", false);
         int indx_L = t.indexOfStaFromMarker("ML", true);
@@ -141,16 +141,16 @@ public class Track_Test {
         Track t = new Track("open | https://www.google.com/ |\n" +
                 "open | https://www.youtube.com/ |\n" +
                 "wait | 3000");
-        List<SessionTrackAction> sta =  t.getStasFromMarkers("M0", "ML", false, true);
+        List<SessionTrackAction> sta = t.getStasFromMarkers("M0", "ML", false, true);
         assertEquals(t.getTrack().get(1), sta.get(0));
         assertEquals(t.getTrack().get(2), sta.get(1));
 
-        sta =  t.getStasFromMarkers("M0", "ML", true, false);
+        sta = t.getStasFromMarkers("M0", "ML", true, false);
         assertEquals(2, sta.size());
         assertEquals(t.getTrack().get(0), sta.get(0));
         assertEquals(t.getTrack().get(1), sta.get(1));
 
-        sta =  t.getStasFromMarkers("M0", "M0", true, true);
+        sta = t.getStasFromMarkers("M0", "M0", true, true);
         assertEquals(1, sta.size());
         assertEquals(t.getTrack().get(0), sta.get(0));
     }

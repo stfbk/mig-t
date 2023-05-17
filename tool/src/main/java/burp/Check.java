@@ -1,6 +1,9 @@
 package burp;
 
+import org.json.JSONObject;
+
 import java.util.Arrays;
+import java.util.Iterator;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -17,6 +20,71 @@ public class Check {
     boolean isParamCheck = false; // specifies if what is declared in what is a parameter name
 
     Utils.ContentType contentType; // The content on which the check should work on
+
+    public Check() {
+
+    }
+
+    /**
+     * Instantiate a new Check object given its parsed JSONObject
+     *
+     * @param json_check the check as JSONObject
+     * @throws ParsingException
+     */
+    public Check(JSONObject json_check) throws ParsingException {
+        Iterator<String> keys = json_check.keys();
+        while (keys.hasNext()) {
+            String key = keys.next();
+            switch (key) {
+                case "in":
+                    if (key.equals("in")) {
+                        this.in = Utils.MessageSection.fromString(json_check.getString("in"));
+                    }
+                case "check param":
+                    if (key.equals("check param")) {
+                        this.isParamCheck = true;
+                        this.setWhat(json_check.getString("check param"));
+                        break;
+                    }
+                case "check":
+                    if (key.equals("check")) {
+                        this.setWhat(json_check.getString("check"));
+                        break;
+                    }
+                case "is":
+                    if (key.equals("is")) {
+                        this.setOp(Utils.CheckOps.IS);
+                        this.op_val = json_check.getString("is");
+                        break;
+                    }
+                case "is not":
+                    if (key.equals("is not")) {
+                        this.setOp(Utils.CheckOps.IS_NOT);
+                        this.op_val = json_check.getString("is not");
+                        break;
+                    }
+                case "contains":
+                    if (key.equals("contains")) {
+                        this.setOp(Utils.CheckOps.CONTAINS);
+                        this.op_val = json_check.getString("contains");
+                        break;
+                    }
+                case "not contains":
+                    if (key.equals("not contains")) {
+                        this.setOp(Utils.CheckOps.NOT_CONTAINS);
+                        this.op_val = json_check.getString("not contains");
+                        break;
+                    }
+                case "is present":
+                    if (key.equals("is present")) {
+                        this.op = json_check.getBoolean("is present") ? Utils.CheckOps.IS_PRESENT :
+                                Utils.CheckOps.IS_NOT_PRESENT;
+                        this.op_val = json_check.getBoolean("is present") ?
+                                "is present" : "is not present";
+                    }
+            }
+        }
+    }
 
     /**
      * Execute the check if it is http

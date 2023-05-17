@@ -43,9 +43,9 @@ public class GUI extends JSplitPane {
             "Mitigations",
             "Result"};
     private final Object[][] foundData = {};
-    private List<Test> passives;
     private final List<Test> actives;
     private final Map<String, Component> sessions_text;
+    private final Object lock2 = new Object();
     //GUI
     JTable resultTable;
     JTable testTable;
@@ -96,9 +96,9 @@ public class GUI extends JSplitPane {
     ExecuteActives ex;
     List<Var> act_test_vars;
     List<MessageType> messageTypes;
+    private List<Test> passives;
     private String DRIVER_PATH = "";
     private Thread active_ex;
-    private final Object lock2 = new Object();
     private boolean active_ex_finished = false;
 
     /**

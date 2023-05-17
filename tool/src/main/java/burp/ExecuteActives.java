@@ -215,9 +215,8 @@ public class ExecuteActives implements Runnable {
                         }
 
                         List<Var> act_vars = listener.onBeforeExSessionOps();
-                        Object[] res = Utils.executeSessionOps(actual_test, op, act_vars);
-                        op = (Operation) res[0];
-                        listener.onAfterExSessionOps((List<Var>) res[1]);
+                        List<Var> updated_vars = op.executeSessionOps(actual_test, act_vars);
+                        listener.onAfterExSessionOps(updated_vars);
 
                     } else {
                         //if it is a normal operation
@@ -251,9 +250,8 @@ public class ExecuteActives implements Runnable {
                             }
                         }
 
-                        Object[] res = Utils.executeSessionOps(actual_test, op, act_vars);
-                        op = (Operation) res[0];
-                        listener.onAfterExSessionOps((List<Var>) res[1]);
+                        List<Var> updated_vars = op.executeSessionOps(actual_test, act_vars);
+                        listener.onAfterExSessionOps(updated_vars);
 
                         if (op.applicable) {
                             actual_test.success = op.result;

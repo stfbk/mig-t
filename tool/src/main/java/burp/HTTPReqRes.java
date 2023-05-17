@@ -3,6 +3,8 @@ package burp;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Class which is intended to substitute the <code>IHTTPRequestResponse</code> one, because of serialization support
@@ -11,25 +13,22 @@ import java.util.List;
  */
 public class HTTPReqRes implements Cloneable {
     static public int instances;
-
-    // host data
-    private String host;
-    private int port = 0;
-    private String protocol;
-
-    // message data
-    private String request_url;
-    private byte[] request;
-    private byte[] response;
-
     public boolean isRequest = false;
     public boolean isResponse = false;
     public int body_offset_req; // identifies the index where the body ends in the request
     public int body_offset_resp; // the index where teh body of the response starts
-    private List<String> headers_req; // the headers of the request
-    private List<String> headers_resp; // the headers of the response
     byte[] body_req; // the body of the request message
     byte[] body_resp; // the body of the response message
+    // host data
+    private String host;
+    private int port = 0;
+    private String protocol;
+    // message data
+    private String request_url; // The url of the request (not the header)
+    private byte[] request;
+    private byte[] response;
+    private List<String> headers_req; // the headers of the request
+    private List<String> headers_resp; // the headers of the response
 
 
     /**
@@ -176,6 +175,7 @@ public class HTTPReqRes implements Cloneable {
      */
     private byte[] build_message(IExtensionHelpers helpers, boolean isRequest) {
         // TODO: this could be written avoiding helpers class
+        // TODO: url is not updated
         if (isRequest) {
             this.request = helpers.buildHttpMessage(headers_req, getBody(true));
             return this.request;
@@ -305,12 +305,12 @@ public class HTTPReqRes implements Cloneable {
         return response;
     }
 
-    public String getUrl() {
-        return this.request_url;
-    }
-
     public void setResponse(byte[] response) {
         this.response = response;
+    }
+
+    public String getUrl() {
+        return this.request_url;
     }
 
     public String getRequest_url() {
@@ -348,5 +348,108 @@ public class HTTPReqRes implements Cloneable {
     @Override
     public Object clone() throws CloneNotSupportedException {
         return super.clone();
+    }
+
+    /**
+     * Get the given parameter value from the url of the request messsage
+     *
+     * @param param the parameter name to be searched
+     * @return the value of the parameter
+     */
+    public String getUrlParam(String param) {
+        if (!isRequest || request_url == null) {
+            throw new RuntimeException("Trying to access the url of a response message");
+        }
+
+        Pattern pattern = Pattern.compile("(?<=" + param + "=)[^$\\n&\\s]*");
+        Matcher matcher = pattern.matcher(this.request_url);
+        String res = "";
+        while (matcher.find()) {
+            res = matcher.group();
+            break;
+        }
+        return res;
+    }
+
+    /**
+     * Get the given parameter value from the head
+     *
+     * @param isRequest if the message is a request
+     * @param param     the parameter name to be searched
+     * @return the value of the parameter
+     */
+    public String getHeadParam(Boolean isRequest, String param) {
+        List<String> headers = isRequest ? this.headers_req : this.headers_resp;
+
+        for (String s : headers) {
+            if (s.contains(param)) {
+                String[] splitted = s.split(":");
+
+                String value = s.substring(s.indexOf(":") + 1);
+                return value.strip();
+            }
+        }
+        return "";
+    }
+
+
+    public void editHeadParam(Boolean isRequest, String param, String new_value) {
+        List<String> headers = isRequest ? this.headers_req : this.headers_resp;
+
+        int indx = -1;
+
+        for (String s : headers) {
+            if (s.contains(param)) {
+                indx = headers.indexOf(s);
+                break;
+            }
+        }
+
+        if (isRequest) {
+            headers_req.set(indx, param + ": " + new_value);
+        } else {
+            headers_resp.set(indx, param + ": " + new_value);
+        }
+    }
+
+    public void addHeadParameter(boolean isRequest, String name, String value) {
+        (isRequest ? this.headers_req : this.headers_resp).add(name + ": " + value);
+    }
+
+    public void removeHeadParameter(boolean isRequest, String name) {
+        List<String> headers = isRequest ? this.headers_req : this.headers_resp;
+
+        for (String h : headers) {
+            if (h.contains(name)) {
+                headers.remove(h);
+                break;
+            }
+        }
+
+        if (isRequest) {
+            this.headers_req = headers;
+        } else {
+            this.headers_resp = headers;
+        }
+    }
+
+    /**
+     * Given a message, get the given parameter value from the body, note that it accepts a regular expression, and
+     * everything matched will be returned as a value
+     *
+     * @param isRequest if the message is a request
+     * @param param     the parameter to be searched as a regex, everything matched by this will be returned as a value
+     * @return the value of the parameter
+     */
+    public String getBodyRegex(Boolean isRequest, String param) {
+        Pattern pattern = Pattern.compile(param);
+        Matcher matcher = pattern.matcher(new String(isRequest ? body_req : body_resp, StandardCharsets.UTF_8));
+
+        String res = "";
+        while (matcher.find()) {
+            res = matcher.group();
+            break;
+        }
+        return res;
     }
 }

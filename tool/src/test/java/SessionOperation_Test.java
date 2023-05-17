@@ -1,7 +1,5 @@
 import burp.ParsingException;
 import burp.SessionOperation;
-import burp.SessionTrackAction;
-import burp.Utils;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 

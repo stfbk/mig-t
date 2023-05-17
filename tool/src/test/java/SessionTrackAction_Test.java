@@ -10,7 +10,7 @@ public class SessionTrackAction_Test {
 
     @Test
     @DisplayName("ParsingRawSessionAction test")
-    void test_parseRawSessionAction(){
+    void test_parseRawSessionAction() {
         SessionTrackAction s = new SessionTrackAction();
 
         try {
@@ -40,8 +40,8 @@ public class SessionTrackAction_Test {
             s = new SessionTrackAction("equals | xpath=/html/body/div[1]/div[3]/div/div[5]/div[1]/span[1] |");
             assertEquals(Utils.SessAction.EQUALS, s.action);
             assertEquals("equals | xpath=/html/body/div[1]/div[3]/div/div[5]/div[1]/span[1] |", s.toString());
-        } catch (ParsingException e){
-            assertEquals(1,0);
+        } catch (ParsingException e) {
+            assertEquals(1, 0);
         }
     }
 

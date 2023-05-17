@@ -1,4 +1,6 @@
-import burp.*;
+import burp.ParsingException;
+import burp.Session;
+import burp.Utils;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -6,7 +8,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class GUI_Test {
 
@@ -15,7 +17,7 @@ public class GUI_Test {
     void test_batchPassivesFromSession() throws ParsingException {
         List<burp.Test> tests = new ArrayList<>();
 
-        for (int i=0; i< 8; i++) {
+        for (int i = 0; i < 8; i++) {
             burp.Test t1 = new burp.Test();
             t1.sessions.add(new Session());
             tests.add(t1);
