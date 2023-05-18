@@ -1,4 +1,4 @@
-import burp.HTTPReqRes;
+import migt.HTTPReqRes;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 

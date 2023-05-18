@@ -1,4 +1,4 @@
-package burp;
+package migt;
 
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;

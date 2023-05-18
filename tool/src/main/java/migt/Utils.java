@@ -1,5 +1,6 @@
-package burp;
+package migt;
 
+import burp.IExtensionHelpers;
 import org.json.JSONArray;
 import org.json.JSONObject;
 

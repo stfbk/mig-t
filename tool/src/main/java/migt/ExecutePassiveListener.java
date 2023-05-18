@@ -1,4 +1,9 @@
-package burp;
+package migt;
+
+import migt.HTTPReqRes;
+import migt.ParsingException;
+import migt.Session;
+import migt.Test;
 
 import java.util.ArrayList;
 import java.util.List;

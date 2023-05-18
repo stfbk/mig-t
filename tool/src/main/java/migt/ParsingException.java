@@ -1,4 +1,4 @@
-package burp;
+package migt;
 
 /**
  * Exception raised when the parsing of the language fails

@@ -1,4 +1,9 @@
-package burp;
+package migt;
+
+import burp.IExtensionHelpers;
+import burp.IHttpRequestResponse;
+import burp.IHttpRequestResponsePersisted;
+import burp.IHttpService;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;

@@ -1,5 +1,8 @@
-package burp;
+package migt;
 
+import burp.IExtensionHelpers;
+import burp.IRequestInfo;
+import burp.IResponseInfo;
 import org.json.JSONObject;
 
 import java.util.Arrays;
@@ -216,6 +219,14 @@ public class Check {
         return true;
     }
 
+    /**
+     * Execute the json version of the check
+     * @param message the message to check
+     * @param helpers the burp helper class
+     * @param isRequest to select the request or the response
+     * @return the result of the execution //TODO: change to API
+     * @throws ParsingException
+     */
     private boolean execute_json(HTTPReqRes message,
                                  IExtensionHelpers helpers,
                                  boolean isRequest) throws ParsingException {

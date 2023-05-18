@@ -1,4 +1,4 @@
-import burp.*;
+import migt.*;
 import org.json.JSONObject;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -81,7 +81,7 @@ public class Utils_Test {
     @Test
     @DisplayName("Test execute session ops")
     void testExecuteSessionOps() throws ParsingException {
-        burp.Test t = new burp.Test();
+        migt.Test t = new migt.Test();
         Operation op = new Operation();
         List<Var> vars = new ArrayList<>();
 
@@ -107,7 +107,7 @@ public class Utils_Test {
     @Test
     @DisplayName("Test execute session Ops")
     void executeSessioOps_test() {
-        burp.Test t = new burp.Test();
+        migt.Test t = new migt.Test();
         Session s = new Session("s1");
 
         try {

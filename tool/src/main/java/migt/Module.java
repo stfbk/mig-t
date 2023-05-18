@@ -1,4 +1,7 @@
-package burp;
+package migt;
+
+import burp.IExtensionHelpers;
+import org.json.JSONObject;
 
 /**
  * This class is the Parent class inherited by all modules. It provides some methods and parameters to be
@@ -12,6 +15,10 @@ public class Module {
 
     public Module() {
 
+    }
+
+    public Module(JSONObject json_module) {
+        // Parse
     }
 
     public Module(IExtensionHelpers helpers) {

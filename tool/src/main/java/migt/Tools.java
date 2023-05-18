@@ -1,4 +1,7 @@
-package burp;
+package migt;
+
+import burp.IExtensionHelpers;
+import burp.IParameter;
 
 import java.net.URL;
 import java.nio.charset.StandardCharsets;

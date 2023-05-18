@@ -1,4 +1,6 @@
-package burp;
+package migt;
+
+import burp.*;
 
 import javax.swing.*;
 import java.awt.*;
@@ -10,8 +12,8 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 
-import static burp.Utils.executeDecodeOps;
-import static burp.Utils.getVariableByName;
+import static migt.Utils.executeDecodeOps;
+import static migt.Utils.getVariableByName;
 
 /**
  * Main class executed by Burp

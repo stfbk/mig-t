@@ -1,4 +1,4 @@
-package burp;
+package migt;
 
 import io.jsonwebtoken.*;
 import org.json.JSONException;

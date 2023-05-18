@@ -1,6 +1,6 @@
-import burp.ParsingException;
-import burp.SessionTrackAction;
-import burp.Utils;
+import migt.ParsingException;
+import migt.SessionTrackAction;
+import migt.Utils;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 

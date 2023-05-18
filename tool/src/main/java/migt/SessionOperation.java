@@ -1,4 +1,4 @@
-package burp;
+package migt;
 
 import org.json.JSONArray;
 import org.json.JSONObject;

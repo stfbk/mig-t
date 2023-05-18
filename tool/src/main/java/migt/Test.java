@@ -1,4 +1,6 @@
-package burp;
+package migt;
+
+import burp.IInterceptedProxyMessage;
 
 import java.io.BufferedWriter;
 import java.io.File;

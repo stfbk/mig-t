@@ -1,4 +1,4 @@
-package burp;
+package migt;
 
 import java.util.Objects;
 

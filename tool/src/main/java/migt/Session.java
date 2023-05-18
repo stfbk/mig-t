@@ -1,4 +1,7 @@
-package burp;
+package migt;
+
+import burp.IExtensionHelpers;
+import burp.IHttpRequestResponsePersisted;
 
 import java.util.ArrayList;
 import java.util.List;

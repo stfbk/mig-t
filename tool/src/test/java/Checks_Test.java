@@ -1,4 +1,4 @@
-import burp.ParsingException;
+import migt.ParsingException;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 

@@ -1,4 +1,6 @@
-package burp;
+package migt;
+
+import burp.IExtensionHelpers;
 
 import java.util.ArrayList;
 import java.util.HashMap;

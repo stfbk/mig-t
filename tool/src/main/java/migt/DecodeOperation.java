@@ -1,5 +1,6 @@
-package burp;
+package migt;
 
+import burp.IExtensionHelpers;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
 import samlraider.application.SamlTabController;
@@ -17,7 +18,7 @@ import java.util.zip.DataFormatException;
 import java.util.zip.Deflater;
 import java.util.zip.Inflater;
 
-import static burp.Utils.getVariableByName;
+import static migt.Utils.getVariableByName;
 
 /**
  * This class stores a decode operation
@@ -158,7 +159,7 @@ public class DecodeOperation extends Module {
                         actual = new String(actual_b);
                         isActualString = true;
                     }
-                    actual = burp.JWT.decode_raw_jwt(actual);
+                    actual = JWT.decode_raw_jwt(actual);
 
                     break;
                 case DEFLATE:

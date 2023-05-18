@@ -1,6 +1,6 @@
-import burp.JWT;
-import burp.ParsingException;
-import burp.Utils;
+import migt.JWT;
+import migt.ParsingException;
+import migt.Utils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -9,7 +9,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 
 public class JWT_Test {
-    burp.JWT j;
+    JWT j;
     String raw_jwt = "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiYWRtaW4iOnRydWUsImlhdCI6MTUxNjIzOTAyMn0.NHVaYe26MbtOYhSKkoKYdFVomg4i8ZJd8_-RU8VNbftc4TSMb4bXP3l3YlNWACwyXPGffz5aXHc6lty1Y2t4SWRqGteragsVdZufDn5BlnJl9pdR_kdVFUsra2rWKEofkZeIC4yWytE58sMIihvo9H1ScmmVwBcQP6XETqYd0aSHp1gOa9RdUPDvoXQ5oqygTqVtxaDr6wUFKrKItgBMzWIdNZ6y7O9E0DhEPTbE9rfBo6KTFsHAZnMg4k68CDp2woYIaXbmYTWcvbzIuHO7_37GT79XdIwkm95QJ7hYC9RiwrV7mesbY4PAahERJawntho0my942XheVLmGwLMBkQ";
 
     String raw_header = "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9";
@@ -22,13 +22,13 @@ public class JWT_Test {
 
     @BeforeEach
     void setUp() {
-        j = new burp.JWT();
+        j = new JWT();
     }
 
     @Test
     @DisplayName("Testing default values")
     void testDefaultValues() {
-        burp.JWT j = new JWT();
+        JWT j = new JWT();
         assertEquals("", j.raw);
         assertEquals("", j.signature);
         assertEquals("", j.header);
@@ -38,7 +38,7 @@ public class JWT_Test {
     @Test
     @DisplayName("Testing jwt decode and encode")
     void testJWTParse() {
-        burp.JWT j = new burp.JWT();
+        JWT j = new JWT();
         boolean errors = false;
         try {
             j.parseJWT(raw_jwt);
@@ -67,13 +67,13 @@ public class JWT_Test {
     void testJWTRemoveClaim() {
         boolean errors = false;
         try {
-            burp.JWT j = new burp.JWT();
+            JWT j = new JWT();
             j.parseJWT(raw_jwt);
             j.removeClaim(Utils.Jwt_section.HEADER, "typ");
             String out = j.buildJWT();
             assertEquals("eyJhbGciOiJSUzI1NiJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiYWRtaW4iOnRydWUsImlhdCI6MTUxNjIzOTAyMn0.NHVaYe26MbtOYhSKkoKYdFVomg4i8ZJd8_-RU8VNbftc4TSMb4bXP3l3YlNWACwyXPGffz5aXHc6lty1Y2t4SWRqGteragsVdZufDn5BlnJl9pdR_kdVFUsra2rWKEofkZeIC4yWytE58sMIihvo9H1ScmmVwBcQP6XETqYd0aSHp1gOa9RdUPDvoXQ5oqygTqVtxaDr6wUFKrKItgBMzWIdNZ6y7O9E0DhEPTbE9rfBo6KTFsHAZnMg4k68CDp2woYIaXbmYTWcvbzIuHO7_37GT79XdIwkm95QJ7hYC9RiwrV7mesbY4PAahERJawntho0my942XheVLmGwLMBkQ", out);
 
-            j = new burp.JWT();
+            j = new JWT();
             j.parseJWT(raw_jwt);
             j.removeClaim(Utils.Jwt_section.PAYLOAD, "name");
             out = j.buildJWT();
@@ -92,31 +92,31 @@ public class JWT_Test {
     void testJWTEditClaim() {
         boolean errors = false;
         try {
-            burp.JWT j = new burp.JWT();
+            JWT j = new JWT();
             j.parseJWT(raw_jwt);
             j.editAddClaim(Utils.Jwt_section.HEADER, "typ", "asdasd");
             String out = j.buildJWT();
             assertEquals("eyJhbGciOiJSUzI1NiIsInR5cCI6ImFzZGFzZCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiYWRtaW4iOnRydWUsImlhdCI6MTUxNjIzOTAyMn0.NHVaYe26MbtOYhSKkoKYdFVomg4i8ZJd8_-RU8VNbftc4TSMb4bXP3l3YlNWACwyXPGffz5aXHc6lty1Y2t4SWRqGteragsVdZufDn5BlnJl9pdR_kdVFUsra2rWKEofkZeIC4yWytE58sMIihvo9H1ScmmVwBcQP6XETqYd0aSHp1gOa9RdUPDvoXQ5oqygTqVtxaDr6wUFKrKItgBMzWIdNZ6y7O9E0DhEPTbE9rfBo6KTFsHAZnMg4k68CDp2woYIaXbmYTWcvbzIuHO7_37GT79XdIwkm95QJ7hYC9RiwrV7mesbY4PAahERJawntho0my942XheVLmGwLMBkQ", out);
 
-            j = new burp.JWT();
+            j = new JWT();
             j.parseJWT(raw_jwt);
             j.editAddClaim(Utils.Jwt_section.PAYLOAD, "name", "peppe");
             out = j.buildJWT();
             assertEquals("eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6InBlcHBlIiwiYWRtaW4iOnRydWUsImlhdCI6MTUxNjIzOTAyMn0.NHVaYe26MbtOYhSKkoKYdFVomg4i8ZJd8_-RU8VNbftc4TSMb4bXP3l3YlNWACwyXPGffz5aXHc6lty1Y2t4SWRqGteragsVdZufDn5BlnJl9pdR_kdVFUsra2rWKEofkZeIC4yWytE58sMIihvo9H1ScmmVwBcQP6XETqYd0aSHp1gOa9RdUPDvoXQ5oqygTqVtxaDr6wUFKrKItgBMzWIdNZ6y7O9E0DhEPTbE9rfBo6KTFsHAZnMg4k68CDp2woYIaXbmYTWcvbzIuHO7_37GT79XdIwkm95QJ7hYC9RiwrV7mesbY4PAahERJawntho0my942XheVLmGwLMBkQ", out);
 
-            j = new burp.JWT();
+            j = new JWT();
             j.parseJWT(raw_jwt);
             j.editAddClaim(Utils.Jwt_section.SIGNATURE, "", "peppe");
             out = j.buildJWT();
             assertEquals("eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiYWRtaW4iOnRydWUsImlhdCI6MTUxNjIzOTAyMn0.peppe", out);
 
-            j = new burp.JWT();
+            j = new JWT();
             j.parseJWT(raw_jwt);
             j.editAddClaim(Utils.Jwt_section.HEADER, "prova", "provona");
             out = j.buildJWT();
             assertEquals("eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCIsInByb3ZhIjoicHJvdm9uYSJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiYWRtaW4iOnRydWUsImlhdCI6MTUxNjIzOTAyMn0.NHVaYe26MbtOYhSKkoKYdFVomg4i8ZJd8_-RU8VNbftc4TSMb4bXP3l3YlNWACwyXPGffz5aXHc6lty1Y2t4SWRqGteragsVdZufDn5BlnJl9pdR_kdVFUsra2rWKEofkZeIC4yWytE58sMIihvo9H1ScmmVwBcQP6XETqYd0aSHp1gOa9RdUPDvoXQ5oqygTqVtxaDr6wUFKrKItgBMzWIdNZ6y7O9E0DhEPTbE9rfBo6KTFsHAZnMg4k68CDp2woYIaXbmYTWcvbzIuHO7_37GT79XdIwkm95QJ7hYC9RiwrV7mesbY4PAahERJawntho0my942XheVLmGwLMBkQ", out);
 
-            j = new burp.JWT();
+            j = new JWT();
             j.parseJWT(raw_jwt);
             j.editAddClaim(Utils.Jwt_section.PAYLOAD, "prova", "provona");
             out = j.buildJWT();
@@ -133,7 +133,7 @@ public class JWT_Test {
         String in = "eyJhbGciOiJSUzI1NiIsImtpZCI6IllodUlKVTZvMTVFVUN5cUEwTEhFcUpkLXhWUEpnb3lXNXdaMW80cGFkV3MifQ.eyJzY29wZSI6Im9wZW5pZCIsInJlZGlyZWN0X3VyaSI6Imh0dHA6Ly9yZWx5aW5nLXBhcnR5Lm9yZzo4MDAxL29pZGMvcnAvY2FsbGJhY2siLCJyZXNwb25zZV90eXBlIjoiY29kZSIsIm5vbmNlIjoidUNhQkJ6RDNPa3VPbEVVenZUSGJOcWFoOHVZdTRVa3UiLCJzdGF0ZSI6IjZFY3JwdzlYNThZaFVXMVlYSHF4bEVEVUhvbXczNUlxIiwiY2xpZW50X2lkIjoiaHR0cDovL3JlbHlpbmctcGFydHkub3JnOjgwMDEvIiwiZW5kcG9pbnQiOiJodHRwOi8vY2llLXByb3ZpZGVyLm9yZzo4MDAyL29pZGMvb3AvYXV0aG9yaXphdGlvbiIsImFjcl92YWx1ZXMiOiJodHRwczovL3d3dy5zcGlkLmdvdi5pdC9TcGlkTDIiLCJpYXQiOjE2NTM5ODM4NTksImF1ZCI6WyJodHRwOi8vY2llLXByb3ZpZGVyLm9yZzo4MDAyL29pZGMvb3AvIiwiaHR0cDovL2NpZS1wcm92aWRlci5vcmc6ODAwMi9vaWRjL29wL2F1dGhvcml6YXRpb24iXSwiY2xhaW1zIjp7ImlkX3Rva2VuIjp7ImZhbWlseV9uYW1lIjp7ImVzc2VudGlhbCI6dHJ1ZX0sImVtYWlsIjp7ImVzc2VudGlhbCI6dHJ1ZX19LCJ1c2VyaW5mbyI6eyJnaXZlbl9uYW1lIjpudWxsLCJmYW1pbHlfbmFtZSI6bnVsbCwiZW1haWwiOm51bGwsImZpc2NhbF9udW1iZXIiOm51bGx9fSwicHJvbXB0IjoiY29uc2VudCBsb2dpbiIsImNvZGVfY2hhbGxlbmdlIjoiU2hOX0t0U3ZhMEtwS1pZUFZ2MEhVd0lFM1lHclhZeHBuVS1Vb1BGTEluZyIsImNvZGVfY2hhbGxlbmdlX21ldGhvZCI6IlMyNTYiLCJpc3MiOiJodHRwOi8vcmVseWluZy1wYXJ0eS5vcmc6ODAwMS8iLCJzdWIiOiJodHRwOi8vcmVseWluZy1wYXJ0eS5vcmc6ODAwMS8ifQ.mETftfWL9MYrf3BVnahWOilFYItkBSaTw3nhKu0UzfiAI5lFy1orNGatNIR-Dg4hgsFCXgaY9rJSi2TVRSqIsHAJPe0HC5sKfXJ-mka0_w4koGDjbmYRZVN3yI05QWsLpENlsuCk2JEgZfz5BvAuX_MgxytIQHhUgy7DsdoJW-6Bk2DPDUiG_bDrBBjdFYgVocaQrxW49NmVIwtVz3dbhdslGA6g0uX7Dp9lQ9HqyWr1YnHtxUdyfuM2wdwPf11fhZNI8Nu_tpgVUxUMQgyEFA1nAscos2FuvLhpNovuciyh0BAlrYTpbXpZ-hjBv5rbfIrv5wytRNhlK2VxP7DA2g";
         boolean errors = false;
         try {
-            j = new burp.JWT();
+            j = new JWT();
             j.parseJWT(in);
 
             boolean a = j.jwt.getBody().containsKey("family_name");

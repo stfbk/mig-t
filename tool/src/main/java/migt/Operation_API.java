@@ -1,4 +1,4 @@
-package burp;
+package migt;
 
 /**
  * This class provides an API for an Operation module, to be used by other modules.

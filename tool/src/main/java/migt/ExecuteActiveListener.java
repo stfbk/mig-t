@@ -1,4 +1,9 @@
-package burp;
+package migt;
+
+import migt.Operation;
+import migt.Session;
+import migt.Test;
+import migt.Var;
 
 import java.util.List;
 

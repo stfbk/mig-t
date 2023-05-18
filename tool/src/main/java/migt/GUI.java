@@ -1,5 +1,6 @@
-package burp;
+package migt;
 
+import burp.*;
 import com.google.gson.Gson;
 import org.json.JSONArray;
 import org.json.JSONException;

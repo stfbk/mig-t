@@ -1,4 +1,4 @@
-package burp;
+package migt;
 
 import org.openqa.selenium.*;
 import org.openqa.selenium.chrome.ChromeDriver;

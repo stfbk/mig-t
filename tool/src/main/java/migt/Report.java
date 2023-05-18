@@ -1,4 +1,4 @@
-package burp;
+package migt;
 
 import be.quodlibet.boxable.BaseTable;
 import be.quodlibet.boxable.Cell;

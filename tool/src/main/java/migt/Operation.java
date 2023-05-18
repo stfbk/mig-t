@@ -1,10 +1,13 @@
-package burp;
+package migt;
+
+import burp.IHttpService;
+import burp.IInterceptedProxyMessage;
 
 import java.util.ArrayList;
 import java.util.List;
 
-import static burp.Utils.buildStringWithVars;
-import static burp.Utils.findParentDiv;
+import static migt.Utils.buildStringWithVars;
+import static migt.Utils.findParentDiv;
 
 /**
  * Class storing an Operation in a Test

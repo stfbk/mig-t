@@ -1,7 +1,7 @@
-import burp.Marker;
-import burp.ParsingException;
-import burp.SessionTrackAction;
-import burp.Track;
+import migt.Marker;
+import migt.ParsingException;
+import migt.SessionTrackAction;
+import migt.Track;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
