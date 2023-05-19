@@ -1,6 +1,8 @@
 package migt;
 
 import burp.IExtensionHelpers;
+import com.jayway.jsonpath.Configuration;
+import com.jayway.jsonpath.JsonPath;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
@@ -541,6 +543,43 @@ public class Utils {
         return null;
     }
 
+    public static byte[] editMessageParam(IExtensionHelpers helpers,
+                                          String param_name,
+                                          Utils.DecodeOperationFrom decodeOperationFrom,
+                                          HTTPReqRes messageInfo,
+                                          boolean isRequest,
+                                          String new_value,
+                                          boolean isBodyRegex) throws ParsingException {
+
+        Utils.MessageSection ms = null;
+
+        switch (decodeOperationFrom) {
+            case HEAD:
+                ms = MessageSection.HEAD;
+                break;
+            case BODY:
+                ms = MessageSection.BODY;
+                break;
+            case URL:
+                ms = MessageSection.URL;
+                break;
+            case JWT_HEADER:
+            case JWT_PAYLOAD:
+            case JWT_SIGNATURE:
+                throw new ParsingException("invalid from section in decode operation should be a message section");
+        }
+
+        return editMessageParam(
+                helpers,
+                param_name,
+                ms,
+                messageInfo,
+                isRequest,
+                new_value,
+                isBodyRegex
+        );
+    }
+
     /**
      * Given a name, returns the corresponding variable
      *
@@ -557,35 +596,6 @@ public class Utils {
             }
         }
         throw new ParsingException("variable not defined");
-    }
-
-    /**
-     * Executes the decode operations in an operation
-     *
-     * @param op
-     * @param messageInfo
-     * @param isRequest
-     * @param helpers
-     * @param mainPane
-     * @return
-     * @throws ParsingException
-     */
-    public static Operation executeDecodeOps(Operation op,
-                                             HTTPReqRes messageInfo,
-                                             boolean isRequest,
-                                             IExtensionHelpers helpers,
-                                             GUI mainPane) throws ParsingException {
-        Operation_API api = new Operation_API(messageInfo, isRequest);
-        for (DecodeOperation dop : op.getDecodeOperations()) {
-            // TODO: add to parser the decode operations list
-            dop.loader(api, helpers);
-            dop.execute(mainPane);
-            if (!op.setResult(dop))
-                break;
-            api = dop.exporter();
-        }
-
-        return op;
     }
 
     /**
@@ -627,6 +637,104 @@ public class Utils {
             }
         }
         return res;
+    }
+
+    public static String editJson(Utils.Jwt_action action,
+                                  String content,
+                                  String j_path,
+                                  GUI mainPane,
+                                  String save_as) {
+        Object document = Configuration.defaultConfiguration().jsonProvider().parse(content);
+        JsonPath jsonPath = JsonPath.compile(j_path);
+
+        switch (action) {
+            case REMOVE:
+                document = jsonPath.delete(document, Configuration.defaultConfiguration());
+                break;
+            case EDIT:
+            case ADD:
+                document = jsonPath.set(document, "Alice", Configuration.defaultConfiguration());
+                //TODO: check if set also adds in case it is not found
+                break;
+            case SAVE:
+                Var v = new Var();
+                v.name = save_as;
+                v.isMessage = false;
+                v.value = JsonPath.read(content, j_path); //TODO could rise errors
+                synchronized (mainPane.lock) {
+                    mainPane.act_test_vars.add(v);
+                }
+                break;
+        }
+        return Configuration.defaultConfiguration().jsonProvider().toJson(document); //basically converts to string
+    }
+
+    public enum CheckIn {
+        // standard message
+        HEAD,
+        BODY,
+        URL,
+        // jwt
+        JWT_HEADER,
+        JWT_PAYLOAD,
+        JWT_SIGNATURE;
+
+        public static CheckIn fromString(String input) throws ParsingException {
+            if (input != null) {
+                switch (input) {
+                    case "head":
+                        return HEAD;
+                    case "body":
+                        return BODY;
+                    case "url":
+                        return URL;
+                    case "header":
+                        return JWT_HEADER;
+                    case "payload":
+                        return JWT_PAYLOAD;
+                    case "signature":
+                        return JWT_SIGNATURE;
+                    default:
+                        throw new ParsingException("invalid in '" + input + "' for check");
+                }
+            } else {
+                throw new NullPointerException();
+            }
+        }
+    }
+
+    public enum DecodeOperationFrom {
+        // standard message
+        HEAD,
+        BODY,
+        URL,
+        // jwt
+        JWT_HEADER,
+        JWT_PAYLOAD,
+        JWT_SIGNATURE;
+
+        public static DecodeOperationFrom fromString(String input) throws ParsingException {
+            if (input != null) {
+                switch (input) {
+                    case "head":
+                        return HEAD;
+                    case "body":
+                        return BODY;
+                    case "url":
+                        return URL;
+                    case "jwt header":
+                        return JWT_HEADER;
+                    case "jwt payload":
+                        return JWT_PAYLOAD;
+                    case "jwt signature":
+                        return JWT_SIGNATURE;
+                    default:
+                        throw new ParsingException("invalid decode operation from '" + input + "'");
+                }
+            } else {
+                throw new NullPointerException();
+            }
+        }
     }
 
     /**

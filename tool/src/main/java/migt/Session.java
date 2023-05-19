@@ -26,6 +26,7 @@ public class Session {
     List<HTTPReqRes> messages;
     boolean isOffline = false;
     ExecuteTrack ex;
+
     /**
      * Instantiate the session
      */

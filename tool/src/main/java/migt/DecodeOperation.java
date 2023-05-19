@@ -1,6 +1,9 @@
 package migt;
 
 import burp.IExtensionHelpers;
+import com.jayway.jsonpath.JsonPath;
+import org.json.JSONArray;
+import org.json.JSONObject;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
 import samlraider.application.SamlTabController;
@@ -10,7 +13,9 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -18,19 +23,21 @@ import java.util.zip.DataFormatException;
 import java.util.zip.Deflater;
 import java.util.zip.Inflater;
 
+import static migt.Tools.executeDecodeOps;
 import static migt.Utils.getVariableByName;
 
 /**
  * This class stores a decode operation
  */
 public class DecodeOperation extends Module {
-    String decoded_content; // the decoded content
-    String decode_target; // aka decode_param how to decode the raw content
-    Utils.MessageSection from; // where the raw content is
-    List<Utils.Encoding> encodings; // the list of encoding to decode and rencode
+    public String decoded_content; // the decoded content
+    public String decode_target; // aka decode_param how to decode the raw content
+    public Utils.DecodeOperationFrom from; // where the raw content is. Depending on the containing module, can be other things
+    public List<Utils.Encoding> encodings = new ArrayList<>(); // the list of encoding to decode and rencode
     // TODO: change this to DecodeOperationType, and riassign it from the parser
-    Utils.DecodeOpType type; // the type of the decoded param
-    API api;
+    public Utils.DecodeOpType type; // the type of the decoded param
+    public List<Check> checks; // the list of checks to be executed
+    public List<DecodeOperation> decodeOperations = new ArrayList<>(); // a list of decode operations to execute them recursevly
 
     String save_as; // TODO add in parsing
     String use; //TODO add in parsing
@@ -62,11 +69,151 @@ public class DecodeOperation extends Module {
     String saml_original_cert;
 
     public DecodeOperation() {
+    }
 
+    /**
+     * Instantiate a decode operation object parsing a json object
+     *
+     * @param decode_op_json the json object
+     * @throws ParsingException
+     */
+    public DecodeOperation(JSONObject decode_op_json) throws ParsingException {
+        java.util.Iterator<String> keys = decode_op_json.keys();
+        while (keys.hasNext()) {
+            String key = keys.next();
+
+            switch (key) {
+                case "use":
+                    use = decode_op_json.getString("use");
+                    break;
+                case "as":
+                    save_as = decode_op_json.getString("as");
+                    break;
+                case "decode param":
+                    decode_target = decode_op_json.getString("decode param");
+                    break;
+                case "encodings":
+                    JSONArray encodings = decode_op_json.getJSONArray("encodings");
+                    Iterator<Object> it = encodings.iterator();
+
+                    while (it.hasNext()) {
+                        String act_enc = (String) it.next();
+                        this.encodings.add(
+                                Utils.Encoding.fromString(act_enc));
+                    }
+                    break;
+                case "from":
+                    String f = decode_op_json.getString("from");
+                    from = Utils.DecodeOperationFrom.fromString(f);
+                    break;
+                case "value":
+                    // value of xml or other edits
+                    value = decode_op_json.getString("value");
+                    break;
+                case "add tag":
+                    xml_action = Utils.XmlAction.ADD_TAG;
+                    xml_action_name = decode_op_json.getString(key);
+                    break;
+                case "add attribute":
+                    xml_action = Utils.XmlAction.ADD_ATTR;
+                    xml_action_name = decode_op_json.getString(key);
+                    break;
+                case "edit tag":
+                    xml_action = Utils.XmlAction.EDIT_TAG;
+                    xml_action_name = decode_op_json.getString(key);
+                    break;
+                case "edit attribute":
+                    xml_action = Utils.XmlAction.EDIT_ATTR;
+                    xml_action_name = decode_op_json.getString(key);
+                    break;
+                case "remove tag":
+                    xml_action = Utils.XmlAction.REMOVE_TAG;
+                    xml_action_name = decode_op_json.getString(key);
+                    break;
+                case "remove attribute":
+                    xml_action = Utils.XmlAction.REMOVE_ATTR;
+                    xml_action_name = decode_op_json.getString(key);
+                    break;
+                case "save tag":
+                    xml_action = Utils.XmlAction.SAVE_TAG;
+                    xml_action_name = decode_op_json.getString(key);
+                    break;
+                case "save attribute":
+                    xml_action = Utils.XmlAction.SAVE_ATTR;
+                    xml_action_name = decode_op_json.getString(key);
+                    break;
+                case "self-sign":
+                    self_sign = decode_op_json.getBoolean("self-sign");
+                    break;
+                case "remove signature":
+                    remove_signature = decode_op_json.getBoolean("remove signature");
+                    break;
+                case "xml tag":
+                    xml_tag = decode_op_json.getString("xml tag");
+                    break;
+                case "xml occurrency":
+                    xml_occurrency = decode_op_json.getInt("xml occurrency");
+                    break;
+                case "xml attribute":
+                    xml_attr = decode_op_json.getString("xml attribute");
+                    break;
+                case "txt remove":
+                    txt_action = Utils.TxtAction.REMOVE;
+                    txt_action_name = decode_op_json.getString("txt remove");
+                    break;
+                case "txt edit":
+                    txt_action = Utils.TxtAction.EDIT;
+                    txt_action_name = decode_op_json.getString("txt edit");
+                    break;
+                case "txt add":
+                    txt_action = Utils.TxtAction.ADD;
+                    txt_action_name = decode_op_json.getString("txt add");
+                    break;
+                case "txt save":
+                    txt_action = Utils.TxtAction.SAVE;
+                    txt_action_name = decode_op_json.getString("txt save");
+                    break;
+                case "jwt from":
+                    jwt_section = Utils.Jwt_section.getFromString(
+                            decode_op_json.getString("jwt from"));
+                    if (decode_op_json.getString("jwt from").contains("raw")) {
+                        isRawJWT = true;
+                    }
+                    break;
+                case "jwt remove":
+                    jwt_action = Utils.Jwt_action.REMOVE;
+                    what = decode_op_json.getString("jwt remove");
+                    break;
+                case "jwt edit":
+                    jwt_action = Utils.Jwt_action.EDIT;
+                    what = decode_op_json.getString("jwt edit");
+                    break;
+                case "jwt add":
+                    jwt_action = Utils.Jwt_action.ADD;
+                    what = decode_op_json.getString("jwt add");
+                    break;
+                case "jwt save":
+                    jwt_action = Utils.Jwt_action.SAVE;
+                    what = decode_op_json.getString("jwt save");
+                    break;
+                case "jwt sign":
+                    sign = decode_op_json.getBoolean("jwt sign");
+                    break;
+                case "decode operations":
+                    // Recursion goes brr
+                    JSONArray decode_ops = decode_op_json.getJSONArray("decode operations");
+                    for (int k = 0; k < decode_ops.length(); k++) {
+                        JSONObject act_decode_op = decode_ops.getJSONObject(k);
+                        DecodeOperation decode_op = new DecodeOperation(act_decode_op);
+                        decodeOperations.add(decode_op);
+                    }
+                    break;
+            }
+        }
     }
 
     public DecodeOperation(
-            Utils.MessageSection from,
+            Utils.DecodeOperationFrom from,
             String decode_target,
             List<Utils.Encoding> encodings,
             Utils.DecodeOpType type) {
@@ -90,7 +237,7 @@ public class DecodeOperation extends Module {
      * @throws ParsingException If problems are encountered during decoding
      */
     public static String decodeParam(IExtensionHelpers helpers,
-                                     Utils.MessageSection ms,
+                                     Utils.DecodeOperationFrom ms,
                                      List<Utils.Encoding> encodings,
                                      HTTPReqRes messageInfo,
                                      Boolean isRequest,
@@ -127,6 +274,7 @@ public class DecodeOperation extends Module {
      * @throws ParsingException if the decoding fails
      */
     public static String decode(List<Utils.Encoding> encodings, String encoded, IExtensionHelpers helpers) throws ParsingException {
+        // TODO: remove dependency from helpers
         String actual = encoded;
         byte[] actual_b = null;
         boolean isActualString = true;
@@ -340,46 +488,101 @@ public class DecodeOperation extends Module {
         return output;
     }
 
-    public void loader(Operation_API api, IExtensionHelpers helpers) throws ParsingException {
-        // load api, extract needed things
-        this.helpers = helpers;
-        this.api = api;
-
-        decoded_content = decodeParam(
-                helpers, from, encodings, api.message, api.is_request, decode_target);
+    @Override
+    public DecodeOperation_API getAPI() {
+        return (DecodeOperation_API) api;
     }
 
+    /**
+     * Loads an Operation API
+     *
+     * @param api
+     * @param helpers
+     * @throws ParsingException
+     */
+    public void loader(Operation_API api, IExtensionHelpers helpers) {
+        // load api, extract needed things
+        this.helpers = helpers;
+        this.imported_api = api;
+    }
+
+    /**
+     * Loads a decode operation API
+     *
+     * @param api
+     */
+    public void loader(DecodeOperation_API api, IExtensionHelpers helpers) {
+        this.imported_api = api;
+        this.helpers = helpers;
+
+    }
+
+    /**
+     * Exports the API of this decode operation to be used by another operation
+     *
+     * @return the API
+     * @throws ParsingException
+     */
     @Override
     public Operation_API exporter() throws ParsingException {
         Collections.reverse(encodings); // Set the right order for encoding
         String encoded = encode(encodings, decoded_content, helpers);
 
-        byte[] edited_message = Utils.editMessageParam(
+        Utils.editMessageParam(
                 helpers,
-                decoded_content,
+                decode_target,
                 from,
-                ((Operation_API) api).message,
-                ((Operation_API) api).is_request,
+                ((Operation_API) imported_api).message,
+                ((Operation_API) imported_api).is_request,
                 encoded,
                 true);
 
-        if (edited_message != null) {
-            if (((Operation_API) api).is_request) {
-                ((Operation_API) api).message.setRequest(edited_message);
-            } else {
-                ((Operation_API) api).message.setResponse(edited_message);
-            }
-            /*
-            if (op.processed_message_service != null) {
-                messageInfo.setHttpService(op.processed_message_service);
-            }
-            */
-        }
-
-        return ((Operation_API) api);
+        // the previous function should already have updated the message inside api
+        return ((Operation_API) imported_api);
     }
 
+    /**
+     * Executes this decode operation
+     *
+     * @param mainPane the mainpane is needed to access the variables
+     * @throws ParsingException
+     */
     public void execute(GUI mainPane) throws ParsingException {
+        if (api instanceof Operation_API) {
+            decoded_content = decodeParam(
+                    helpers,
+                    from,
+                    encodings,
+                    ((Operation_API) api).message,
+                    ((Operation_API) api).is_request,
+                    decode_target
+            );
+        } else if (api instanceof DecodeOperation_API) {
+            switch (from) {
+                case JWT_HEADER:
+                case JWT_PAYLOAD:
+                case JWT_SIGNATURE:
+                    // recursevly decode from a jwt
+                    String j = ((DecodeOperation_API) api).getDecodedContent(from);
+
+                    String found = "";
+                    // https://github.com/json-path/JsonPath
+                    try {
+                        found = JsonPath.read(j, what); // select what to decode
+                    } catch (com.jayway.jsonpath.PathNotFoundException e) {
+                        applicable = false;
+                        result = false;
+                        return;
+                    }
+                    decoded_content = decode(encodings, found, helpers);
+                    break;
+                default:
+                    throw new UnsupportedOperationException(
+                            "the from you selected in the recursive decode operation is not yet supported");
+                    //TODO implement missing
+            }
+        }
+
         // If a variable value has to be used, read the value of the variable at execution time
         if (!use.equals("")) {
             Var v = getVariableByName(use, mainPane);
@@ -407,6 +610,28 @@ public class DecodeOperation extends Module {
             }
         }
 
+        // Edit decoded content
+        editDecodedContent(mainPane);
+
+        // executes recursive decode operations
+        if (decodeOperations.size() != 0) {
+            executeDecodeOps(this, helpers, mainPane);
+        }
+
+        if (checks.size() != 0) {
+            Tools.executeChecks(this);
+        }
+
+        // SAML re-sign
+        if (self_sign && !decoded_content.equals("")) {
+            // SAML re-sign
+
+            decoded_content = SamlTabController.resignAssertion_edit(decoded_content, saml_original_cert);
+            //decoded_param = SamlTabController.resignMessage_edit(decoded_param, original_cert);
+        }
+    }
+
+    private void editDecodedContent(GUI mainPane) throws ParsingException {
         switch (type) {
             case XML: {
                 switch (xml_action) {
@@ -459,7 +684,6 @@ public class DecodeOperation extends Module {
                         synchronized (mainPane.lock) {
                             mainPane.act_test_vars.add(v);
                         }
-
                         break;
                     }
                     case SAVE_ATTR:
@@ -485,29 +709,29 @@ public class DecodeOperation extends Module {
                     jwt.parseJWT(decoded_content);
                 }
 
-                // TODO: Move edit to json
-                switch (jwt_action) {
-                    case REMOVE:
-                        //TODO: Change with JSON
-                        //jwt.removeClaim(jwt_section, what);
+                //edit
+                switch (jwt_section) {
+                    case HEADER:
+                        jwt.header = Utils.editJson(jwt_action, jwt.header, what, mainPane, save_as);
                         break;
-                    case EDIT:
-                    case ADD:
-                        //TODO: Change with JSON
-                        //jwt.editAddClaim(jwt_section, what, value);
+                    case PAYLOAD:
+                        jwt.payload = Utils.editJson(jwt_action, jwt.payload, what, mainPane, save_as);
                         break;
-                    case SAVE:
-                        Var v = new Var();
-                        v.name = save_as;
-                        v.isMessage = false;
-                        //TODO: Change with JSON
-                        //v.value = jwt.getClaim(jwt_section, what);
-                        synchronized (mainPane.lock) {
-                            mainPane.act_test_vars.add(v);
-                        }
+                    case SIGNATURE:
+                        jwt.signature = Utils.editJson(jwt_action, jwt.signature, what, mainPane, save_as);
+                        break;
+                    case RAW_HEADER:
+                        //TODO
+                        break;
+                    case RAW_PAYLOAD:
+                        //TODO
+                        break;
+                    case RAW_SIGNATURE:
+                        //TODO
                         break;
                 }
 
+                //rebuild
                 decoded_content = isRawJWT ?
                         jwt.buildJWT_string() :
                         jwt.buildJWT();
@@ -557,14 +781,6 @@ public class DecodeOperation extends Module {
                 }
                 break;
             }
-        }
-
-        // SAML re-sign
-        if (self_sign && !decoded_content.equals("")) {
-            // SAML re-sign
-
-            decoded_content = SamlTabController.resignAssertion_edit(decoded_content, saml_original_cert);
-            //decoded_param = SamlTabController.resignMessage_edit(decoded_param, original_cert);
         }
     }
 }

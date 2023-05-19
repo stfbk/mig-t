@@ -203,7 +203,7 @@ public class Tools {
                                            int message_index,
                                            IExtensionHelpers helpers,
                                            boolean isRequest) throws ParsingException {
-        //Operation_API api = new Operation_API(act_message, isRequest); //TODO: to change
+        currentOP.setAPI(new Operation_API(act_message, isRequest));
         HTTPReqRes message = null;
         boolean res = true;
 
@@ -215,10 +215,8 @@ public class Tools {
             return false;
         }
 
-        currentOP = Utils.executeDecodeOps(
+        currentOP = executeDecodeOps(
                 currentOP,
-                act_message,
-                isRequest,
                 helpers,
                 null
         );
@@ -457,9 +455,46 @@ public class Tools {
                                         HTTPReqRes message,
                                         IExtensionHelpers helpers,
                                         boolean isRequest) throws ParsingException {
-
+        //TODO: change to module in progress
         for (Check c : checks) {
             if (!c.execute(message, helpers, isRequest)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /**
+     * Execute a list of checks from an operation. Uses API.
+     *
+     * @param op
+     * @return
+     * @throws ParsingException
+     */
+    public static boolean executeChecks(Operation op) throws ParsingException {
+        for (Check c : op.getChecks()) {
+            c.loader(op.api); //TODO: change loader to an Operation api
+            c.execute();
+            if (!op.setResult(c)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /**
+     * Execute a list of checks inside a decode operation. This function uses the APIs Sets also the result to the
+     * decode op
+     *
+     * @param dop the decode operation calling this method
+     * @return the result, for convenience
+     * @throws ParsingException if errors are found
+     */
+    public static boolean executeChecks(DecodeOperation dop) throws ParsingException {
+        for (Check c : dop.checks) {
+            c.loader(dop.getAPI());
+            c.execute();
+            if (!dop.setResult(c)) {
                 return false;
             }
         }
@@ -484,5 +519,53 @@ public class Tools {
             map.put(name, value);
         }
         return map;
+    }
+
+    /**
+     * Executes the decode operations in an operation. Uses APIs. Sets the result to the operation
+     *
+     * @param op
+     * @param helpers
+     * @param mainPane
+     * @return
+     * @throws ParsingException
+     */
+    public static Operation executeDecodeOps(Operation op,
+                                             IExtensionHelpers helpers,
+                                             GUI mainPane) throws ParsingException {
+        Operation_API api = op.getAPI();
+        for (DecodeOperation dop : op.getDecodeOperations()) {
+            dop.loader(api, helpers);
+            dop.execute(mainPane);
+            if (!op.setResult(dop))
+                break;
+            op.setAPI(dop.exporter());
+        }
+
+        return op;
+    }
+
+    /**
+     * Executes a decode operation, from a decode operation. This is basically the recursive step.
+     *
+     * @param op       the decode operation executing its child decode operations
+     * @param helpers  the burp helpers
+     * @param mainPane
+     * @return
+     * @throws ParsingException
+     */
+    public static DecodeOperation executeDecodeOps(DecodeOperation op,
+                                                   IExtensionHelpers helpers,
+                                                   GUI mainPane) throws ParsingException {
+        DecodeOperation_API api = op.getAPI();
+        for (DecodeOperation dop : op.decodeOperations) {
+            dop.loader(api, helpers);
+            dop.execute(mainPane);
+            if (!op.setResult(dop))
+                break;
+            op.setAPI(dop.exporter());
+        }
+
+        return op;
     }
 }

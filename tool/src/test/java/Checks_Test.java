@@ -1,12 +1,13 @@
-import migt.ParsingException;
+import migt.*;
+import org.json.JSONObject;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import static org.junit.jupiter.api.Assertions.*;
+
 public class Checks_Test {
 
-    @Test
-    @DisplayName("parser")
-    void test_parser() throws ParsingException {
+    public Check initCheck_json(String check_str) throws ParsingException {
         String input = "{\n" +
                 "  \"pageInfo\": {\n" +
                 "    \"pageName\": \"abc\",\n" +
@@ -26,6 +27,143 @@ public class Checks_Test {
                 "  ]\n" +
                 "}";
 
+        Check c = new Check(new JSONObject(check_str));
 
+        DecodeOperation_API dopapi = new DecodeOperation_API();
+        dopapi.type = Utils.DecodeOpType.JWT;
+        dopapi.jwt_header = input;
+        c.loader(dopapi);
+
+        return c;
+    }
+
+    @Test
+    @DisplayName("check")
+    void test_check() throws ParsingException {
+        String check_str = "{\n" +
+                "        \"in\": \"header\",\n" +
+                "        \"check\": \"$.pageInfo.pageName\",\n" +
+                "        \"is\": \"abc\"\n" +
+                "}";
+
+        Check c = initCheck_json(check_str);
+        c.execute();
+        assertTrue(c.getResult());
+    }
+
+    @Test
+    @DisplayName("check")
+    void test_check_json_is_not() throws ParsingException {
+        String check_str = "{\n" +
+                "        \"in\": \"header\",\n" +
+                "        \"check\": \"$.pageInfo.pageName\",\n" +
+                "        \"is\": \"notabc\"\n" +
+                "}";
+
+        Check c = initCheck_json(check_str);
+        c.execute();
+        assertFalse(c.getResult());
+    }
+
+    @Test
+    @DisplayName("check")
+    void test_check_json_contains() throws ParsingException {
+        String check_str = "{\n" +
+                "        \"in\": \"header\",\n" +
+                "        \"check\": \"$.pageInfo.pageName\",\n" +
+                "        \"contains\": \"abc\"\n" +
+                "}";
+
+        Check c = initCheck_json(check_str);
+        c.execute();
+        assertTrue(c.getResult());
+    }
+
+    @Test
+    @DisplayName("check")
+    void test_check_json_not_contains() throws ParsingException {
+        String check_str = "{\n" +
+                "        \"in\": \"header\",\n" +
+                "        \"check\": \"$.pageInfo.pageName\",\n" +
+                "        \"not contains\": \"abc\"\n" +
+                "}";
+
+        Check c = initCheck_json(check_str);
+        c.execute();
+        assertFalse(c.getResult());
+    }
+
+    @Test
+    @DisplayName("check")
+    void test_check_json_not_found() throws ParsingException {
+        String check_str = "{\n" +
+                "        \"in\": \"header\",\n" +
+                "        \"check\": \"$.pageInfo.notexisting\",\n" +
+                "        \"is\": \"abc\"\n" +
+                "}";
+
+        Check c = initCheck_json(check_str);
+        c.execute();
+        assertFalse(c.getResult());
+    }
+
+    @Test
+    @DisplayName("check")
+    void test_check_json_not_present() throws ParsingException {
+        String check_str = "{\n" +
+                "        \"in\": \"header\",\n" +
+                "        \"check\": \"$.pageInfo.notexisting\",\n" +
+                "        \"is present\": \"false\"\n" +
+                "}";
+
+        Check c = initCheck_json(check_str);
+        c.execute();
+        assertTrue(c.getResult());
+    }
+
+    @Test
+    @DisplayName("check")
+    void test_check_json_not_present_wrong() throws ParsingException {
+        String check_str = "{\n" +
+                "        \"in\": \"header\",\n" +
+                "        \"check\": \"$.pageInfo.notexisting\",\n" +
+                "        \"is present\": \"true\"\n" +
+                "}";
+
+        Check c = initCheck_json(check_str);
+        c.execute();
+        assertFalse(c.getResult());
+    }
+
+    @Test
+    @DisplayName("check")
+    void test_check_json_is_inside_list() throws ParsingException {
+        String check_str = "{\n" +
+                "        \"in\": \"header\",\n" +
+                "        \"check\": \"$.posts[0].actor_id\",\n" +
+                "        \"is\": \"1234567890\"\n" +
+                "}";
+
+        Check c = initCheck_json(check_str);
+        c.execute();
+        assertTrue(c.getResult());
+    }
+
+    @Test
+    @DisplayName("check")
+    void test_check_json_set_result() throws ParsingException {
+        String check_str = "{\n" +
+                "        \"in\": \"header\",\n" +
+                "        \"check\": \"$.posts[0].actor_id\",\n" +
+                "        \"is\": \"1234567890\"\n" +
+                "}";
+
+        Check c = initCheck_json(check_str);
+        c.execute();
+
+        DecodeOperation dop = new DecodeOperation();
+        dop.setResult(c);
+
+        assertTrue(dop.getResult());
     }
 }

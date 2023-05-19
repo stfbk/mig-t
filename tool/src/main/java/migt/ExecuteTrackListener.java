@@ -1,10 +1,5 @@
 package migt;
 
-import migt.ParsingException;
-import migt.SessionTrackAction;
-import migt.Track;
-import migt.Var;
-
 /**
  * Listener for the ExectuteTrack Object
  *

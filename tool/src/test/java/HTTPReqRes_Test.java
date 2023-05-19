@@ -8,8 +8,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class HTTPReqRes_Test {
 
@@ -95,7 +94,7 @@ public class HTTPReqRes_Test {
         byte[] builded = message.build_message(message.isRequest);
         String builded_str = new String(builded, StandardCharsets.UTF_8);
         assertEquals(raw, builded_str);
-        assertTrue(Arrays.equals(builded, raw_b));
+        assertArrayEquals(builded, raw_b);
     }
 
     @Test
@@ -133,7 +132,7 @@ public class HTTPReqRes_Test {
         byte[] builded = message.build_message(message.isRequest);
         String builded_str = new String(builded, StandardCharsets.UTF_8);
         assertEquals(raw, builded_str);
-        assertTrue(Arrays.equals(builded, raw_b));
+        assertArrayEquals(builded, raw_b);
     }
 
     @Test
@@ -176,7 +175,7 @@ public class HTTPReqRes_Test {
         raw_b = raw.getBytes(StandardCharsets.UTF_8);
 
         assertEquals(raw, builded_str);
-        assertTrue(Arrays.equals(builded, raw_b));
+        assertArrayEquals(builded, raw_b);
     }
 
     @Test

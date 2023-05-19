@@ -3,22 +3,27 @@ package migt;
 import burp.IExtensionHelpers;
 import burp.IRequestInfo;
 import burp.IResponseInfo;
+import com.jayway.jsonpath.JsonPath;
 import org.json.JSONObject;
 
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Iterator;
+import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import static migt.Utils.CheckOps.IS_NOT_PRESENT;
 
 /**
  * Check Object class. This object is used in Operations to check that a parameter or some text is in as specified.
  *
  * @author Matteo Bitussi
  */
-public class Check {
+public class Check extends Module {
     String what; // what to search
     Utils.CheckOps op; // the check operations
-    Utils.MessageSection in; // the section over which to search
+    Utils.CheckIn in; // the section over which to search
     String op_val;
     boolean isParamCheck = false; // specifies if what is declared in what is a parameter name
 
@@ -41,7 +46,7 @@ public class Check {
             switch (key) {
                 case "in":
                     if (key.equals("in")) {
-                        this.in = Utils.MessageSection.fromString(json_check.getString("in"));
+                        this.in = Utils.CheckIn.fromString(json_check.getString("in"));
                     }
                 case "check param":
                     if (key.equals("check param")) {
@@ -81,12 +86,16 @@ public class Check {
                 case "is present":
                     if (key.equals("is present")) {
                         this.op = json_check.getBoolean("is present") ? Utils.CheckOps.IS_PRESENT :
-                                Utils.CheckOps.IS_NOT_PRESENT;
+                                IS_NOT_PRESENT;
                         this.op_val = json_check.getBoolean("is present") ?
                                 "is present" : "is not present";
                     }
             }
         }
+    }
+
+    public void loader(DecodeOperation_API api) {
+        this.imported_api = api;
     }
 
     /**
@@ -114,18 +123,10 @@ public class Check {
                 if (!isRequest) {
                     throw new ParsingException("Searching URL in response");
                 }
-                msg_str = req_info.getHeaders().get(0);
+                msg_str = message.getUrlHeader();
                 break;
             case BODY:
-                if (isRequest) {
-                    int offset = req_info.getBodyOffset();
-                    byte[] body = Arrays.copyOfRange(message.getRequest(), offset, message.getRequest().length);
-                    msg_str = new String(body);
-                } else {
-                    int offset = res_info.getBodyOffset();
-                    byte[] body = Arrays.copyOfRange(message.getResponse(), offset, message.getResponse().length);
-                    msg_str = new String(body);
-                }
+                msg_str = new String(message.getBody(isRequest), StandardCharsets.UTF_8);
                 break;
             case HEAD:
                 if (isRequest) {
@@ -149,7 +150,7 @@ public class Check {
 
         if (this.isParamCheck) {
             try {
-                Pattern p = this.in == Utils.MessageSection.URL ?
+                Pattern p = this.in == Utils.CheckIn.URL ?
                         Pattern.compile("(?<=[?&]" + this.what + "=)[^\\n&]*") :
                         Pattern.compile("(?<=" + this.what + ":\\s?)[^\\n]*");
                 Matcher m = p.matcher(msg_str);
@@ -166,7 +167,6 @@ public class Check {
                     // so result is true
                     return true;
                 }
-
                 switch (this.op) {
                     case IS:
                         if (!this.op_val.equals(val)) {
@@ -196,7 +196,7 @@ public class Check {
             } catch (ArrayIndexOutOfBoundsException e) {
                 //e.printStackTrace();
                 if (this.op != null) {
-                    if (this.op != Utils.CheckOps.IS_NOT_PRESENT) {
+                    if (this.op != IS_NOT_PRESENT) {
                         return false;
                     }
                 } else {
@@ -206,13 +206,13 @@ public class Check {
         } else {
             if (!msg_str.contains(this.what)) {
                 if (this.op != null) {
-                    return this.op == Utils.CheckOps.IS_NOT_PRESENT;
+                    return this.op == IS_NOT_PRESENT;
                 } else {
                     return false;
                 }
             } else {
                 if (this.op != null) {
-                    return this.op != Utils.CheckOps.IS_NOT_PRESENT;
+                    return this.op != IS_NOT_PRESENT;
                 }
             }
         }
@@ -221,21 +221,61 @@ public class Check {
 
     /**
      * Execute the json version of the check
-     * @param message the message to check
-     * @param helpers the burp helper class
-     * @param isRequest to select the request or the response
+     *
      * @return the result of the execution //TODO: change to API
      * @throws ParsingException
      */
-    private boolean execute_json(HTTPReqRes message,
-                                 IExtensionHelpers helpers,
-                                 boolean isRequest) throws ParsingException {
-        return true;
-        // https://github.com/json-path/JsonPath
-        // TODO
-        //String something = JsonPath.read(json, "$.store.book[*].author");
+    private boolean execute_json() throws ParsingException {
+        DecodeOperation_API tmp = ((DecodeOperation_API) this.imported_api);
 
-        //JSONParser jsonParser = new JSONParser();
+        String j = "";
+
+        switch (in) {
+            case JWT_HEADER: {
+                j = tmp.jwt_header;
+                break;
+            }
+            case JWT_PAYLOAD: {
+                j = tmp.jwt_payload;
+                break;
+            }
+            case JWT_SIGNATURE: {
+                j = tmp.jwt_signature;
+                break;
+            }
+        }
+
+        String found = "";
+        // https://github.com/json-path/JsonPath
+        try {
+            found = JsonPath.read(j, what);
+        } catch (com.jayway.jsonpath.PathNotFoundException e) {
+            applicable = true;
+            return op == IS_NOT_PRESENT;
+        }
+
+        applicable = true; // at this point the path has been found so the check is applicable
+
+        if (isParamCheck) {
+            throw new ParsingException("Cannot execute a 'check param' in a json, please use 'check'");
+        }
+
+        switch (op) {
+            case IS:
+                return op_val.equals(found);
+            case IS_NOT:
+                return !op_val.equals(found);
+            case CONTAINS:
+                return found.contains(op_val);
+            case NOT_CONTAINS:
+                return !found.contains(op_val);
+            case IS_PRESENT:
+                return !found.equals("");
+            case IS_NOT_PRESENT:
+                return found.equals("");
+        }
+
+        return false;
     }
 
     /**
@@ -249,13 +289,24 @@ public class Check {
     public boolean execute(HTTPReqRes message,
                            IExtensionHelpers helpers,
                            boolean isRequest) throws ParsingException {
-        switch (contentType) {
-            case HTTP:
-                return execute_http(message, helpers, isRequest);
-            case JSON:
-                return execute_json(message, helpers, isRequest);
-            default:
-                throw new ParsingException("invalid content type + " + contentType);
+        //TODO: migrate to api
+        if (Objects.requireNonNull(contentType) == Utils.ContentType.HTTP) {
+            result = execute_http(message, helpers, isRequest);
+            return result;
+        }
+        throw new ParsingException("invalid content type + " + contentType);
+    }
+
+    public void execute() throws ParsingException {
+        switch (((DecodeOperation_API) imported_api).type) {
+            case JWT:
+                result = execute_json();
+            case TXT:
+                //TODO
+                break;
+            case XML:
+                //TODO
+                break;
         }
     }
 

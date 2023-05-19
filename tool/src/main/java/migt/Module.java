@@ -8,21 +8,42 @@ import org.json.JSONObject;
  * used by other classes
  */
 public class Module {
+    // These variables should be present in each module
     boolean result = true;
     boolean applicable = false;
     IExtensionHelpers helpers;
-    API api;
+    API api; // the api of this module
+    API imported_api; // the api imported from a previous module
 
     public Module() {
 
     }
 
+    /**
+     * Instantiate the module by parsing a JSONObject
+     *
+     * @param json_module
+     */
     public Module(JSONObject json_module) {
         // Parse
     }
 
     public Module(IExtensionHelpers helpers) {
         this.helpers = helpers;
+    }
+
+    /**
+     * Method used to get the API object of this module to be used in other modules.
+     */
+    public <T extends API> T getAPI() {
+        return null;
+    }
+
+    /**
+     * Method used to set the API object of this module, when it is edited or simply to initiate it.
+     */
+    public void setAPI(API api) {
+
     }
 
     /**
@@ -36,7 +57,8 @@ public class Module {
     }
 
     /**
-     * Placeholder of a exporter function. This function should return the API object after it is edited.
+     * Placeholder of a exporter function. This function should return the API object to where it has been loaded after
+     * it has been edited. There is no need to call the exporter if the API is not edited.
      *
      * @return the edited API
      * @throws ParsingException
@@ -46,7 +68,7 @@ public class Module {
     }
 
     /**
-     * Sets the result of a child module to this one. For convenience, returns the result of the module
+     * Update the result of this module from a child module. For convenience, returns the result of the module
      *
      * @param module the module to save the result from
      * @param <T>    The module class
@@ -59,5 +81,14 @@ public class Module {
             this.result = false;
         }
         return module.result;
+    }
+
+    /**
+     * Get the result of this module
+     *
+     * @return the result of the module
+     */
+    public boolean getResult() {
+        return this.result;
     }
 }

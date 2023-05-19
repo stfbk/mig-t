@@ -34,11 +34,12 @@ public class Operation extends Module {
     public String decode_param;
     public List<Utils.Encoding> encodings;
     public List<IInterceptedProxyMessage> log_messages;
-
-    // Session operation
-
     public List<SessionOperation> session_operations;
-
+    // Decode operations
+    public List<DecodeOperation> decodeOperations;
+    // Session operation
+    // API
+    Operation_API api;
     //boolean applicable = false; // if the operation can't find a matching message, is not applicable
     //boolean result = true; // defalult true
     private List<Check> checks;
@@ -48,9 +49,6 @@ public class Operation extends Module {
     private Utils.Action action;
     private String session;
     private Utils.SessionAction sessionAction;
-
-    // Decode operations
-    private List<DecodeOperation> decodeOperations;
 
     /**
      * Instantiate an operation
@@ -297,6 +295,10 @@ public class Operation extends Module {
         }
 
         return updated_vars;
+    }
+
+    public void setAPI(Operation_API api) {
+        this.api = api;
     }
 
     /**

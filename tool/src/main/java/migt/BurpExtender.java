@@ -12,7 +12,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 
-import static migt.Utils.executeDecodeOps;
+import static migt.Tools.executeDecodeOps;
 import static migt.Utils.getVariableByName;
 
 /**
@@ -300,12 +300,20 @@ public class BurpExtender implements IBurpExtender, ITab, IProxyListener {
         mainPane.act_active_op = executeOperation(mainPane.act_active_op,
                 message,
                 msg_type.isRequest);
+
+        // if message has been edited inside operation update the value
         if (mainPane.act_active_op.processed_message != null) {
+            //TODO: remove processed_message in future
             if (msg_type.isRequest) {
-                //TODO use replace Burp Message ?
                 messageInfo.setRequest(mainPane.act_active_op.processed_message);
             } else {
                 messageInfo.setResponse(mainPane.act_active_op.processed_message);
+            }
+        } else {
+            if (msg_type.isRequest) {
+                messageInfo.setRequest(message.getMessage(message.isRequest, helpers));
+            } else {
+                messageInfo.setResponse(message.getMessage(message.isRequest, helpers));
             }
         }
         resume();
@@ -321,6 +329,8 @@ public class BurpExtender implements IBurpExtender, ITab, IProxyListener {
      * @return the updated operation, with its result
      */
     private Operation executeOperation(Operation op, HTTPReqRes messageInfo, boolean isRequest) {
+        op.setAPI(new Operation_API(messageInfo, isRequest));
+
         if (!op.preconditions.isEmpty()) {
             try {
                 op.applicable = Tools.executeChecks(op.preconditions,
@@ -370,7 +380,7 @@ public class BurpExtender implements IBurpExtender, ITab, IProxyListener {
             op = executeMessageOps(op, messageInfo, isRequest);
             if (!op.applicable | !op.result)
                 return op;
-            op = executeDecodeOps(op, messageInfo, isRequest, helpers, mainPane);
+            op = executeDecodeOps(op, helpers, mainPane);
             if (!op.applicable | !op.result)
                 return op;
 

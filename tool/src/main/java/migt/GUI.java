@@ -1419,20 +1419,6 @@ public class GUI extends JSplitPane {
                                             message_op.type = Utils.MessageOpType.fromString(
                                                     act_message_op.getString("type"));
                                             break;
-                                        case "decode param":
-                                            message_op.decode_param = act_message_op.getString("decode param");
-                                            break;
-
-                                        case "encoding":
-                                            JSONArray encodings = act_message_op.getJSONArray("encoding");
-                                            Iterator<Object> it = encodings.iterator();
-
-                                            while (it.hasNext()) {
-                                                String act_enc = (String) it.next();
-                                                message_op.encodings.add(
-                                                        Utils.Encoding.fromString(act_enc));
-                                            }
-                                            break;
                                         case "template":
                                             message_op.template = act_message_op.getString("template");
                                             break;
@@ -1453,107 +1439,9 @@ public class GUI extends JSplitPane {
                             JSONArray decode_ops = act_operation.getJSONArray("decode operations");
                             for (int k = 0; k < decode_ops.length(); k++) {
                                 JSONObject act_decode_op = decode_ops.getJSONObject(k);
-                                DecodeOperation decode_op = new DecodeOperation();
-                                keys = act_decode_op.keys();
-                                while (keys.hasNext()) {
-                                    String key = keys.next();
-
-                                    switch (key) {
-                                        case "value":
-                                            // value of xml or other edits
-                                            decode_op.value = act_decode_op.getString("value");
-                                            break;
-                                        case "add tag":
-                                            decode_op.xml_action = Utils.XmlAction.ADD_TAG;
-                                            decode_op.xml_action_name = act_decode_op.getString(key);
-                                            break;
-                                        case "add attribute":
-                                            decode_op.xml_action = Utils.XmlAction.ADD_ATTR;
-                                            decode_op.xml_action_name = act_decode_op.getString(key);
-                                            break;
-                                        case "edit tag":
-                                            decode_op.xml_action = Utils.XmlAction.EDIT_TAG;
-                                            decode_op.xml_action_name = act_decode_op.getString(key);
-                                            break;
-                                        case "edit attribute":
-                                            decode_op.xml_action = Utils.XmlAction.EDIT_ATTR;
-                                            decode_op.xml_action_name = act_decode_op.getString(key);
-                                            break;
-                                        case "remove tag":
-                                            decode_op.xml_action = Utils.XmlAction.REMOVE_TAG;
-                                            decode_op.xml_action_name = act_decode_op.getString(key);
-                                            break;
-                                        case "remove attribute":
-                                            decode_op.xml_action = Utils.XmlAction.REMOVE_ATTR;
-                                            decode_op.xml_action_name = act_decode_op.getString(key);
-                                            break;
-                                        case "save tag":
-                                            decode_op.xml_action = Utils.XmlAction.SAVE_TAG;
-                                            decode_op.xml_action_name = act_decode_op.getString(key);
-                                            break;
-                                        case "save attribute":
-                                            decode_op.xml_action = Utils.XmlAction.SAVE_ATTR;
-                                            decode_op.xml_action_name = act_decode_op.getString(key);
-                                            break;
-                                        case "self-sign":
-                                            decode_op.self_sign = act_decode_op.getBoolean("self-sign");
-                                            break;
-                                        case "remove signature":
-                                            decode_op.remove_signature = act_decode_op.getBoolean("remove signature");
-                                            break;
-                                        case "xml tag":
-                                            decode_op.xml_tag = act_decode_op.getString("xml tag");
-                                            break;
-                                        case "xml occurrency":
-                                            decode_op.xml_occurrency = act_decode_op.getInt("xml occurrency");
-                                            break;
-                                        case "xml attribute":
-                                            decode_op.xml_attr = act_decode_op.getString("xml attribute");
-                                            break;
-                                        case "txt remove":
-                                            decode_op.txt_action = Utils.TxtAction.REMOVE;
-                                            decode_op.txt_action_name = act_decode_op.getString("txt remove");
-                                            break;
-                                        case "txt edit":
-                                            decode_op.txt_action = Utils.TxtAction.EDIT;
-                                            decode_op.txt_action_name = act_decode_op.getString("txt edit");
-                                            break;
-                                        case "txt add":
-                                            decode_op.txt_action = Utils.TxtAction.ADD;
-                                            decode_op.txt_action_name = act_decode_op.getString("txt add");
-                                            break;
-                                        case "txt save":
-                                            decode_op.txt_action = Utils.TxtAction.SAVE;
-                                            decode_op.txt_action_name = act_decode_op.getString("txt save");
-                                            break;
-                                        case "jwt from":
-                                            decode_op.jwt_section = Utils.Jwt_section.getFromString(
-                                                    act_decode_op.getString("jwt from"));
-                                            if (act_decode_op.getString("jwt from").contains("raw")) {
-                                                decode_op.isRawJWT = true;
-                                            }
-                                            break;
-                                        case "jwt remove":
-                                            decode_op.jwt_action = Utils.Jwt_action.REMOVE;
-                                            decode_op.what = act_decode_op.getString("jwt remove");
-                                            break;
-                                        case "jwt edit":
-                                            decode_op.jwt_action = Utils.Jwt_action.EDIT;
-                                            decode_op.what = act_decode_op.getString("jwt edit");
-                                            break;
-                                        case "jwt add":
-                                            decode_op.jwt_action = Utils.Jwt_action.ADD;
-                                            decode_op.what = act_decode_op.getString("jwt add");
-                                            break;
-                                        case "jwt save":
-                                            decode_op.jwt_action = Utils.Jwt_action.SAVE;
-                                            decode_op.what = act_decode_op.getString("jwt save");
-                                            break;
-                                        case "jwt sign":
-                                            decode_op.sign = act_decode_op.getBoolean("jwt sign");
-                                            break;
-                                    }
-                                }
+                                // recursion managed inside
+                                DecodeOperation decode_op = new DecodeOperation(act_decode_op);
+                                op.decodeOperations.add(decode_op);
                             }
                         }
 
