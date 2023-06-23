@@ -9,7 +9,6 @@ import org.json.JSONObject;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Iterator;
-import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -290,20 +289,19 @@ public class Check extends Module {
                            IExtensionHelpers helpers,
                            boolean isRequest) throws ParsingException {
         //TODO: migrate to api
-        if (Objects.requireNonNull(contentType) == Utils.ContentType.HTTP) {
-            result = execute_http(message, helpers, isRequest);
-            return result;
-        }
-        throw new ParsingException("invalid content type + " + contentType);
+        result = execute_http(message, helpers, isRequest);
+        return result;
+        // TODO REMOVE CONTENT TYPE
     }
 
     public void execute() throws ParsingException {
         switch (((DecodeOperation_API) imported_api).type) {
             case JWT:
                 result = execute_json();
-            case TXT:
-                //TODO
                 break;
+            case NONE:
+                break;
+            //TODO
             case XML:
                 //TODO
                 break;

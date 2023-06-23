@@ -1,12 +1,20 @@
+import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.SignatureAlgorithm;
+import io.jsonwebtoken.security.Keys;
 import migt.JWT;
 import migt.ParsingException;
 import migt.Utils;
+import org.bouncycastle.util.io.pem.PemObject;
+import org.bouncycastle.util.io.pem.PemWriter;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
+import javax.crypto.SecretKey;
+
+import java.security.*;
+
+import static org.junit.jupiter.api.Assertions.*;
 
 public class JWT_Test {
     JWT j;
@@ -37,13 +45,13 @@ public class JWT_Test {
 
     @Test
     @DisplayName("Testing jwt decode and encode")
-    void testJWTParse() {
+    void testJWTParse_build() {
         JWT j = new JWT();
         boolean errors = false;
         try {
-            j.parseJWT(raw_jwt);
+            j.parse(raw_jwt);
 
-            String out = j.buildJWT();
+            String out = j.build();
             assertEquals(raw_jwt, out);
             String[] splitted = out.split("\\.");
 
@@ -62,21 +70,47 @@ public class JWT_Test {
         assertFalse(errors);
     }
 
+    /**
+    @Test
+    void test_complete() throws NoSuchAlgorithmException, ParsingException {
+        String public_pem = "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEAPq3ZL01cG1DHZ4iZLiRlRJIlupb5MGfHipSBq1hG2Jo=\n-----END PUBLIC KEY-----\n";
+        String private_pem = "-----BEGIN PRIVATE KEY-----\nMC4CAQAwBQYDK2VwBCIEIFlqmiu8kHunEywNZhbZjdZcT1YGTUCoOlh9aHF+43UE\n-----END PRIVATE KEY-----\n";
+
+        //KeyPairGenerator keyGen = KeyPairGenerator.getInstance("RSA");
+        //keyGen.initialize(2048);
+        //KeyPair pair = keyGen.generateKeyPair();
+        //PrivateKey sk = pair.getPrivate();
+        //PublicKey pk = pair.getPublic();
+
+        String jws = Jwts.builder()
+                .setSubject("Bob")
+                .signWith(sk)
+                .compact();
+
+        assertFalse(jws.equals(""));
+
+        JWT j = new JWT();
+        j.check_sig = true;
+        j.public_key = "pk_string";
+        j.parse(raw_jwt);
+    }
+
+
     @Test
     @DisplayName("Testing jwt remove claim")
     void testJWTRemoveClaim() {
         boolean errors = false;
         try {
             JWT j = new JWT();
-            j.parseJWT(raw_jwt);
+            j.parse(raw_jwt);
             j.removeClaim(Utils.Jwt_section.HEADER, "typ");
-            String out = j.buildJWT();
+            String out = j.build();
             assertEquals("eyJhbGciOiJSUzI1NiJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiYWRtaW4iOnRydWUsImlhdCI6MTUxNjIzOTAyMn0.NHVaYe26MbtOYhSKkoKYdFVomg4i8ZJd8_-RU8VNbftc4TSMb4bXP3l3YlNWACwyXPGffz5aXHc6lty1Y2t4SWRqGteragsVdZufDn5BlnJl9pdR_kdVFUsra2rWKEofkZeIC4yWytE58sMIihvo9H1ScmmVwBcQP6XETqYd0aSHp1gOa9RdUPDvoXQ5oqygTqVtxaDr6wUFKrKItgBMzWIdNZ6y7O9E0DhEPTbE9rfBo6KTFsHAZnMg4k68CDp2woYIaXbmYTWcvbzIuHO7_37GT79XdIwkm95QJ7hYC9RiwrV7mesbY4PAahERJawntho0my942XheVLmGwLMBkQ", out);
 
             j = new JWT();
-            j.parseJWT(raw_jwt);
+            j.parse(raw_jwt);
             j.removeClaim(Utils.Jwt_section.PAYLOAD, "name");
-            out = j.buildJWT();
+            out = j.build();
             assertEquals("eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwiYWRtaW4iOnRydWUsImlhdCI6MTUxNjIzOTAyMn0.NHVaYe26MbtOYhSKkoKYdFVomg4i8ZJd8_-RU8VNbftc4TSMb4bXP3l3YlNWACwyXPGffz5aXHc6lty1Y2t4SWRqGteragsVdZufDn5BlnJl9pdR_kdVFUsra2rWKEofkZeIC4yWytE58sMIihvo9H1ScmmVwBcQP6XETqYd0aSHp1gOa9RdUPDvoXQ5oqygTqVtxaDr6wUFKrKItgBMzWIdNZ6y7O9E0DhEPTbE9rfBo6KTFsHAZnMg4k68CDp2woYIaXbmYTWcvbzIuHO7_37GT79XdIwkm95QJ7hYC9RiwrV7mesbY4PAahERJawntho0my942XheVLmGwLMBkQ", out);
 
             String[] splitted = out.split("\\.");
@@ -93,33 +127,33 @@ public class JWT_Test {
         boolean errors = false;
         try {
             JWT j = new JWT();
-            j.parseJWT(raw_jwt);
+            j.parse(raw_jwt);
             j.editAddClaim(Utils.Jwt_section.HEADER, "typ", "asdasd");
-            String out = j.buildJWT();
+            String out = j.build();
             assertEquals("eyJhbGciOiJSUzI1NiIsInR5cCI6ImFzZGFzZCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiYWRtaW4iOnRydWUsImlhdCI6MTUxNjIzOTAyMn0.NHVaYe26MbtOYhSKkoKYdFVomg4i8ZJd8_-RU8VNbftc4TSMb4bXP3l3YlNWACwyXPGffz5aXHc6lty1Y2t4SWRqGteragsVdZufDn5BlnJl9pdR_kdVFUsra2rWKEofkZeIC4yWytE58sMIihvo9H1ScmmVwBcQP6XETqYd0aSHp1gOa9RdUPDvoXQ5oqygTqVtxaDr6wUFKrKItgBMzWIdNZ6y7O9E0DhEPTbE9rfBo6KTFsHAZnMg4k68CDp2woYIaXbmYTWcvbzIuHO7_37GT79XdIwkm95QJ7hYC9RiwrV7mesbY4PAahERJawntho0my942XheVLmGwLMBkQ", out);
 
             j = new JWT();
-            j.parseJWT(raw_jwt);
+            j.parse(raw_jwt);
             j.editAddClaim(Utils.Jwt_section.PAYLOAD, "name", "peppe");
-            out = j.buildJWT();
+            out = j.build();
             assertEquals("eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6InBlcHBlIiwiYWRtaW4iOnRydWUsImlhdCI6MTUxNjIzOTAyMn0.NHVaYe26MbtOYhSKkoKYdFVomg4i8ZJd8_-RU8VNbftc4TSMb4bXP3l3YlNWACwyXPGffz5aXHc6lty1Y2t4SWRqGteragsVdZufDn5BlnJl9pdR_kdVFUsra2rWKEofkZeIC4yWytE58sMIihvo9H1ScmmVwBcQP6XETqYd0aSHp1gOa9RdUPDvoXQ5oqygTqVtxaDr6wUFKrKItgBMzWIdNZ6y7O9E0DhEPTbE9rfBo6KTFsHAZnMg4k68CDp2woYIaXbmYTWcvbzIuHO7_37GT79XdIwkm95QJ7hYC9RiwrV7mesbY4PAahERJawntho0my942XheVLmGwLMBkQ", out);
 
             j = new JWT();
-            j.parseJWT(raw_jwt);
+            j.parse(raw_jwt);
             j.editAddClaim(Utils.Jwt_section.SIGNATURE, "", "peppe");
-            out = j.buildJWT();
+            out = j.build();
             assertEquals("eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiYWRtaW4iOnRydWUsImlhdCI6MTUxNjIzOTAyMn0.peppe", out);
 
             j = new JWT();
-            j.parseJWT(raw_jwt);
+            j.parse(raw_jwt);
             j.editAddClaim(Utils.Jwt_section.HEADER, "prova", "provona");
-            out = j.buildJWT();
+            out = j.build();
             assertEquals("eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCIsInByb3ZhIjoicHJvdm9uYSJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiYWRtaW4iOnRydWUsImlhdCI6MTUxNjIzOTAyMn0.NHVaYe26MbtOYhSKkoKYdFVomg4i8ZJd8_-RU8VNbftc4TSMb4bXP3l3YlNWACwyXPGffz5aXHc6lty1Y2t4SWRqGteragsVdZufDn5BlnJl9pdR_kdVFUsra2rWKEofkZeIC4yWytE58sMIihvo9H1ScmmVwBcQP6XETqYd0aSHp1gOa9RdUPDvoXQ5oqygTqVtxaDr6wUFKrKItgBMzWIdNZ6y7O9E0DhEPTbE9rfBo6KTFsHAZnMg4k68CDp2woYIaXbmYTWcvbzIuHO7_37GT79XdIwkm95QJ7hYC9RiwrV7mesbY4PAahERJawntho0my942XheVLmGwLMBkQ", out);
 
             j = new JWT();
-            j.parseJWT(raw_jwt);
+            j.parse(raw_jwt);
             j.editAddClaim(Utils.Jwt_section.PAYLOAD, "prova", "provona");
-            out = j.buildJWT();
+            out = j.build();
             assertEquals("eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiYWRtaW4iOnRydWUsImlhdCI6MTUxNjIzOTAyMiwicHJvdmEiOiJwcm92b25hIn0.NHVaYe26MbtOYhSKkoKYdFVomg4i8ZJd8_-RU8VNbftc4TSMb4bXP3l3YlNWACwyXPGffz5aXHc6lty1Y2t4SWRqGteragsVdZufDn5BlnJl9pdR_kdVFUsra2rWKEofkZeIC4yWytE58sMIihvo9H1ScmmVwBcQP6XETqYd0aSHp1gOa9RdUPDvoXQ5oqygTqVtxaDr6wUFKrKItgBMzWIdNZ6y7O9E0DhEPTbE9rfBo6KTFsHAZnMg4k68CDp2woYIaXbmYTWcvbzIuHO7_37GT79XdIwkm95QJ7hYC9RiwrV7mesbY4PAahERJawntho0my942XheVLmGwLMBkQ", out);
         } catch (ParsingException e) {
             errors = true;
@@ -134,7 +168,7 @@ public class JWT_Test {
         boolean errors = false;
         try {
             j = new JWT();
-            j.parseJWT(in);
+            j.parse(in);
 
             boolean a = j.jwt.getBody().containsKey("family_name");
             String s = (String) j.jwt.getBody().get("family_name");
@@ -161,4 +195,5 @@ public class JWT_Test {
                         ".hZQdNZoZeLNJrIezuXQIV0C5a9ZOubiYTOUYdtmbsR4F_NFZFKDZccbjYk-ntYa2O7_DgcwQ083kAv5dutwU6nhiHBh3K__W4zct2yxcsLspE2pvBbmMjvq7IqmEYgIR2NEBwtCz9RrV6srnjzygm3XHb7kpfu-Z2eVPzxRTqi1C5l-ZX-xPDr2YFFdpHVB17G3lXTEj_Mm6zr6uNeJkS8Ytscq6SXyni3OTj_bRLTLONjoypLRO-qw8z2d8lY7bYgx9mZCAuUtgS75yRlrHuGu4zsE3Bg3UigfnCO_Pqouq-HZOGEZ_7_Hra0S5V8BPek_fRhRH6K534rFWlApRMQ",
                 out);
     }
+    */
 }

@@ -106,7 +106,7 @@ public class Utils_Test {
 
     @Test
     @DisplayName("Test execute session Ops")
-    void executeSessioOps_test() {
+    void executeSessioOps_test() throws ParsingException {
         migt.Test t = new migt.Test();
         Session s = new Session("s1");
 

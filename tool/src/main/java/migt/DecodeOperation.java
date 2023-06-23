@@ -4,27 +4,18 @@ import burp.IExtensionHelpers;
 import com.jayway.jsonpath.JsonPath;
 import org.json.JSONArray;
 import org.json.JSONObject;
-import org.w3c.dom.Document;
-import org.xml.sax.SAXException;
-import samlraider.application.SamlTabController;
-import samlraider.helpers.XMLHelpers;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Iterator;
-import java.util.List;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+import java.util.*;
 import java.util.zip.DataFormatException;
 import java.util.zip.Deflater;
 import java.util.zip.Inflater;
 
 import static migt.Tools.executeDecodeOps;
-import static migt.Utils.getVariableByName;
+import static migt.Tools.executeEditOps;
 
 /**
  * This class stores a decode operation
@@ -33,42 +24,18 @@ public class DecodeOperation extends Module {
     public String decoded_content; // the decoded content
     public String decode_target; // aka decode_param how to decode the raw content
     public Utils.DecodeOperationFrom from; // where the raw content is. Depending on the containing module, can be other things
-    public List<Utils.Encoding> encodings = new ArrayList<>(); // the list of encoding to decode and rencode
-    // TODO: change this to DecodeOperationType, and riassign it from the parser
-    public Utils.DecodeOpType type; // the type of the decoded param
+    public List<Utils.Encoding> encodings; // the list of encoding to decode and rencode
+    public Utils.DecodeOpType type; // the type of the decoded param (used only to edit its content)
     public List<Check> checks; // the list of checks to be executed
-    public List<DecodeOperation> decodeOperations = new ArrayList<>(); // a list of decode operations to execute them recursevly
+    public List<DecodeOperation> decodeOperations; // a list of decode operations to execute them recursevly
+    public List<EditOperation> editOperations; // a list of edit operations
 
-    String save_as; // TODO add in parsing
-    String use; //TODO add in parsing
-
-    // TODO: move this variables in parser
-    String what;
-    // XML
-    Utils.XmlAction xml_action;
-    String xml_action_name;
-    String xml_tag;
-    String xml_attr;
-    String value;
-    Integer xml_occurrency;
-    Boolean self_sign;
-    Boolean remove_signature;
-
-    // TXT
-    Utils.TxtAction txt_action;
-    String txt_action_name;
-
-    // JWT
-    boolean isRawJWT = false;
-    Utils.Jwt_section jwt_section;
-    Utils.Jwt_action jwt_action;
-    boolean sign = false;
     JWT jwt;
 
-    XMLHelpers xmlHelpers = new XMLHelpers();
-    String saml_original_cert;
+    String what;
 
     public DecodeOperation() {
+        init();
     }
 
     /**
@@ -78,16 +45,14 @@ public class DecodeOperation extends Module {
      * @throws ParsingException
      */
     public DecodeOperation(JSONObject decode_op_json) throws ParsingException {
+        init();
         java.util.Iterator<String> keys = decode_op_json.keys();
         while (keys.hasNext()) {
             String key = keys.next();
 
             switch (key) {
-                case "use":
-                    use = decode_op_json.getString("use");
-                    break;
-                case "as":
-                    save_as = decode_op_json.getString("as");
+                case "type":
+                    type = Utils.DecodeOpType.fromString(decode_op_json.getString("type"));
                     break;
                 case "decode param":
                     decode_target = decode_op_json.getString("decode param");
@@ -106,99 +71,6 @@ public class DecodeOperation extends Module {
                     String f = decode_op_json.getString("from");
                     from = Utils.DecodeOperationFrom.fromString(f);
                     break;
-                case "value":
-                    // value of xml or other edits
-                    value = decode_op_json.getString("value");
-                    break;
-                case "add tag":
-                    xml_action = Utils.XmlAction.ADD_TAG;
-                    xml_action_name = decode_op_json.getString(key);
-                    break;
-                case "add attribute":
-                    xml_action = Utils.XmlAction.ADD_ATTR;
-                    xml_action_name = decode_op_json.getString(key);
-                    break;
-                case "edit tag":
-                    xml_action = Utils.XmlAction.EDIT_TAG;
-                    xml_action_name = decode_op_json.getString(key);
-                    break;
-                case "edit attribute":
-                    xml_action = Utils.XmlAction.EDIT_ATTR;
-                    xml_action_name = decode_op_json.getString(key);
-                    break;
-                case "remove tag":
-                    xml_action = Utils.XmlAction.REMOVE_TAG;
-                    xml_action_name = decode_op_json.getString(key);
-                    break;
-                case "remove attribute":
-                    xml_action = Utils.XmlAction.REMOVE_ATTR;
-                    xml_action_name = decode_op_json.getString(key);
-                    break;
-                case "save tag":
-                    xml_action = Utils.XmlAction.SAVE_TAG;
-                    xml_action_name = decode_op_json.getString(key);
-                    break;
-                case "save attribute":
-                    xml_action = Utils.XmlAction.SAVE_ATTR;
-                    xml_action_name = decode_op_json.getString(key);
-                    break;
-                case "self-sign":
-                    self_sign = decode_op_json.getBoolean("self-sign");
-                    break;
-                case "remove signature":
-                    remove_signature = decode_op_json.getBoolean("remove signature");
-                    break;
-                case "xml tag":
-                    xml_tag = decode_op_json.getString("xml tag");
-                    break;
-                case "xml occurrency":
-                    xml_occurrency = decode_op_json.getInt("xml occurrency");
-                    break;
-                case "xml attribute":
-                    xml_attr = decode_op_json.getString("xml attribute");
-                    break;
-                case "txt remove":
-                    txt_action = Utils.TxtAction.REMOVE;
-                    txt_action_name = decode_op_json.getString("txt remove");
-                    break;
-                case "txt edit":
-                    txt_action = Utils.TxtAction.EDIT;
-                    txt_action_name = decode_op_json.getString("txt edit");
-                    break;
-                case "txt add":
-                    txt_action = Utils.TxtAction.ADD;
-                    txt_action_name = decode_op_json.getString("txt add");
-                    break;
-                case "txt save":
-                    txt_action = Utils.TxtAction.SAVE;
-                    txt_action_name = decode_op_json.getString("txt save");
-                    break;
-                case "jwt from":
-                    jwt_section = Utils.Jwt_section.getFromString(
-                            decode_op_json.getString("jwt from"));
-                    if (decode_op_json.getString("jwt from").contains("raw")) {
-                        isRawJWT = true;
-                    }
-                    break;
-                case "jwt remove":
-                    jwt_action = Utils.Jwt_action.REMOVE;
-                    what = decode_op_json.getString("jwt remove");
-                    break;
-                case "jwt edit":
-                    jwt_action = Utils.Jwt_action.EDIT;
-                    what = decode_op_json.getString("jwt edit");
-                    break;
-                case "jwt add":
-                    jwt_action = Utils.Jwt_action.ADD;
-                    what = decode_op_json.getString("jwt add");
-                    break;
-                case "jwt save":
-                    jwt_action = Utils.Jwt_action.SAVE;
-                    what = decode_op_json.getString("jwt save");
-                    break;
-                case "jwt sign":
-                    sign = decode_op_json.getBoolean("jwt sign");
-                    break;
                 case "decode operations":
                     // Recursion goes brr
                     JSONArray decode_ops = decode_op_json.getJSONArray("decode operations");
@@ -208,19 +80,14 @@ public class DecodeOperation extends Module {
                         decodeOperations.add(decode_op);
                     }
                     break;
+                case "checks":
+                    checks = Utils.parseChecksFromJSON(decode_op_json.getJSONArray("checks"));
+                    break;
+                case "edits":
+                    editOperations = Utils.parseEditsFromJSON(decode_op_json.getJSONArray("edits"));
+                    break;
             }
         }
-    }
-
-    public DecodeOperation(
-            Utils.DecodeOperationFrom from,
-            String decode_target,
-            List<Utils.Encoding> encodings,
-            Utils.DecodeOpType type) {
-        this.from = from;
-        this.decode_target = decode_target;
-        this.encodings = encodings;
-        this.type = type;
     }
 
     /**
@@ -301,14 +168,6 @@ public class DecodeOperation extends Module {
                         actual = helpers.urlDecode(new String(actual_b));
                         isActualString = true;
                     }
-                    break;
-                case JWT:
-                    if (!isActualString) {
-                        actual = new String(actual_b);
-                        isActualString = true;
-                    }
-                    actual = JWT.decode_raw_jwt(actual);
-
                     break;
                 case DEFLATE:
                     boolean done = false;
@@ -398,10 +257,6 @@ public class DecodeOperation extends Module {
                     }
                     break;
 
-                case JWT:
-                    //TBD
-                    break;
-
                 case DEFLATE:
 
                     if (isActualString) {
@@ -488,8 +343,20 @@ public class DecodeOperation extends Module {
         return output;
     }
 
+    public void init() {
+        decoded_content = "";
+        decode_target = "";
+        checks = new ArrayList<>();
+        encodings = new ArrayList<>();
+        decodeOperations = new ArrayList<>();
+        what = "";
+        type = Utils.DecodeOpType.NONE;
+        editOperations = new ArrayList<>();
+    }
+
     @Override
     public DecodeOperation_API getAPI() {
+        api = new DecodeOperation_API(this);
         return (DecodeOperation_API) api;
     }
 
@@ -548,22 +415,29 @@ public class DecodeOperation extends Module {
      * @throws ParsingException
      */
     public void execute(GUI mainPane) throws ParsingException {
-        if (api instanceof Operation_API) {
+        if (imported_api instanceof Operation_API) {
             decoded_content = decodeParam(
                     helpers,
                     from,
                     encodings,
-                    ((Operation_API) api).message,
-                    ((Operation_API) api).is_request,
-                    decode_target
-            );
-        } else if (api instanceof DecodeOperation_API) {
+                    ((Operation_API) imported_api).message,
+                    ((Operation_API) imported_api).is_request,
+                    decode_target);
+
+            // If type is jwt, parse
+            if (Objects.requireNonNull(type) == Utils.DecodeOpType.JWT) {
+                jwt = new JWT();
+
+                jwt.parse(decoded_content);
+            }
+
+        } else if (imported_api instanceof DecodeOperation_API) {
             switch (from) {
                 case JWT_HEADER:
                 case JWT_PAYLOAD:
                 case JWT_SIGNATURE:
                     // recursevly decode from a jwt
-                    String j = ((DecodeOperation_API) api).getDecodedContent(from);
+                    String j = ((DecodeOperation_API) imported_api).getDecodedContent(from);
 
                     String found = "";
                     // https://github.com/json-path/JsonPath
@@ -583,204 +457,61 @@ public class DecodeOperation extends Module {
             }
         }
 
-        // If a variable value has to be used, read the value of the variable at execution time
-        if (!use.equals("")) {
-            Var v = getVariableByName(use, mainPane);
-            if (!v.isMessage) {
-                value = v.value;
-            } else {
-                throw new ParsingException("Error while using variable, expected text var, got message var");
-            }
+        // execute edit operations
+        if (editOperations.size() > 0) {
+            executeEditOps(this, helpers, mainPane);
         }
-
-        //SAML Remove signatures
-        if (self_sign | remove_signature) {
-            Document document = null;
-            try {
-                document = xmlHelpers.getXMLDocumentOfSAMLMessage(decoded_content);
-                saml_original_cert = xmlHelpers.getCertificate(document.getDocumentElement());
-                if (saml_original_cert == null) {
-                    System.out.println("SAML Certificate not found in decoded parameter \"" + decode_target + "\"");
-                    applicable = false;
-                }
-                decoded_content = SamlTabController.removeSignature_edit(decoded_content);
-
-            } catch (SAXException e) {
-                e.printStackTrace();
-            }
-        }
-
-        // Edit decoded content
-        editDecodedContent(mainPane);
 
         // executes recursive decode operations
         if (decodeOperations.size() != 0) {
             executeDecodeOps(this, helpers, mainPane);
         }
 
+        // execute checks
         if (checks.size() != 0) {
-            Tools.executeChecks(this);
+            executeChecks();
         }
 
-        // SAML re-sign
-        if (self_sign && !decoded_content.equals("")) {
-            // SAML re-sign
-
-            decoded_content = SamlTabController.resignAssertion_edit(decoded_content, saml_original_cert);
-            //decoded_param = SamlTabController.resignMessage_edit(decoded_param, original_cert);
+        // Rebuild JWT before encoding it
+        if (Objects.requireNonNull(type) == Utils.DecodeOpType.JWT) {
+            decoded_content = jwt.build();
         }
+        applicable = true;
     }
 
-    private void editDecodedContent(GUI mainPane) throws ParsingException {
+    /**
+     * Execute a list of checks inside a decode operation. This function uses the APIs Sets also the result to the
+     * decode op
+     *
+     * @return the result, for convenience
+     * @throws ParsingException if errors are found
+     */
+    public boolean executeChecks() throws ParsingException {
+        for (Check c : checks) {
+            c.loader(getAPI());
+            c.execute();
+            if (!setResult(c)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    public void setAPI(DecodeOperation_API dop_api) {
+        this.api = dop_api;
+        // assign values returned from the api
         switch (type) {
-            case XML: {
-                switch (xml_action) {
-                    case ADD_TAG:
-                        decoded_content = XML.addTag(decoded_content,
-                                xml_tag,
-                                xml_action_name,
-                                value,
-                                xml_occurrency);
-                        break;
-                    case ADD_ATTR:
-                        decoded_content = XML.addTagAttribute(decoded_content,
-                                xml_tag,
-                                xml_action_name,
-                                value,
-                                xml_occurrency);
-                        break;
-                    case EDIT_TAG:
-                        decoded_content = XML.editTagValue(decoded_content,
-                                xml_action_name,
-                                value,
-                                xml_occurrency);
-                        break;
-                    case EDIT_ATTR:
-                        decoded_content = XML.editTagAttributes(decoded_content,
-                                xml_tag,
-                                xml_action_name,
-                                value,
-                                xml_occurrency);
-                        break;
-                    case REMOVE_TAG:
-                        decoded_content = XML.removeTag(decoded_content,
-                                xml_action_name,
-                                xml_occurrency);
-                        break;
-                    case REMOVE_ATTR:
-                        decoded_content = XML.removeTagAttribute(decoded_content,
-                                xml_tag,
-                                xml_action_name,
-                                xml_occurrency);
-                        break;
-                    case SAVE_TAG: {
-                        String to_save = XML.getTagValaue(decoded_content,
-                                xml_action_name,
-                                xml_occurrency);
-                        Var v = new Var();
-                        v.name = save_as;
-                        v.isMessage = false;
-                        v.value = to_save;
-                        synchronized (mainPane.lock) {
-                            mainPane.act_test_vars.add(v);
-                        }
-                        break;
-                    }
-                    case SAVE_ATTR:
-                        String to_save = XML.getTagAttributeValue(decoded_content,
-                                xml_tag, xml_action_name,
-                                xml_occurrency);
-                        Var v = new Var();
-                        v.name = save_as;
-                        v.isMessage = false;
-                        v.value = to_save;
-                        synchronized (mainPane.lock) {
-                            mainPane.act_test_vars.add(v);
-                        }
-                        break;
-                }
+            case JWT:
+                this.jwt.header = dop_api.jwt_header;
+                this.jwt.payload = dop_api.jwt_payload;
+                this.jwt.signature = dop_api.jwt_signature;
                 break;
-            }
-            case JWT: {
-                jwt = new JWT();
-                if (isRawJWT) {
-                    jwt.parseJWT_string(decoded_content);
-                } else {
-                    jwt.parseJWT(decoded_content);
-                }
-
-                //edit
-                switch (jwt_section) {
-                    case HEADER:
-                        jwt.header = Utils.editJson(jwt_action, jwt.header, what, mainPane, save_as);
-                        break;
-                    case PAYLOAD:
-                        jwt.payload = Utils.editJson(jwt_action, jwt.payload, what, mainPane, save_as);
-                        break;
-                    case SIGNATURE:
-                        jwt.signature = Utils.editJson(jwt_action, jwt.signature, what, mainPane, save_as);
-                        break;
-                    case RAW_HEADER:
-                        //TODO
-                        break;
-                    case RAW_PAYLOAD:
-                        //TODO
-                        break;
-                    case RAW_SIGNATURE:
-                        //TODO
-                        break;
-                }
-
-                //rebuild
-                decoded_content = isRawJWT ?
-                        jwt.buildJWT_string() :
-                        jwt.buildJWT();
+            case NONE:
+                this.decoded_content = dop_api.txt;
                 break;
-            }
-            case TXT: {
-                Pattern p = Pattern.compile(txt_action_name);
-                Matcher m = p.matcher(decoded_content);
-
-                if (txt_action == null) {
-                    throw new ParsingException("txt action not specified");
-                }
-
-                switch (txt_action) {
-                    case REMOVE:
-                        decoded_content = m.replaceAll("");
-
-                        break;
-                    case EDIT:
-                        decoded_content = m.replaceAll(value);
-
-                        break;
-                    case ADD:
-                        while (m.find()) {
-                            int index = m.end();
-                            String before = decoded_content.substring(0, index);
-                            String after = decoded_content.substring(index);
-                            decoded_content = before + value + after;
-                            break;
-                        }
-                        break;
-                    case SAVE:
-                        String val = "";
-                        while (m.find()) {
-                            val = m.group();
-                            break;
-                        }
-
-                        Var v = new Var();
-                        v.name = save_as;
-                        v.isMessage = false;
-                        v.value = val;
-                        synchronized (mainPane.lock) {
-                            mainPane.act_test_vars.add(v);
-                        }
-                        break;
-                }
+            case XML:
+                this.decoded_content = dop_api.xml;
                 break;
-            }
         }
     }
 }

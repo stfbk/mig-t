@@ -698,7 +698,52 @@ public class GUI extends JSplitPane {
         inputContainer.add(lblOutput, gbc);
 
         txtSearch = new JTextArea();
-        txtSearch.append("");
+        txtSearch.setText("{\n" +
+                "  \"test suite\": {\n" +
+                "    \"name\": \"Correct Generation\",\n" +
+                "    \"description\": \"tests of type Correct Generation for the OP\",\n" +
+                "    \"filter messages\": true\n" +
+                "  },\n" +
+                "  \"tests\": [\n" +
+                "    {\n" +
+                "      \"test\": {\n" +
+                "        \"name\": \"Test decoding jwt\",\n" +
+                "        \"description\": \"\",\n" +
+                "        \"type\": \"active\",\n" +
+                "        \"sessions\": [\n" +
+                "          \"s1\"\n" +
+                "        ],\n" +
+                "        \"operations\": [\n" +
+                "          {\n" +
+                "            \"session\": \"s1\",\n" +
+                "            \"action\": \"start\"\n" +
+                "          },\n" +
+                "          {\n" +
+                "            \"action\": \"intercept\",\n" +
+                "            \"from session\": \"s1\",\n" +
+                "            \"then\": \"forward\",\n" +
+                "            \"message type\": \"authz_request\",\n" +
+                "            \"decode operations\": [\n" +
+                "              {\n" +
+                "                \"from\": \"body\",\n" +
+                "                \"decode param\": \"(?<=authz_request_object=)[^$\\n& ]*\",\n" +
+                "                \"type\": \"jwt\",\n" +
+                "                \"edits\": [\n" +
+                "                  {\n" +
+                "                    \"jwt from\": \"payload\",\n" +
+                "                    \"jwt edit\": \"$.scope\",\n" +
+                "                    \"value\": \"qualcosaltro\"\n" +
+                "                  }\n" +
+                "                ]\n" +
+                "              }\n" +
+                "            ]\n" +
+                "          }\n" +
+                "        ],\n" +
+                "        \"result\": \"correct flow s1\"\n" +
+                "      }\n" +
+                "    }\n" +
+                "  ]\n" +
+                "}");
 
         JScrollPane scrollPane2 = new JScrollPane(txtSearch,
                 JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED, JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
@@ -1144,9 +1189,9 @@ public class GUI extends JSplitPane {
      */
     private void readJSONinput(String jsonInput) {
         sessions_names.clear();
-        //BurpExtender.printStream.println("" + obj.getJSONObject("Search").getString("Delete"));
         txtSearch.setBorder(BorderFactory.createEmptyBorder());
         setJSONError(false, "");
+
         try {
             JSONObject obj = new JSONObject(jsonInput);
             List<Test> tests = new ArrayList<>();
@@ -1157,7 +1202,6 @@ public class GUI extends JSplitPane {
             boolean metadata = false;
             if (obj.getJSONObject("test suite").has("metadata")) {
                 metadata = obj.getJSONObject("test suite").getBoolean("metadata");
-
             }
 
             if (obj.getJSONObject("test suite").has("filter messages")) {
@@ -1171,292 +1215,15 @@ public class GUI extends JSplitPane {
             for (int i = 0; i < arrTests.length(); i++) {
                 JSONObject act_test = arrTests.getJSONObject(i).getJSONObject("test");
 
-                Test test = new Test();
-
-                test.setDescription(act_test.getString("description"));
-                test.setName(act_test.getString("name"));
-                test.setType(act_test.getString("type"));
-
-                Iterator<String> keys = act_test.keys();
-                while (keys.hasNext()) {
-                    String key = keys.next();
-
-                    switch (key) {
-                        case "name":
-                        case "type":
-                        case "description":
-                        case "result":
-                        case "operations":
-                        case "sessions":
-                            break;
-                        case "references":
-                            test.references = act_test.getString("references");
-                            break;
-                        case "violated_properties":
-                            test.violated_properties = act_test.getString("violated_properties");
-                            break;
-                        case "mitigations":
-                            test.mitigations = act_test.getString("mitigations");
-                            break;
-                        case "affected_entity":
-                            test.affected_entity = act_test.getString("affected_entity");
-                            break;
-                        default:
-                            throw new ParsingException("Invalid key \"" + key + "\"");
-                    }
-                }
-
-                if (test.isActive) {
-                    if (act_test.has("result")) {
-                        String tmp = act_test.getString("result");
-                        if (tmp.contains("assert_only")) {
-                            test.result = Utils.ResultType.fromString(tmp);
-                        } else {
-                            tmp = tmp.trim();
-                            String[] splitted = tmp.split("flow");
-
-                            if (splitted.length > 1) {
-                                test.resultSession = splitted[1].trim();
-                            }
-                            test.result = Utils.ResultType.fromString(splitted[0].trim());
-                        }
-                    }
-                }
-                if (act_test.has("sessions")) {
-                    JSONArray arrSess = act_test.getJSONArray("sessions");
-                    Iterator<Object> it = arrSess.iterator();
-
-                    while (it.hasNext()) {
-                        String act_sess_name = (String) it.next();
-
-                        if (!sessions_names.contains(act_sess_name)) {
-                            sessions_names.add(act_sess_name);
-                            // Default is 8080
-                            session_port.put(act_sess_name, "8080");
-                        }
-                        test.sessions.add(new Session(act_sess_name));
-                    }
-
-
-                } else {
-                    test.sessions.add(defaultSession);
-                }
-
-                //Array of Operations
-                JSONArray arrOps = act_test.getJSONArray("operations");
-
-                //Reads all the operations
-                for (int j = 0; j < arrOps.length(); j++) {
-                    JSONObject act_operation = arrOps.getJSONObject(j);
-
-                    Operation op = new Operation();
-
-                    // Test non attivo
-                    if (!test.isActive) {
-                        if (act_operation.has("decode param")) {
-                            op.decode_param = act_operation.getString("decode param");
-
-                            JSONArray encodings = act_operation.getJSONArray("encoding");
-                            Iterator<Object> it = encodings.iterator();
-
-                            while (it.hasNext()) {
-                                String act_enc = (String) it.next();
-                                op.encodings.add(
-                                        Utils.Encoding.fromString(act_enc));
-                            }
-                        }
-                        if (act_operation.has("regex")) {
-                            // regex version
-                            op.isRegex = true;
-                            op.setRegex(act_operation.getString("regex"));
-                            op.setMessageType(act_operation.getString("message type"), messageTypes);
-                            op.setMessageSection(Utils.MessageSection.fromString(act_operation.getString("message section")));
-                        } else {
-                            //non regex version
-                            op.setMessageType(act_operation.getString("message type"), messageTypes);
-
-                            JSONArray checks = act_operation.getJSONArray("checks");
-
-                            if (act_operation.has("message section")) {
-                                op.setMessageSection(Utils.MessageSection.fromString(act_operation.getString("message section")));
-                            }
-                            op.setChecks(Utils.parseChecksFromJSON(checks));
-                        }
-                    } else {
-                        // If the test is active
-                        if (act_operation.has("session")) {
-                            // If is an operation to control a session
-                            String session = act_operation.getString("session");
-                            String action = act_operation.getString("action");
-
-                            List<SessionOperation> lsop = SessionOperation.parseFromJson(act_operation);
-                            if (lsop != null) {
-                                for (SessionOperation sop : lsop) {
-                                    op.session_operations.add(sop);
-                                }
-                            }
-
-                            op.setSession(session);
-                            op.setSessionAction(action);
-                            op.isSessionOp = true;
-                            test.operations.add(op);
-                            continue;
-                        }
-
-                        // If is a standard operation
-                        String action = act_operation.getString("action");
-                        op.setAction(action);
-
-                        if (op.getAction() == Utils.Action.VALIDATE) {
-                            if (act_operation.has("match")) {
-                                String toMatch = act_operation.getString("match");
-                                if (toMatch.equals("all")) op.to_match = -1;
-                                else op.to_match = Integer.parseInt(toMatch);
-                            } else {
-                                op.to_match = 1;
-                            }
-
-                            if (act_operation.has("regex")) {
-                                // regex version
-                                op.isRegex = true;
-                                op.setRegex(act_operation.getString("regex"));
-                                op.setMessageType(act_operation.getString("message type"), messageTypes);
-                                op.setMessageSection(
-                                        Utils.MessageSection.fromString(
-                                                act_operation.getString("message section")));
-                            } else {
-                                //non regex version
-                                op.setMessageType(act_operation.getString("message type"), messageTypes);
-                                JSONArray checks = act_operation.getJSONArray("checks");
-
-                                op.setChecks(Utils.parseChecksFromJSON(checks));
-                            }
-                        }
-
-                        String message_type = act_operation.getString("message type");
-
-                        op.setMessageType(message_type, messageTypes);
-
-                        if (act_operation.has("from session")) {
-                            op.from_session = act_operation.getString("from session");
-                        }
-                        if (act_operation.has("to session")) {
-                            op.to_session = act_operation.getString("to session");
-                        }
-                        if (act_operation.has("then")) {
-                            op.then = Utils.Then.fromString(act_operation.getString("then"));
-                        }
-                        if (act_operation.has("save")) {
-                            op.save_name = act_operation.getString("save");
-                        }
-                        if (act_operation.has("replace request")) {
-                            op.replace_request_name = act_operation.getString("replace request");
-                        } else if (act_operation.has("replace response")) {
-                            op.replace_response_name = act_operation.getString("replace response");
-                        }
-
-                        // Preconditions
-                        if (act_operation.has("preconditions")) {
-                            JSONArray checks = act_operation.getJSONArray("preconditions");
-                            op.preconditions = Utils.parseChecksFromJSON(checks);
-                        }
-
-                        // Message Operations
-                        if (act_operation.has("message operations")) {
-                            JSONArray message_ops = act_operation.getJSONArray("message operations");
-                            for (int k = 0; k < message_ops.length(); k++) {
-                                JSONObject act_message_op = message_ops.getJSONObject(k);
-                                MessageOperation message_op = new MessageOperation();
-                                keys = act_message_op.keys();
-                                while (keys.hasNext()) {
-                                    String key = keys.next();
-
-                                    switch (key) {
-                                        case "from":
-                                            message_op.from = Utils.MessageSection.fromString(act_message_op.getString("from"));
-                                            break;
-                                        case "remove parameter":
-                                            message_op.what = act_message_op.getString("remove parameter");
-                                            message_op.action = Utils.MessageOperationActions.REMOVE_PARAMETER;
-                                            break;
-                                        case "remove match word":
-                                            message_op.what = act_message_op.getString("remove match word");
-                                            message_op.action = Utils.MessageOperationActions.REMOVE_MATCH_WORD;
-                                            break;
-                                        case "edit":
-                                            message_op.what = act_message_op.getString("edit");
-                                            message_op.action = Utils.MessageOperationActions.EDIT;
-                                            break;
-                                        case "edit regex":
-                                            message_op.what = act_message_op.getString("edit regex");
-                                            message_op.action = Utils.MessageOperationActions.EDIT_REGEX;
-                                            break;
-                                        case "in":
-                                            message_op.to = act_message_op.getString("in");
-                                            break;
-                                        case "add":
-                                            message_op.what = act_message_op.getString("add");
-                                            message_op.action = Utils.MessageOperationActions.ADD;
-                                            break;
-                                        case "this":
-                                            message_op.to = act_message_op.getString("this");
-                                            break;
-                                        case "save":
-                                            message_op.what = act_message_op.getString("save");
-                                            message_op.action = Utils.MessageOperationActions.SAVE;
-                                            break;
-                                        case "save match":
-                                            message_op.what = act_message_op.getString("save match");
-                                            message_op.action = Utils.MessageOperationActions.SAVE_MATCH;
-                                            break;
-                                        case "as":
-                                            message_op.save_as = act_message_op.getString("as");
-                                            break;
-                                        case "use":
-                                            message_op.use = act_message_op.getString("use");
-                                            break;
-                                        case "type":
-                                            message_op.type = Utils.MessageOpType.fromString(
-                                                    act_message_op.getString("type"));
-                                            break;
-                                        case "template":
-                                            message_op.template = act_message_op.getString("template");
-                                            break;
-                                        case "output_path":
-                                            message_op.output_path = act_message_op.getString("output_path");
-                                            break;
-                                        default:
-                                            System.err.println(key);
-                                            throw new ParsingException("Message operation not valid");
-                                    }
-                                }
-                                op.messageOerations.add(message_op);
-                            }
-                        }
-
-                        // Decode Operations
-                        if (act_operation.has("decode operations")) {
-                            JSONArray decode_ops = act_operation.getJSONArray("decode operations");
-                            for (int k = 0; k < decode_ops.length(); k++) {
-                                JSONObject act_decode_op = decode_ops.getJSONObject(k);
-                                // recursion managed inside
-                                DecodeOperation decode_op = new DecodeOperation(act_decode_op);
-                                op.decodeOperations.add(decode_op);
-                            }
-                        }
-
-                        // Session Operations
-                        List<SessionOperation> lsop = SessionOperation.parseFromJson(act_operation);
-                        if (lsop != null) {
-                            for (SessionOperation sop : lsop) {
-                                op.session_operations.add(sop);
-                            }
-                        }
-
-                    }
-                    test.operations.add(op);
-                }
+                Test test = new Test(act_test, defaultSession, messageTypes);
                 tests.add(test);
+
+                for (Session s : test.sessions) {
+                    if (!sessions_names.contains(s.name)) {
+                        sessions_names.add(s.name);
+                        session_port.put(s.name, "8080"); // set default port to session
+                    }
+                }
             }
             updateSessionTabs();
             updateTxtSessionConfig();

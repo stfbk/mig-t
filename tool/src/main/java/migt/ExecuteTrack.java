@@ -77,6 +77,7 @@ public class ExecuteTrack implements Runnable {
             options.addArguments("ignore-certificate-errors");
             options.addArguments("window-size=1280,1400");
             options.addArguments("--proxy-bypass-list=<-loopback>");
+            options.addArguments("--remote-allow-origins=*");
             Proxy proxy = new Proxy();
             proxy.setHttpProxy("localhost:" + port);
             proxy.setSslProxy("localhost:" + port);

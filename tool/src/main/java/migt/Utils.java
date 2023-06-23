@@ -3,6 +3,7 @@ package migt;
 import burp.IExtensionHelpers;
 import com.jayway.jsonpath.Configuration;
 import com.jayway.jsonpath.JsonPath;
+import com.jayway.jsonpath.PathNotFoundException;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
@@ -37,6 +38,16 @@ public class Utils {
                 throw new ParsingException("In tag cannot be empty");
             }
             res.add(check);
+        }
+        return res;
+    }
+
+    public static List<EditOperation> parseEditsFromJSON(JSONArray edits_array) throws ParsingException {
+        List<EditOperation> res = new ArrayList<>();
+        for (int i = 0; i < edits_array.length(); i++) {
+            JSONObject act_edit = edits_array.getJSONObject(i);
+            EditOperation edit = new EditOperation(act_edit);
+            res.add(edit);
         }
         return res;
     }
@@ -639,11 +650,20 @@ public class Utils {
         return res;
     }
 
+    /**
+     * @param action
+     * @param content
+     * @param j_path
+     * @param mainPane
+     * @param save_as
+     * @return
+     */
     public static String editJson(Utils.Jwt_action action,
                                   String content,
                                   String j_path,
                                   GUI mainPane,
-                                  String save_as) {
+                                  String save_as,
+                                  String newValue) throws PathNotFoundException {
         Object document = Configuration.defaultConfiguration().jsonProvider().parse(content);
         JsonPath jsonPath = JsonPath.compile(j_path);
 
@@ -653,7 +673,7 @@ public class Utils {
                 break;
             case EDIT:
             case ADD:
-                document = jsonPath.set(document, "Alice", Configuration.defaultConfiguration());
+                document = jsonPath.set(document, newValue, Configuration.defaultConfiguration());
                 //TODO: check if set also adds in case it is not found
                 break;
             case SAVE:
@@ -994,7 +1014,6 @@ public class Utils {
     public enum Encoding {
         BASE64,
         URL,
-        JWT,
         DEFLATE;
 
         /**
@@ -1011,8 +1030,6 @@ public class Utils {
                         return BASE64;
                     case "url":
                         return URL;
-                    case "jwt":
-                        return JWT;
                     case "deflate":
                         return DEFLATE;
                     default:
@@ -1054,9 +1071,12 @@ public class Utils {
         }
     }
 
+    /**
+     * Used to specify the type of decoded content, only when that content has to be edited.
+     */
     public enum DecodeOpType {
         JWT,
-        TXT,
+        NONE,
         XML;
 
         public static DecodeOpType fromString(String input) throws ParsingException {
@@ -1064,8 +1084,6 @@ public class Utils {
                 switch (input) {
                     case "jwt":
                         return JWT;
-                    case "txt":
-                        return TXT;
                     case "xml":
                         return XML;
                     default:
@@ -1186,10 +1204,7 @@ public class Utils {
     public enum Jwt_section {
         HEADER,
         PAYLOAD,
-        SIGNATURE,
-        RAW_HEADER,
-        RAW_PAYLOAD,
-        RAW_SIGNATURE;
+        SIGNATURE;
 
         /**
          * Get the JWT section enum value from a string
@@ -1206,12 +1221,6 @@ public class Utils {
                     return PAYLOAD;
                 case "signature":
                     return SIGNATURE;
-                case "raw_header":
-                    return RAW_HEADER;
-                case "raw_payload":
-                    return RAW_PAYLOAD;
-                case "raw_signature":
-                    return RAW_SIGNATURE;
                 default:
                     throw new ParsingException("Invalid jwt section");
             }

@@ -1,6 +1,8 @@
 package migt;
 
 import burp.IInterceptedProxyMessage;
+import org.json.JSONArray;
+import org.json.JSONObject;
 
 import java.io.BufferedWriter;
 import java.io.File;
@@ -10,6 +12,7 @@ import java.nio.charset.StandardCharsets;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 
 /**
@@ -36,7 +39,7 @@ public class Test {
     String description;
 
     /**
-     * Instantiate a test
+     * Empty constructor for tests
      */
     public Test() {
         this.resultSession = "";
@@ -52,6 +55,101 @@ public class Test {
         references = "";
         violated_properties = "";
         mitigations = "";
+    }
+
+    /**
+     * Instantiate a test
+     */
+    public Test(JSONObject test_json,
+                Session defaultSession,
+                List<MessageType> messageTypes) throws Exception {
+        this.resultSession = "";
+        this.name = "";
+        this.description = "";
+        this.error_srt = "";
+        this.operations = new ArrayList<>();
+        this.sessions = new ArrayList<>();
+
+        this.success = false;
+        this.isActive = false;
+
+        references = "";
+        violated_properties = "";
+        mitigations = "";
+
+        description = test_json.getString("description");
+        name = test_json.getString("name");
+        setType(test_json.getString("type"));
+
+        Iterator<String> keys = test_json.keys();
+        while (keys.hasNext()) {
+            String key = keys.next();
+
+            switch (key) {
+                case "name":
+                case "type":
+                case "description":
+                case "result":
+                case "operations":
+                case "sessions":
+                    break;
+                case "references":
+                    references = test_json.getString("references");
+                    break;
+                case "violated_properties":
+                    violated_properties = test_json.getString("violated_properties");
+                    break;
+                case "mitigations":
+                    mitigations = test_json.getString("mitigations");
+                    break;
+                case "affected_entity":
+                    affected_entity = test_json.getString("affected_entity");
+                    break;
+                default:
+                    throw new ParsingException("Invalid key \"" + key + "\"");
+            }
+        }
+
+        // set result
+        if (isActive) {
+            if (test_json.has("result")) {
+                String tmp = test_json.getString("result");
+                if (tmp.contains("assert_only")) {
+                    result = Utils.ResultType.fromString(tmp);
+                } else {
+                    tmp = tmp.trim();
+                    String[] splitted = tmp.split("flow");
+
+                    if (splitted.length > 1) {
+                        resultSession = splitted[1].trim();
+                    }
+                    result = Utils.ResultType.fromString(splitted[0].trim());
+                }
+            }
+        }
+
+        if (test_json.has("sessions")) {
+            JSONArray arrSess = test_json.getJSONArray("sessions");
+            Iterator<Object> it = arrSess.iterator();
+
+            while (it.hasNext()) {
+                String act_sess_name = (String) it.next();
+                sessions.add(new Session(act_sess_name));
+            }
+        } else {
+            sessions.add(defaultSession);
+        }
+
+        //Array of Operations
+        JSONArray arrOps = test_json.getJSONArray("operations");
+
+        //Reads all the operations
+        for (int j = 0; j < arrOps.length(); j++) {
+            JSONObject act_operation = arrOps.getJSONObject(j);
+
+            Operation op = new Operation(act_operation, isActive, messageTypes);
+            operations.add(op);
+        }
     }
 
     public String getName() {

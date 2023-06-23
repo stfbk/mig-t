@@ -92,10 +92,12 @@ public class HTTPReqRes implements Cloneable {
             helpers.analyzeRequest(message.getRequest()).getBodyOffset();
             this.headers_req = helpers.analyzeRequest(message.getRequest()).getHeaders();
             this.request_url = helpers.analyzeRequest(message).getUrl().toString();
+            this.body_offset_req = helpers.analyzeRequest(message.getRequest()).getBodyOffset();
         } else {
             this.setResponse(message.getResponse());
             helpers.analyzeResponse(message.getResponse()).getBodyOffset();
             this.headers_resp = helpers.analyzeResponse(message.getResponse()).getHeaders();
+            this.body_offset_resp = helpers.analyzeRequest(message.getRequest()).getBodyOffset();
         }
 
         IHttpService service = message.getHttpService();
@@ -448,7 +450,7 @@ public class HTTPReqRes implements Cloneable {
      */
     public String getBodyRegex(Boolean isRequest, String param) {
         Pattern pattern = Pattern.compile(param);
-        Matcher matcher = pattern.matcher(new String(isRequest ? body_req : body_resp, StandardCharsets.UTF_8));
+        Matcher matcher = pattern.matcher(new String(getBody(isRequest), StandardCharsets.UTF_8));
 
         String res = "";
         while (matcher.find()) {

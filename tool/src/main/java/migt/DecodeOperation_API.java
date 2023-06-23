@@ -7,6 +7,29 @@ public class DecodeOperation_API extends API {
     public String jwt_payload;
     public String jwt_signature;
     public String txt;
+    public String xml;
+
+
+    public DecodeOperation_API() {
+
+    }
+
+    public DecodeOperation_API(DecodeOperation dop) {
+        type = dop.type;
+        switch (dop.type) {
+            case NONE:
+                txt = dop.decoded_content;
+                break;
+            case JWT:
+                jwt_header = dop.jwt.header;
+                jwt_payload = dop.jwt.payload;
+                jwt_signature = dop.jwt.signature;
+                break;
+            case XML:
+                xml = dop.decoded_content;
+                break;
+        }
+    }
 
     public String getDecodedContent(Utils.DecodeOperationFrom dopfrom) throws ParsingException {
         switch (dopfrom) {

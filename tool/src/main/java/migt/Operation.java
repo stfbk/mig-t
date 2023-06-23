@@ -2,8 +2,11 @@ package migt;
 
 import burp.IHttpService;
 import burp.IInterceptedProxyMessage;
+import org.json.JSONArray;
+import org.json.JSONObject;
 
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 
 import static migt.Utils.buildStringWithVars;
@@ -54,6 +57,139 @@ public class Operation extends Module {
      * Instantiate an operation
      */
     public Operation() {
+        init();
+    }
+
+    public Operation(JSONObject operation_json,
+                     boolean isActive,
+                     List<MessageType> messageTypes) throws Exception {
+        init();
+        if (!isActive) {
+            if (operation_json.has("decode param")) {
+                decode_param = operation_json.getString("decode param");
+
+                JSONArray encodings = operation_json.getJSONArray("encoding");
+                Iterator<Object> it = encodings.iterator();
+
+                while (it.hasNext()) {
+                    String act_enc = (String) it.next();
+                    this.encodings.add(
+                            Utils.Encoding.fromString(act_enc));
+                }
+            }
+            if (operation_json.has("regex")) {
+                // regex version
+                isRegex = true;
+                setRegex(operation_json.getString("regex"));
+                setMessageSection(Utils.MessageSection.fromString(operation_json.getString("message section")));
+            } else {
+                //non regex version
+                JSONArray checks = operation_json.getJSONArray("checks");
+
+                if (operation_json.has("message section")) {
+                    setMessageSection(Utils.MessageSection.fromString(operation_json.getString("message section")));
+                }
+                setChecks(Utils.parseChecksFromJSON(checks));
+            }
+        } else {
+            // If the test is active
+            if (operation_json.has("session")) {
+                // If is a Session Operation
+                String session = operation_json.getString("session");
+                String action = operation_json.getString("action");
+
+                List<SessionOperation> lsop = SessionOperation.parseFromJson(operation_json);
+                if (lsop != null) {
+                    for (SessionOperation sop : lsop) {
+                        session_operations.add(sop);
+                    }
+                }
+
+                setSession(session);
+                setSessionAction(action);
+                isSessionOp = true;
+                return;
+            }
+
+            // If is a standard operation
+            String action = operation_json.getString("action");
+            setAction(action);
+
+            // if it is a validate
+            if (getAction() == Utils.Action.VALIDATE) {
+                // TODO: to remove match?
+                if (operation_json.has("match")) {
+                    String toMatch = operation_json.getString("match");
+                    if (toMatch.equals("all")) to_match = -1;
+                    else to_match = Integer.parseInt(toMatch);
+                } else {
+                    to_match = 1;
+                }
+
+                if (operation_json.has("regex")) {
+                    // regex version
+                    isRegex = true;
+                    setRegex(operation_json.getString("regex"));
+                    setMessageSection(
+                            Utils.MessageSection.fromString(
+                                    operation_json.getString("message section")));
+                } else {
+                    //non regex version
+                    JSONArray checks = operation_json.getJSONArray("checks");
+
+                    setChecks(Utils.parseChecksFromJSON(checks));
+                }
+            }
+
+            if (operation_json.has("from session")) {
+                from_session = operation_json.getString("from session");
+            }
+            if (operation_json.has("to session")) {
+                to_session = operation_json.getString("to session");
+            }
+            if (operation_json.has("then")) {
+                then = Utils.Then.fromString(operation_json.getString("then"));
+            }
+            if (operation_json.has("save")) {
+                save_name = operation_json.getString("save");
+            }
+            if (operation_json.has("replace request")) {
+                replace_request_name = operation_json.getString("replace request");
+            } else if (operation_json.has("replace response")) {
+                replace_response_name = operation_json.getString("replace response");
+            }
+
+            // Preconditions
+            if (operation_json.has("preconditions")) {
+                JSONArray checks = operation_json.getJSONArray("preconditions");
+                preconditions = Utils.parseChecksFromJSON(checks);
+            }
+
+            // Message Operations
+            if (operation_json.has("message operations")) {
+                JSONArray message_ops = operation_json.getJSONArray("message operations");
+                for (int k = 0; k < message_ops.length(); k++) {
+                    JSONObject act_message_op = message_ops.getJSONObject(k);
+                    MessageOperation message_op = new MessageOperation(act_message_op);
+                    messageOerations.add(message_op);
+                }
+            }
+
+            // Decode Operations
+            if (operation_json.has("decode operations")) {
+                JSONArray decode_ops = operation_json.getJSONArray("decode operations");
+                for (int k = 0; k < decode_ops.length(); k++) {
+                    JSONObject act_decode_op = decode_ops.getJSONObject(k);
+                    // recursion managed inside
+                    DecodeOperation decode_op = new DecodeOperation(act_decode_op);
+                    decodeOperations.add(decode_op);
+                }
+            }
+            setMessageType(operation_json.getString("message type"), messageTypes);
+        }
+    }
+
+    private void init() {
         this.messageOerations = new ArrayList<>();
         this.preconditions = new ArrayList<>();
         this.checks = new ArrayList<>();
@@ -297,8 +433,16 @@ public class Operation extends Module {
         return updated_vars;
     }
 
+    public Operation_API getAPI() {
+        return this.api;
+        // TODO: check if the api should be updated with the processed message before returning it
+        // TODO: the api should be updated i.e. if the message is edited before making it available
+    }
+
     public void setAPI(Operation_API api) {
         this.api = api;
+        // updates the processed message from the api
+        this.processed_message = api.message.build_message(api.is_request);
     }
 
     /**

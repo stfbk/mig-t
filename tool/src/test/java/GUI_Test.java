@@ -1,6 +1,7 @@
 import migt.ParsingException;
 import migt.Session;
 import migt.Utils;
+import org.json.JSONObject;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 

@@ -33,6 +33,16 @@ public class Module {
     }
 
     /**
+     * This function should be called to check that after an initialization of a module all the necessary parameters
+     * are set correctly.
+     *
+     * @return
+     */
+    public void validate() throws ParsingException {
+
+    }
+
+    /**
      * Method used to get the API object of this module to be used in other modules.
      */
     public <T extends API> T getAPI() {

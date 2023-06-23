@@ -483,25 +483,6 @@ public class Tools {
     }
 
     /**
-     * Execute a list of checks inside a decode operation. This function uses the APIs Sets also the result to the
-     * decode op
-     *
-     * @param dop the decode operation calling this method
-     * @return the result, for convenience
-     * @throws ParsingException if errors are found
-     */
-    public static boolean executeChecks(DecodeOperation dop) throws ParsingException {
-        for (Check c : dop.checks) {
-            c.loader(dop.getAPI());
-            c.execute();
-            if (!dop.setResult(c)) {
-                return false;
-            }
-        }
-        return true;
-    }
-
-    /**
      * Function that gets all the parameters of an url
      * (<a href="https://stackoverflow.com/questions/11733500/getting-url-parameter-in-java-and-extract-a-specific-text-from-that-url">stackoverflow</a>)
      *
@@ -564,6 +545,21 @@ public class Tools {
             if (!op.setResult(dop))
                 break;
             op.setAPI(dop.exporter());
+        }
+
+        return op;
+    }
+
+    public static DecodeOperation executeEditOps(DecodeOperation op,
+                                                 IExtensionHelpers helpers,
+                                                 GUI mainPane) throws ParsingException {
+        DecodeOperation_API api = op.getAPI();
+        for (EditOperation eop : op.editOperations) {
+            eop.loader(api);
+            eop.execute(mainPane);
+            if (!op.setResult(eop))
+                break;
+            op.setAPI(eop.exporter());
         }
 
         return op;
