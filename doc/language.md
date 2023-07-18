@@ -115,7 +115,6 @@ A message is divided in three parts
 The message operations are operations to be done on the intercepted message in an operation.
 The syntax contains always the `from` tag, which specifies the message section where to search to do the given action (url, body, head). Then we have the possible actions:
 
-- `decode parameter` where you can decode and do things on a parameter, see dedicated section
 - `remove match word` it removes the matched string, can be fed with a regex
 - `remove parameter` with value the name of the parameter to be removed. A variant of the previous, it removes the parameter searched with its value
 - `edit` edits the given parameter's value, the tag `in` specifies in what has to be edited
@@ -159,41 +158,174 @@ If you choose the body section, the meaning of the tags is different, infact:
 
 Note that the content lenght of the body section is automatically updated or removed
 
-### Encoding/Decoding in message operations
+## Decode operation
 
-In message operations there is the possibility of specifing a parameter to be decoded and to be processed. The HTTP parameter containing the encoded text has to be specified with the `decode param`, if the section of the message is the body the `decode param` takes a regex (for more info see below section). Then, a list of encodings has to be specified with the tag `encoding`, the order of these encodings will be followed while decoding. Note that when the message is encoded, the order will be reversed.
+A list of decode operations can be added to each Operation. These operations are used to decode encoded content taken from inside an intercepted message. A decode operation can have its own list of decode operations; these are called recursive decode ops. and they take as input the previously decoded content.
 
-An example, where we take the parameter `SAMLRequest` from a message's url, and then specifing the encodings (url, base64 and deflate).
+The HTTP parameter containing the content to be decoded has to be specified with the `decode param` If the section of the message is 'body,' the `decode param` takes a regex (for more information, see the section below).
 
-```json
-"message operations": [
-    {
-        "from": "url",
-        "decode param": "SAMLRequest",
-        "encoding": [
-            "url",
-            "base64",
-            "deflate"
-        ],
-        "type": "xml",
-        "xml tag": "samlp:AuthnRequest",
-        "edit attribute": "ID",
-        "value": "newIDValue"
-    }
-]
-```
+Next, a list of encodings (or the `type`) has to be specified. You can specify an encodings list with the tag `encodings` the order of these encodings will be followed while decoding, and when the message is re-encoded, the order will be reversed. With the tag `type` the content is decoded following a fixed set of rules (e.g., jwts or XML). If you specify the `type` tag, the `encodings` tag will be ignored. If you use the `type` tag when using Edit Operations, you may be allowed to use more tags (e.g., with jwts or XML) to edit easily; otherwise, the decoded content will be used as plain text.
+
+In decode operations is possible to use check operations to check the decoded content, depending on the specified type, the allowed check operations differ.
+
+- JWT type -> See 'Checks on JSON content' section
+- No type (encodings used) -> See check section
+
+Needed tags:
+
+- `type` and/or `encodings`
+- `decode param`
+- `from` select from where decode the content (HTTP message section or previous decode output)
+
+optional tags:
+
+- `decode operations`
+- `checks`
+- `edits`
 
 #### Body section
 
 An important note about the body (from) section is that the input of `decode param` has to be a regex, and whatever is matched with that regex is decoded.
 An useful regex to match a parameter's value could be `(?<=SAMLResponse=)[^$\n& ]*` which searches the SAMLResponse= string in the body, and matches everything that is not $ or \n or & or whitespace
 
-### Specific actions for decoded parameters
+## Tag table
+In this table you can find a description of all the tags available for this Operation based on the input Module.
 
-There is the possibility of manipulating the decoded parameter, various types of languages-types are available, like xml.
-The type of the decoded param has to be specified with tag `type`.
+| input module (container)    | Available tags    | Required | value type             | allowed values                         |
+| --------------------------- | ----------------- | -------- | ---------------------- | -------------------------------------- |
+| standard Operation          | from              | yes      | str                    | head, body, url                        |
+|                             | decode param      | yes      | str                    | \*                                     |
+| decode Operation (type=jwt) | from              | yes      | str                    | jwt header, jwt payload, jwt signature |
+|                             | decode param      | yes      | str(JSON path)         | \*                                     |
+| \*                          | type              |          | str                    | xml, jwt                               |
+|                             | encodings         |          | list[str]              | base64, url, ..                        |
+|                             | decode operations |          | list[decode Operation] | \*                                     |
+|                             | checks            |          | list[check Operation]  | \*                                     |
+|                             | edits             |          | list[edit Operation]   | \*                                     |
 
-> Note that for decoded parameters standard message operation actions will not work.
+### Recursive Decode operations
+
+When using the `from` tag in a recursive decode (one that is inside another), you can use - depending on the previous decode type - other sections, such as "jwt header" "jwt payload" ..
+
+Source: standard Operation (HTTP intercepted message)
+
+- `from`: (url, head, body)
+
+Source: decode Operation JWT
+
+- `from`: (jwt header, jwt payload, jwt signature)
+
+in recurdsive decode ops, the decode param accepts different inputs, e.g. if previous decoded content is a jwt, decoded content will accept a JSON path
+
+Syntax example of a recursive decode operation:
+
+```json
+"decode operations": [
+  {
+    ...,
+    "decode operations": [
+      {
+        "from": "somwhere in the previous decode",
+        "encodings": "asdasd",
+      }
+    ]
+  }
+]
+```
+
+Example of decoding a jwt from the url of a message in the asd parameter, and then decode the jwt found inside of the jwt.
+
+```json
+"decode operations": [
+  {
+    "from": "url",
+    "type": "jwt",
+    "decode param": "asd",
+    "decode operations": [
+      {
+        "from": "jwt header",
+        "type": "jwt",
+        "decode param": "$.something"
+      }
+    ]
+  }
+]
+```
+
+### Using Edit Operation in Decode Operations
+
+It is possible to edit the decoded content of decode Ops by using edit Operations. A list of edit Operations has to be specified. When using Edit Op. inside Decode Operations, depending on the `type` specified in Decode Operations, you can use different keys.
+
+- `type`: JWT
+  - `jwt from` specifies the section of the jwt to edit (header, payload, signature)
+  - `jwt edit` JSON path of the key to edit
+  - `jwt remove` JSON path of the key to remove
+  - `jwt add` JSON path to the key to add + `value` with name
+  - `jwt save` JSON path to the key to save
+  - `value` used with edit or add, to specify the value of the key
+- `type`: XML
+  - see next XML section
+- no `type` specified, (treated as plain text):
+  - Using `txt remove` the matched text will be removed from the text
+  - Using `txt edit` the matched text will be edited with the text specified in `value` tag
+  - Using `txt add` the text specified in `value` will be inserted at the end of the matched text
+  - Using `txt save` the matched text will be saved in a variable having the name specified in tag `as`
+
+#### JWT type
+
+This type is used to edit decoded JWT tokens. This way is possible to edit, add, save or resign them. The possible actions are:
+
+- `jwt from` Used to specify the section of the token to execute the given action, choose btween:
+  - `header`
+  - `payload`
+  - `signature`
+- `jwt remove` If used on signature removes the entire signature
+- `jwt edit` `value` If used on signature edits the entire signature.
+- `jwt add` `value`
+- `jwt save` `as` if used on sinature saves the entire signature
+- `jwt sign` (TBDeveloped)
+
+##### Example
+
+Edit the scope claim inside an OAuth request jwt
+
+```json
+"decode operations": [
+  {
+    "from": "url",
+    "type": "jwt",
+    "encodings": [],
+    "decode param": "(?<=authz_request_object=)[^$\n& ]*",
+    "edits": [
+      {
+        "jwt from": "payload",
+        "jwt edit": "$.scope",
+        "value": "wrong_scope"
+      }
+    ]
+  }
+]
+```
+
+Check the scope claim inside an OAuth request jwt
+
+```json
+"decode operations": [
+  {
+    "from": "body",
+    "decode param": "(?<=authz_request_object=)[^$\n& ]*",
+    "encodings": [],
+    "type": "jwt",
+    "checks": [
+      {
+        "in": "payload",
+        "check": "$.scope",
+        "is": "openid"
+      }
+    ]
+  }
+]
+```
 
 #### XML type
 
@@ -230,18 +362,22 @@ An example:
 
 ```json
 "message operations": [
-    {
-        "from": "url",
-        "decode param": "SAMLRequest",
-        "encoding": [
-            "url",
-            "base64",
-            "deflate"
-        ],
-        "type": "xml",
+  {
+    "from": "url",
+    "decode param": "SAMLRequest",
+    "encoding": [
+        "url",
+        "base64",
+        "deflate"
+    ],
+    "type": "xml",
+    "edits": [
+      {
         "edit tag": "samlp:AuthnRequest",
         "value": "new tag value"
-    }
+      }
+    ]
+  }
 ]
 ```
 
@@ -256,29 +392,12 @@ in the tag name you have to specify "Something:apple"
 #### TXT type
 
 It is a type used to edit, remove, add, or save pieces of a decoded param that is treated as a text.
-You hae to specify a regex using the parameter "txt ..." with the associated action, the possible usages are:
+You have to specify a regex using the parameter "txt ..." with the associated action, the possible usages are:
 
 - Using `txt remove` the matched text will be removed from the text
 - Using `txt edit` the matched text will be edited with the text specified in `value` tag
 - Using `txt add` the text specified in `value` will be inserted at the end of the matched text
 - Using `txt save` the matched text will be saved in a variable having the name specified in tag `as`
-
-#### JWT type
-
-Thi type is used to edit decoded JWT tokens. This way is possible to edit, add, save or resign them. The possible actions are:
-
-- `jwt from` Used to specify the section of the token to execute the given action, choose btween:
-  - `header`
-  - `payload`
-  - `signature`
-  - `raw header`
-  - `raw payload`
-  - `raw signature`
-- `jwt remove` If used on signature removes the entire signature
-- `jwt edit` `value` If used on signature edits the entire signature.
-- `jwt add` `value`
-- `jwt save` `as` if used on sinature saves the entire signature
-- `jwt sign` Used to sign the jwt with another invalid key.
 
 #### Note for using saved variables
 
@@ -376,10 +495,30 @@ The Checks tag is a list of Check elements, which can be defined with:
   - `contains`
   - `not contains`
   - `is present` specifying true or false, to check whether is present or not
+- `regex` specify a regex that checks the selected content by matching it.
 
-you can use `check` OR `check param` tag. If you use the `check` tag, you can use all the other tags to verify the value, otherwise, if you use `check param` you can just use `is present`.
+Note that you can use `regex` OR (`check` OR `check param`). If you use the `check` tag, you can use all the other tags to verify the value, otherwise, if you use `check param` you can just use `is present`.
 
 In passive tests the checks's result are intended as the entire test result, so all the checks has to pass to have a successfull test.
+
+### Checks on JSON content
+
+In case a check operation is executed inside an operation that gives a JSON as an output (e.g. decode operations with type=jwt), the check operation is enabled to use JSON paths to identify keys and values specified with `check` tag. The `in` tag specifies the section of the JWT (header, payload, signature). Note that signature is treated as plain text
+
+```json
+"decode operations": [
+  {
+    "tagsofadecode": "decodejwt",
+    "checks": [
+      {
+        "in": "header",
+        "check": "jsonpath",
+        "is": "something"
+      }
+    ]
+  }
+]
+```
 
 ### Note for the active tests
 
@@ -711,10 +850,17 @@ Examples: <br>
 `assert element content is | xpath=/body/div/label | text to match`<br>
 `assert element class has | xpath=/body/... | class_to_match`<br>
 
-### snapshot
+# Changelog
 
-// TODO
+## v1.4.0
 
-### Setvar
-
-// TODO
+- Added decode operations
+- Removed "decode parameter" from Message Operation
+- Added checks in decode operations
+- Added support for Checks to work with JSON content
+- Changed tag `encoding` in `encodings`
+- Added edit Operation
+- Moved tags used to modify decoded content in Message Operations to Edit Operation inside Decode Operation
+- Removed `raw header` `raw payload` `raw signature` from `jwt from` tag in Decode Operation
+- Added supprot of regex in checks (in future they will substitute existing regex)
+- Remove support for hardcoded standard message types such as oauth request and oauth response
