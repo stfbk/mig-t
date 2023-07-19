@@ -132,10 +132,10 @@ public class ExecuteTrack implements Runnable {
                 } catch (WebDriverException e) {
                 }
 
-                if (track.getTrack().get(i).action == Utils.SessAction.CLICK) {
+                if (track.getTrack().get(i).action == SessionOperation.SessAction.CLICK) {
                     last_click = track.getTrack().get(i);
                 }
-                if (track.getTrack().get(i).action == Utils.SessAction.OPEN) {
+                if (track.getTrack().get(i).action == SessionOperation.SessAction.OPEN) {
                     last_open = track.getTrack().get(i);
                 }
                 listener.onNextSessionAction(last_action, last_open, last_click, last_url, sessionName);
@@ -236,9 +236,9 @@ public class ExecuteTrack implements Runnable {
 
                         while (windows_checked != windows_count) {
                             try {
-                                boolean is_snapshot = action.action == Utils.SessAction.SNAPSHOT ||
-                                        action.action == Utils.SessAction.DIFF ||
-                                        action.action == Utils.SessAction.EQUALS;
+                                boolean is_snapshot = action.action == SessionOperation.SessAction.SNAPSHOT ||
+                                        action.action == SessionOperation.SessAction.DIFF ||
+                                        action.action == SessionOperation.SessAction.EQUALS;
 
                                 By by = null;
                                 // Checks for the presence of a valid item to search
@@ -262,7 +262,7 @@ public class ExecuteTrack implements Runnable {
                                         throw new ParsingException("invalid session track command");
                                 }
 
-                                if (action.action == Utils.SessAction.ASSERT_VISIBLE) {
+                                if (action.action == SessionOperation.SessAction.ASSERT_VISIBLE) {
                                     new WebDriverWait(driver, Duration.ofSeconds(TIMEOUT)).until(
                                             ExpectedConditions.visibilityOfElementLocated(by));
                                 } else if (is_snapshot) {
@@ -291,8 +291,8 @@ public class ExecuteTrack implements Runnable {
                             if (currentElement != null) break;
                         }
                         if (currentElement == null) {
-                            if (action.action == Utils.SessAction.ASSERT_CLICKABLE
-                                    || action.action == Utils.SessAction.ASSERT_VISIBLE) {
+                            if (action.action == SessionOperation.SessAction.ASSERT_CLICKABLE
+                                    || action.action == SessionOperation.SessAction.ASSERT_VISIBLE) {
                                 listener.onExecuteDone(false, sessionName);
                                 driver.close();
                                 return;
@@ -334,7 +334,7 @@ public class ExecuteTrack implements Runnable {
                             String diff = currentElement.getScreenshotAs(OutputType.BASE64);
                             File f2 = currentElement.getScreenshotAs(OutputType.FILE);
                             f2.renameTo(new File("./diff.png"));
-                            if (action.action == Utils.SessAction.DIFF) {
+                            if (action.action == SessionOperation.SessAction.DIFF) {
                                 if (diff.equals(snapshot)) {
                                     listener.onExecuteDone(true, current_url, sessionName);
                                     driver.close();

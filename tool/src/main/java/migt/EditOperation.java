@@ -10,11 +10,11 @@ import samlraider.helpers.XMLHelpers;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import static migt.Utils.getVariableByName;
+import static migt.Tools.getVariableByName;
 
 public class EditOperation extends Module {
     // XML
-    Utils.XmlAction xml_action;
+    XmlAction xml_action;
     String xml_action_name;
     String xml_tag;
     String xml_attr;
@@ -29,14 +29,14 @@ public class EditOperation extends Module {
     String save_as; // say the name of the parameter to save the value
 
     // JWT
-    Utils.Jwt_section jwt_section;
-    Utils.Jwt_action jwt_action;
+    Jwt_section jwt_section;
+    Jwt_action jwt_action;
     boolean sign;
 
     String what;
 
     // TXT
-    Utils.TxtAction txt_action;
+    TxtAction txt_action;
     String txt_action_name;
 
     public EditOperation(JSONObject eop_json) throws ParsingException {
@@ -57,35 +57,35 @@ public class EditOperation extends Module {
                     value = eop_json.getString("value");
                     break;
                 case "add tag":
-                    xml_action = Utils.XmlAction.ADD_TAG;
+                    xml_action = XmlAction.ADD_TAG;
                     xml_action_name = eop_json.getString(key);
                     break;
                 case "add attribute":
-                    xml_action = Utils.XmlAction.ADD_ATTR;
+                    xml_action = XmlAction.ADD_ATTR;
                     xml_action_name = eop_json.getString(key);
                     break;
                 case "edit tag":
-                    xml_action = Utils.XmlAction.EDIT_TAG;
+                    xml_action = XmlAction.EDIT_TAG;
                     xml_action_name = eop_json.getString(key);
                     break;
                 case "edit attribute":
-                    xml_action = Utils.XmlAction.EDIT_ATTR;
+                    xml_action = XmlAction.EDIT_ATTR;
                     xml_action_name = eop_json.getString(key);
                     break;
                 case "remove tag":
-                    xml_action = Utils.XmlAction.REMOVE_TAG;
+                    xml_action = XmlAction.REMOVE_TAG;
                     xml_action_name = eop_json.getString(key);
                     break;
                 case "remove attribute":
-                    xml_action = Utils.XmlAction.REMOVE_ATTR;
+                    xml_action = XmlAction.REMOVE_ATTR;
                     xml_action_name = eop_json.getString(key);
                     break;
                 case "save tag":
-                    xml_action = Utils.XmlAction.SAVE_TAG;
+                    xml_action = XmlAction.SAVE_TAG;
                     xml_action_name = eop_json.getString(key);
                     break;
                 case "save attribute":
-                    xml_action = Utils.XmlAction.SAVE_ATTR;
+                    xml_action = XmlAction.SAVE_ATTR;
                     xml_action_name = eop_json.getString(key);
                     break;
                 case "self-sign":
@@ -105,23 +105,23 @@ public class EditOperation extends Module {
                     break;
                 // JWT
                 case "jwt from":
-                    jwt_section = Utils.Jwt_section.getFromString(
+                    jwt_section = Jwt_section.getFromString(
                             eop_json.getString("jwt from"));
                     break;
                 case "jwt remove":
-                    jwt_action = Utils.Jwt_action.REMOVE;
+                    jwt_action = Jwt_action.REMOVE;
                     what = eop_json.getString("jwt remove");
                     break;
                 case "jwt edit":
-                    jwt_action = Utils.Jwt_action.EDIT;
+                    jwt_action = Jwt_action.EDIT;
                     what = eop_json.getString("jwt edit");
                     break;
                 case "jwt add":
-                    jwt_action = Utils.Jwt_action.ADD;
+                    jwt_action = Jwt_action.ADD;
                     what = eop_json.getString("jwt add");
                     break;
                 case "jwt save":
-                    jwt_action = Utils.Jwt_action.SAVE;
+                    jwt_action = Jwt_action.SAVE;
                     what = eop_json.getString("jwt save");
                     break;
                 case "jwt sign":
@@ -129,19 +129,19 @@ public class EditOperation extends Module {
                     break;
 
                 case "txt remove":
-                    txt_action = Utils.TxtAction.REMOVE;
+                    txt_action = TxtAction.REMOVE;
                     txt_action_name = eop_json.getString("txt remove");
                     break;
                 case "txt edit":
-                    txt_action = Utils.TxtAction.EDIT;
+                    txt_action = TxtAction.EDIT;
                     txt_action_name = eop_json.getString("txt edit");
                     break;
                 case "txt add":
-                    txt_action = Utils.TxtAction.ADD;
+                    txt_action = TxtAction.ADD;
                     txt_action_name = eop_json.getString("txt add");
                     break;
                 case "txt save":
-                    txt_action = Utils.TxtAction.SAVE;
+                    txt_action = TxtAction.SAVE;
                     txt_action_name = eop_json.getString("txt save");
                     break;
             }
@@ -291,16 +291,16 @@ public class EditOperation extends Module {
                     try {
                         switch (jwt_section) {
                             case HEADER:
-                                tmp_imported_api.jwt_header = Utils.editJson(
+                                tmp_imported_api.jwt_header = Tools.editJson(
                                         jwt_action, tmp_imported_api.jwt_header, what, mainPane, save_as, value);
                                 break;
                             case PAYLOAD:
                                 // TODO: pass newvalue
-                                tmp_imported_api.jwt_payload = Utils.editJson(
+                                tmp_imported_api.jwt_payload = Tools.editJson(
                                         jwt_action, tmp_imported_api.jwt_payload, what, mainPane, save_as, value);
                                 break;
                             case SIGNATURE:
-                                tmp_imported_api.jwt_signature = Utils.editJson(
+                                tmp_imported_api.jwt_signature = Tools.editJson(
                                         jwt_action, tmp_imported_api.jwt_signature, what, mainPane, save_as, value);
                                 break;
                         }
@@ -358,6 +358,129 @@ public class EditOperation extends Module {
                     break;
             }
             imported_api = tmp_imported_api;
+        }
+    }
+
+    /**
+     * The possible XML actions are the ones described in this enum
+     */
+    public enum XmlAction {
+        ADD_TAG,
+        ADD_ATTR,
+        EDIT_TAG,
+        EDIT_ATTR,
+        REMOVE_TAG,
+        REMOVE_ATTR,
+        SAVE_TAG,
+        SAVE_ATTR;
+
+        /**
+         * From a string get the corresponding value
+         *
+         * @param input the input string
+         * @return the enum value
+         * @throws ParsingException if the string does not correspond to any of the values
+         */
+        public static XmlAction fromString(String input) throws ParsingException {
+            if (input != null) {
+                switch (input) {
+                    case "add tag":
+                        return ADD_TAG;
+                    case "add attribute":
+                        return ADD_ATTR;
+                    case "edit tag":
+                        return EDIT_TAG;
+                    case "edit attribute":
+                        return EDIT_ATTR;
+                    case "remove tag":
+                        return REMOVE_TAG;
+                    case "remove attribute":
+                        return REMOVE_ATTR;
+                    case "save tag":
+                        return SAVE_TAG;
+                    case "save attribute":
+                        return SAVE_ATTR;
+                    default:
+                        throw new ParsingException("invalid xml action");
+                }
+            } else {
+                throw new NullPointerException();
+            }
+        }
+    }
+
+    /**
+     * Defines the possible actions to be done on a decoded parameter interpreted as plain text
+     */
+    public enum TxtAction {
+        REMOVE,
+        EDIT,
+        ADD,
+        SAVE;
+
+        /**
+         * From a string get the corresponding value
+         *
+         * @param input the input string
+         * @return the enum value
+         * @throws ParsingException if the string does not correspond to any of the values
+         */
+        public static TxtAction fromString(String input) throws ParsingException {
+            if (input != null) {
+                switch (input) {
+                    case "txt remove":
+                        return REMOVE;
+                    case "txt edit":
+                        return EDIT;
+                    case "txt add":
+                        return ADD;
+                    case "txt save":
+                        return SAVE;
+                    default:
+                        throw new ParsingException("invalid xml action");
+                }
+            } else {
+                throw new NullPointerException();
+            }
+        }
+    }
+
+    /**
+     * Defines the possible actions to be done on a JWT token
+     */
+    public enum Jwt_action {
+        REMOVE,
+        EDIT,
+        ADD,
+        SAVE
+    }
+
+    /**
+     * Defines the possible JWT token sections
+     */
+    public enum Jwt_section {
+        HEADER,
+        PAYLOAD,
+        SIGNATURE;
+
+        /**
+         * Get the JWT section enum value from a string
+         *
+         * @param s the string to parse
+         * @return the enum value
+         * @throws ParsingException if the string is invalid
+         */
+        public static Jwt_section getFromString(String s) throws ParsingException {
+            switch (s) {
+                case "header":
+                    return HEADER;
+                case "payload":
+                    return PAYLOAD;
+                case "signature":
+                    return SIGNATURE;
+                default:
+                    throw new ParsingException("Invalid jwt section");
+            }
         }
     }
 }

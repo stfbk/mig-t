@@ -13,7 +13,7 @@ import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 
 import static migt.Tools.executeDecodeOps;
-import static migt.Utils.getVariableByName;
+import static migt.Tools.getVariableByName;
 
 /**
  * Main class executed by Burp
@@ -232,7 +232,7 @@ public class BurpExtender implements IBurpExtender, ITab, IProxyListener {
                                         if (matchMessage) {
                                             processMatchedMsg(msg_type, messageInfo);
                                             if (mainPane.act_active_op.then != null &
-                                                    mainPane.act_active_op.then == Utils.Then.DROP) {
+                                                    mainPane.act_active_op.then == Operation.Then.DROP) {
                                                 message.setInterceptAction(IInterceptedProxyMessage.ACTION_DROP);
                                             }
                                         }
@@ -424,7 +424,7 @@ public class BurpExtender implements IBurpExtender, ITab, IProxyListener {
             byte[] new_message;
 
             try {
-                if (mop.type == Utils.MessageOpType.GENERATE_POC) {
+                if (mop.type == MessageOperation.MessageOpType.GENERATE_POC) {
                     if (!isRequest) {
                         throw new ParsingException("Invalid POC generation, message should be a request");
                     }
@@ -433,7 +433,7 @@ public class BurpExtender implements IBurpExtender, ITab, IProxyListener {
                         continue; // other templates not supported yet
                     }
 
-                    String poc = Utils.generate_CSRF_POC(messageInfo, helpers);
+                    String poc = Tools.generate_CSRF_POC(messageInfo, helpers);
 
                     try {
                         File myObj = new File(mop.output_path);
@@ -527,7 +527,7 @@ public class BurpExtender implements IBurpExtender, ITab, IProxyListener {
                                 break;
 
                             case EDIT:
-                                op.processed_message = Utils.editMessageParam(
+                                op.processed_message = Tools.editMessageParam(
                                         helpers,
                                         mop.what,
                                         mop.from,
@@ -538,7 +538,7 @@ public class BurpExtender implements IBurpExtender, ITab, IProxyListener {
                                 break;
 
                             case EDIT_REGEX:
-                                op.processed_message = Utils.editMessage(
+                                op.processed_message = Tools.editMessage(
                                         helpers,
                                         mop.what,
                                         mop,
@@ -594,7 +594,7 @@ public class BurpExtender implements IBurpExtender, ITab, IProxyListener {
                                 switch (mop.from) {
                                     case HEAD: {
                                         String value = "";
-                                        if (mop.action == Utils.MessageOperationActions.SAVE) {
+                                        if (mop.action == MessageOperation.MessageOperationActions.SAVE) {
                                             value = messageInfo.getHeadParam(isRequest, mop.what).trim();
                                         } else {
                                             List<String> headers = messageInfo.getHeaders(isRequest);
@@ -642,7 +642,7 @@ public class BurpExtender implements IBurpExtender, ITab, IProxyListener {
                                         }
                                         String header_0 = messageInfo.getUrlHeader();
 
-                                        pattern = mop.action == Utils.MessageOperationActions.SAVE ?
+                                        pattern = mop.action == MessageOperation.MessageOperationActions.SAVE ?
                                                 Pattern.compile(mop.what + "=[^& ]*(?=(&| ))") :
                                                 Pattern.compile(mop.what);
 
@@ -651,7 +651,7 @@ public class BurpExtender implements IBurpExtender, ITab, IProxyListener {
 
                                         if (matcher.find()) {
                                             String matched = matcher.group();
-                                            value = mop.action == Utils.MessageOperationActions.SAVE ?
+                                            value = mop.action == MessageOperation.MessageOperationActions.SAVE ?
                                                     matched.split("=")[1] :
                                                     matched;
 

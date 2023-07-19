@@ -10,7 +10,7 @@ import java.util.Objects;
  * @author Matteo Bitussi
  */
 public class SessionTrackAction {
-    public Utils.SessAction action;
+    public SessionOperation.SessAction action;
     public String elem_type;
     public String elem_source;
     public String elem;
@@ -56,18 +56,18 @@ public class SessionTrackAction {
                 throw new ParsingException("invalid session action \"" + raw_action + "\"");
             }
 
-            action = Utils.SessAction.getFromString(splitted[0].trim());
+            action = SessionOperation.SessAction.getFromString(splitted[0].trim());
             if (splitted[0].trim().contains("assert")) {
                 isAssert = true;
             }
 
-            if (action == Utils.SessAction.CLEAR_COOKIES) return;
+            if (action == SessionOperation.SessAction.CLEAR_COOKIES) return;
 
             elem = splitted[1].trim();
-            if (!(action == Utils.SessAction.OPEN) &&
-                    action != Utils.SessAction.WAIT &&
-                    action != Utils.SessAction.ALERT &&
-                    action != Utils.SessAction.SET_VAR) {
+            if (!(action == SessionOperation.SessAction.OPEN) &&
+                    action != SessionOperation.SessAction.WAIT &&
+                    action != SessionOperation.SessAction.ALERT &&
+                    action != SessionOperation.SessAction.SET_VAR) {
                 String[] tmp = elem.split("=");
                 elem_type = tmp[0].trim();
                 elem_source = tmp[1].trim();
@@ -155,7 +155,7 @@ public class SessionTrackAction {
             case CLEAR_COOKIES:
                 break;
         }
-        if (action == Utils.SessAction.TYPE) {
+        if (action == SessionOperation.SessAction.TYPE) {
             res += " " + content;
         }
 

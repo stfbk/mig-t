@@ -489,15 +489,15 @@ The Checks tag is a list of Check elements, which can be defined with:
 - `in` says were to check the given parameter, can be _head_, _body_, _url_
 - `check` checks if the given string is present in the specified message section
 - `check param` specifies the name of the parameter to be checked, depending on the section choosed, the tool will search for the parameter using a pattern. (for the url, it will search for a query parameter, for the head, it will search for a head parameter)
+- `check regex` specify a regex that checks the selected content by matching it.
 - The actual check on the value, which are self explanatory. (if none of these are specified, the check will only check if the given parameter is present)
   - `is`
   - `not is`
   - `contains`
   - `not contains`
   - `is present` specifying true or false, to check whether is present or not
-- `regex` specify a regex that checks the selected content by matching it.
 
-Note that you can use `regex` OR (`check` OR `check param`). If you use the `check` tag, you can use all the other tags to verify the value, otherwise, if you use `check param` you can just use `is present`.
+Note that you can use `check regex` OR `check` OR `check param`. If you use the `check` or `check param` tag, you can use all the other tags to verify the value, otherwise, if you use `check regex` you can just use `is present`.
 
 In passive tests the checks's result are intended as the entire test result, so all the checks has to pass to have a successfull test.
 
@@ -864,3 +864,4 @@ Examples: <br>
 - Removed `raw header` `raw payload` `raw signature` from `jwt from` tag in Decode Operation
 - Added supprot of regex in checks (in future they will substitute existing regex)
 - Remove support for hardcoded standard message types such as oauth request and oauth response
+- Removed support for hardcoded identification of OAuth flow

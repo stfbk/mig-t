@@ -21,7 +21,7 @@ import java.util.List;
  * @author Matteo Bitussi
  */
 public class Test {
-    public Utils.ResultType result;
+    public ResultType result;
     public String resultSession;
     public List<Session> sessions;
     public String references;
@@ -115,7 +115,7 @@ public class Test {
             if (test_json.has("result")) {
                 String tmp = test_json.getString("result");
                 if (tmp.contains("assert_only")) {
-                    result = Utils.ResultType.fromString(tmp);
+                    result = ResultType.fromString(tmp);
                 } else {
                     tmp = tmp.trim();
                     String[] splitted = tmp.split("flow");
@@ -123,7 +123,7 @@ public class Test {
                     if (splitted.length > 1) {
                         resultSession = splitted[1].trim();
                     }
-                    result = Utils.ResultType.fromString(splitted[0].trim());
+                    result = ResultType.fromString(splitted[0].trim());
                 }
             }
         }
@@ -188,7 +188,7 @@ public class Test {
                         String.valueOf(count),
                         String.valueOf(op.getMessageType()),
                         String.valueOf(op.getMessageSection()),
-                        op.isRegex ? op.getRegex() : op.getChecks().toString(),
+                        op.getChecks().toString(),
                         msg.index.toString(),
                         msg.isFail ? "failed" : "passed"};
                 res.add(tmp);
@@ -378,6 +378,39 @@ public class Test {
             }
 
             op_count++;
+        }
+    }
+
+    /**
+     * The result type of (also the oracle) of an Active test
+     */
+    public enum ResultType {
+        CORRECT_FLOW,
+        INCORRECT_FLOW,
+        ASSERT_ONLY;
+
+        /**
+         * From a string get the corresponding enum value
+         *
+         * @param input the string
+         * @return the enum value
+         * @throws ParsingException if the input is malformed
+         */
+        public static ResultType fromString(String input) throws ParsingException {
+            if (input != null) {
+                switch (input) {
+                    case "correct":
+                        return CORRECT_FLOW;
+                    case "incorrect":
+                        return INCORRECT_FLOW;
+                    case "assert_only":
+                        return ASSERT_ONLY;
+                    default:
+                        throw new ParsingException("invalid result");
+                }
+            } else {
+                throw new NullPointerException();
+            }
         }
     }
 }

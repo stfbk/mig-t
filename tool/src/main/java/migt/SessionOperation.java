@@ -16,14 +16,14 @@ import java.util.regex.Pattern;
  */
 public class SessionOperation {
     public String from_session;
-    public Utils.SessOperationAction action;
+    public SessOperationAction action;
     public String what;
     public String as;
     public String at;
     public String to; // until to which ession action save
     public boolean is_from_included = false;
     public boolean is_to_included = false;
-    public Utils.SessOperationTarget target;
+    public SessOperationTarget target;
     public String mark_name;
 
     /**
@@ -49,23 +49,23 @@ public class SessionOperation {
                             sop.from_session = act_session_op.getString("session");
                             break;
                         case "save":
-                            sop.action = Utils.SessOperationAction.SAVE;
-                            sop.target = Utils.SessOperationTarget
+                            sop.action = SessOperationAction.SAVE;
+                            sop.target = SessOperationTarget
                                     .getFromString(act_session_op.getString("save"));
                             break;
                         case "as":
                             sop.as = act_session_op.getString("as");
                             break;
                         case "insert":
-                            sop.action = Utils.SessOperationAction.INSERT;
+                            sop.action = SessOperationAction.INSERT;
                             sop.what = act_session_op.getString("insert");
                             break;
                         case "at":
                             sop.at = act_session_op.getString("at");
                             break;
                         case "mark":
-                            sop.action = Utils.SessOperationAction.MARKER;
-                            sop.target = Utils.SessOperationTarget
+                            sop.action = SessOperationAction.MARKER;
+                            sop.target = SessOperationTarget
                                     .getFromString(act_session_op.getString("mark"));
                             sop.mark_name = act_session_op.getString("name");
                             break;
@@ -73,7 +73,7 @@ public class SessionOperation {
                             //Already processed in mark
                             break;
                         case "remove":
-                            sop.action = Utils.SessOperationAction.REMOVE;
+                            sop.action = SessOperationAction.REMOVE;
                             if (sop.at == null || sop.at.length() == 0) {
                                 sop.at = act_session_op.getString("remove");
                             }
@@ -137,5 +137,209 @@ public class SessionOperation {
         l.add(tmp.get(2));
 
         return l;
+    }
+
+    /**
+     * Enum containing all the possible session operation actions
+     */
+    public enum SessionAction {
+        START,
+        PAUSE,
+        RESUME,
+        STOP,
+        CLEAR_COOKIES;
+
+        /**
+         * From a string get the corresponding enum value
+         *
+         * @param input the string
+         * @return the enum value
+         * @throws ParsingException if the input is malformed
+         */
+        public static SessionAction fromString(String input) throws ParsingException {
+            if (input != null) {
+                switch (input) {
+                    case "start":
+                        return START;
+                    case "pause":
+                        return PAUSE;
+                    case "resume":
+                        return RESUME;
+                    case "stop":
+                        return STOP;
+                    case "clear cookies":
+                        return CLEAR_COOKIES;
+                    default:
+                        throw new ParsingException("invalid Session action");
+                }
+            } else {
+                throw new NullPointerException();
+            }
+        }
+    }
+
+    /**
+     * Defines the action of a session action
+     */
+    public enum SessAction {
+        CLICK,
+        OPEN,
+        TYPE,
+        SNAPSHOT,
+        DIFF,
+        EQUALS,
+        WAIT,
+        SET_VAR,
+        CLEAR_COOKIES,
+        ASSERT_CLICKABLE,
+        ASSERT_NOT_CLICKABLE,
+        ASSERT_VISIBLE,
+        ASSERT_NOT_VISIBLE,
+        ASSERT_ELEM_CONTENT_IS,
+        ASSERT_ELEM_CONTENT_HAS,
+        ASSERT_ELEM_CLASS_IS,
+        ASSERT_ELEM_CLASS_HAS,
+        ASSERT_ELEM_HAS_ATTRIBUTE,
+        ASSERT_ELEM_NOT_HAS_ATTRIBUTE,
+        ALERT;
+
+        /**
+         * Get a session action enum value from a string
+         *
+         * @param s the string
+         * @return the enum value
+         * @throws ParsingException if the string is invalid
+         */
+        public static SessAction getFromString(String s) throws ParsingException {
+            switch (s) {
+                case "assert click":
+                case "click":
+                    return CLICK;
+                case "open":
+                case "assert open": // just an alias of open
+                    return OPEN;
+                case "type":
+                    return TYPE;
+                case "snapshot":
+                    return SNAPSHOT;
+                case "diff":
+                    return DIFF;
+                case "equals":
+                    return EQUALS;
+                case "wait":
+                    return WAIT;
+                case "set var":
+                    return SET_VAR;
+                case "clear cookies":
+                    return CLEAR_COOKIES;
+                case "assert clickable":
+                    return ASSERT_CLICKABLE;
+                case "assert not clickable":
+                    return ASSERT_NOT_CLICKABLE;
+                case "assert visible":
+                    return ASSERT_VISIBLE;
+                case "assert not visible":
+                    return ASSERT_NOT_VISIBLE;
+                case "assert element content is":
+                    return ASSERT_ELEM_CONTENT_IS;
+                case "assert element content has":
+                    return ASSERT_ELEM_CONTENT_HAS;
+                case "assert element class is":
+                    return ASSERT_ELEM_CLASS_IS;
+                case "assert element class has":
+                    return ASSERT_ELEM_CLASS_HAS;
+                case "assert element has attribute":
+                    return ASSERT_ELEM_HAS_ATTRIBUTE;
+                case "assert element not has attribute":
+                    return ASSERT_ELEM_NOT_HAS_ATTRIBUTE;
+                case "alert":
+                    return ALERT;
+                default:
+                    throw new ParsingException("Invalid session action \"" + s + "\"");
+            }
+        }
+    }
+
+    /**
+     * Defines the action of a session operation
+     */
+    public enum SessOperationAction {
+        SAVE,
+        INSERT,
+        MARKER,
+        REMOVE
+    }
+
+    /**
+     * Defines the target of a session operation.
+     * Is it better to use js or just build a form? if a form is used, body has to be interpreted
+     */
+    public enum SessOperationTarget {
+        LAST_ACTION,
+        LAST_ACTION_ELEM,
+        LAST_ACTION_ELEM_PARENT,
+        LAST_CLICK,
+        LAST_CLICK_ELEM,
+        LAST_CLICK_ELEM_PARENT,
+        LAST_OPEN,
+        LAST_OPEN_ELEM,
+        LAST_URL,
+        ALL_ASSERT,
+        TRACK;
+
+        /**
+         * Parse a string containing a session operation target
+         *
+         * @param s the string to parse
+         * @throws ParsingException if the string is malformed, or no session operation target is found
+         */
+        public static SessOperationTarget getFromString(String s) throws ParsingException {
+
+            if (s.contains(".")) {
+                String[] splitted;
+                splitted = s.split("\\.");
+                String left = splitted[0];
+                boolean parent = false;
+                if (splitted.length == 3) {
+                    if (splitted[2].equals("parent")) {
+                        parent = true;
+                    }
+                }
+
+                switch (s) {
+                    case "last_action.elem":
+                    case "last_action.elem.parent":
+                        return parent ? LAST_ACTION_ELEM_PARENT : LAST_ACTION_ELEM;
+                    case "last_click.elem":
+                    case "last_click.elem.parent":
+                        return parent ? LAST_CLICK_ELEM_PARENT : LAST_CLICK_ELEM;
+                    case "last_open.elem":
+                        return LAST_OPEN_ELEM;
+                    case "last_url":
+                        return LAST_URL;
+                    case "all_assert":
+                        return ALL_ASSERT;
+                    default:
+                        throw new ParsingException("invalid target in session operation");
+                }
+            } else {
+                switch (s) {
+                    case "track":
+                        return TRACK;
+                    case "last_action":
+                        return LAST_ACTION;
+                    case "last_click":
+                        return LAST_CLICK;
+                    case "last_open":
+                        return LAST_OPEN;
+                    case "last_url":
+                        return LAST_URL;
+                    case "all_assert":
+                        return ALL_ASSERT;
+                    default:
+                        throw new ParsingException("invalid target in session operation");
+                }
+            }
+        }
     }
 }

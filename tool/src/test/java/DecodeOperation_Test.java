@@ -1,6 +1,5 @@
 import migt.DecodeOperation;
 import migt.ParsingException;
-import migt.Utils;
 import org.json.JSONObject;
 import org.junit.jupiter.api.Test;
 
@@ -51,12 +50,12 @@ public class DecodeOperation_Test {
     void test_parse() throws ParsingException {
         DecodeOperation dop = new DecodeOperation(new JSONObject(input));
 
-        assertEquals(Utils.DecodeOperationFrom.URL, dop.from);
+        assertEquals(DecodeOperation.DecodeOperationFrom.URL, dop.from);
         assertEquals("asd", dop.decode_target);
         assertTrue(dop.decodeOperations.size() == 1);
 
         DecodeOperation child_dop = dop.decodeOperations.get(0);
-        assertEquals(Utils.DecodeOperationFrom.JWT_HEADER, child_dop.from);
+        assertEquals(DecodeOperation.DecodeOperationFrom.JWT_HEADER, child_dop.from);
         assertEquals("$.something", child_dop.decode_target);
     }
 
@@ -64,7 +63,7 @@ public class DecodeOperation_Test {
     void test_parse_w_checks() throws ParsingException {
         DecodeOperation dop = new DecodeOperation(new JSONObject(input_w_checks));
 
-        assertEquals(Utils.DecodeOperationFrom.BODY, dop.from);
+        assertEquals(DecodeOperation.DecodeOperationFrom.BODY, dop.from);
         assertEquals(1, dop.checks.size());
 
     }

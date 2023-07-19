@@ -1,7 +1,7 @@
 package migt;
 
 public class DecodeOperation_API extends API {
-    public Utils.DecodeOpType type; // the type of the decoded param
+    public DecodeOperation.DecodeOpType type; // the type of the decoded param
 
     public String jwt_header;
     public String jwt_payload;
@@ -31,7 +31,7 @@ public class DecodeOperation_API extends API {
         }
     }
 
-    public String getDecodedContent(Utils.DecodeOperationFrom dopfrom) throws ParsingException {
+    public String getDecodedContent(DecodeOperation.DecodeOperationFrom dopfrom) throws ParsingException {
         switch (dopfrom) {
             case HEAD:
                 throw new ParsingException("cannot decode from header in a recursive decode");
@@ -40,17 +40,17 @@ public class DecodeOperation_API extends API {
             case URL:
                 throw new ParsingException("cannot decode from url in a recursive decode");
             case JWT_HEADER:
-                if (type != Utils.DecodeOpType.JWT)
+                if (type != DecodeOperation.DecodeOpType.JWT)
                     throw new ParsingException("cannot decode in a jwt header if previous decode was not a jwt");
                 return jwt_header;
 
             case JWT_PAYLOAD:
-                if (type != Utils.DecodeOpType.JWT)
+                if (type != DecodeOperation.DecodeOpType.JWT)
                     throw new ParsingException("cannot decode in a jwt payload if previous decode was not a jwt");
                 return jwt_payload;
 
             case JWT_SIGNATURE:
-                if (type != Utils.DecodeOpType.JWT)
+                if (type != DecodeOperation.DecodeOpType.JWT)
                     throw new ParsingException("cannot decode in a jwt signature if previous decode was not a jwt");
                 return jwt_signature;
             default:

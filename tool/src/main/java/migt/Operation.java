@@ -9,8 +9,8 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
-import static migt.Utils.buildStringWithVars;
-import static migt.Utils.findParentDiv;
+import static migt.Tools.buildStringWithVars;
+import static migt.Tools.findParentDiv;
 
 /**
  * Class storing an Operation in a Test
@@ -21,7 +21,7 @@ public class Operation extends Module {
     public List<MessageOperation> messageOerations;
     public String from_session;
     public String to_session;
-    public Utils.Then then;
+    public Then then;
     public String save_name;
     public int to_match;
     public int act_matched;
@@ -30,12 +30,11 @@ public class Operation extends Module {
     public String replace_request_name;
     public String replace_response_name;
     public boolean isSessionOp = false;
-    public boolean isRegex = false;
     public List<MatchedMessage> matchedMessages;
     public byte[] processed_message;
     public IHttpService processed_message_service;  // null if it is not changed
     public String decode_param;
-    public List<Utils.Encoding> encodings;
+    public List<DecodeOperation.Encoding> encodings;
     public List<IInterceptedProxyMessage> log_messages;
     public List<SessionOperation> session_operations;
     // Decode operations
@@ -43,15 +42,12 @@ public class Operation extends Module {
     // Session operation
     // API
     Operation_API api;
-    //boolean applicable = false; // if the operation can't find a matching message, is not applicable
-    //boolean result = true; // defalult true
     private List<Check> checks;
     private String messageType;
-    private String regex;
-    private Utils.MessageSection messageSection;
-    private Utils.Action action;
+    private HTTPReqRes.MessageSection messageSection;
+    private Action action;
     private String session;
-    private Utils.SessionAction sessionAction;
+    private SessionOperation.SessionAction sessionAction;
 
     /**
      * Instantiate an operation
@@ -60,10 +56,19 @@ public class Operation extends Module {
         init();
     }
 
+    /**
+     * Instantiate an Operation parsing a JSON object
+     *
+     * @param operation_json the operation defined in MIG-L as JSONObject
+     * @param isActive       if the operation is used inside an active or passive test
+     * @param messageTypes   All the message types imported
+     * @throws Exception
+     */
     public Operation(JSONObject operation_json,
                      boolean isActive,
                      List<MessageType> messageTypes) throws Exception {
         init();
+
         if (!isActive) {
             if (operation_json.has("decode param")) {
                 decode_param = operation_json.getString("decode param");
@@ -74,22 +79,17 @@ public class Operation extends Module {
                 while (it.hasNext()) {
                     String act_enc = (String) it.next();
                     this.encodings.add(
-                            Utils.Encoding.fromString(act_enc));
+                            DecodeOperation.Encoding.fromString(act_enc));
                 }
             }
-            if (operation_json.has("regex")) {
-                // regex version
-                isRegex = true;
-                setRegex(operation_json.getString("regex"));
-                setMessageSection(Utils.MessageSection.fromString(operation_json.getString("message section")));
-            } else {
+            if (operation_json.has("checks")) {
                 //non regex version
                 JSONArray checks = operation_json.getJSONArray("checks");
 
                 if (operation_json.has("message section")) {
-                    setMessageSection(Utils.MessageSection.fromString(operation_json.getString("message section")));
+                    setMessageSection(HTTPReqRes.MessageSection.fromString(operation_json.getString("message section")));
                 }
-                setChecks(Utils.parseChecksFromJSON(checks));
+                setChecks(Tools.parseChecksFromJSON(checks));
             }
         } else {
             // If the test is active
@@ -116,7 +116,7 @@ public class Operation extends Module {
             setAction(action);
 
             // if it is a validate
-            if (getAction() == Utils.Action.VALIDATE) {
+            if (getAction() == Action.VALIDATE) {
                 // TODO: to remove match?
                 if (operation_json.has("match")) {
                     String toMatch = operation_json.getString("match");
@@ -125,20 +125,9 @@ public class Operation extends Module {
                 } else {
                     to_match = 1;
                 }
-
-                if (operation_json.has("regex")) {
-                    // regex version
-                    isRegex = true;
-                    setRegex(operation_json.getString("regex"));
-                    setMessageSection(
-                            Utils.MessageSection.fromString(
-                                    operation_json.getString("message section")));
-                } else {
-                    //non regex version
-                    JSONArray checks = operation_json.getJSONArray("checks");
-
-                    setChecks(Utils.parseChecksFromJSON(checks));
-                }
+                //non regex version
+                JSONArray checks = operation_json.getJSONArray("checks");
+                setChecks(Tools.parseChecksFromJSON(checks));
             }
 
             if (operation_json.has("from session")) {
@@ -148,7 +137,7 @@ public class Operation extends Module {
                 to_session = operation_json.getString("to session");
             }
             if (operation_json.has("then")) {
-                then = Utils.Then.fromString(operation_json.getString("then"));
+                then = Then.fromString(operation_json.getString("then"));
             }
             if (operation_json.has("save")) {
                 save_name = operation_json.getString("save");
@@ -162,7 +151,7 @@ public class Operation extends Module {
             // Preconditions
             if (operation_json.has("preconditions")) {
                 JSONArray checks = operation_json.getJSONArray("preconditions");
-                preconditions = Utils.parseChecksFromJSON(checks);
+                preconditions = Tools.parseChecksFromJSON(checks);
             }
 
             // Message Operations
@@ -208,7 +197,6 @@ public class Operation extends Module {
         this.replace_response_name = "";
         this.replace_request_name = "";
         this.messageType = "";
-        this.regex = "";
         this.session = "";
         this.decode_param = "";
         this.processed_message_service = null;
@@ -247,31 +235,24 @@ public class Operation extends Module {
         this.checks = checks;
     }
 
-    public String getRegex() {
-        return regex;
-    }
 
-    public void setRegex(String regex) {
-        this.regex = regex;
-    }
-
-    public Utils.MessageSection getMessageSection() {
+    public HTTPReqRes.MessageSection getMessageSection() {
         return messageSection;
     }
 
-    public void setMessageSection(Utils.MessageSection messageSection) {
+    public void setMessageSection(HTTPReqRes.MessageSection messageSection) {
         this.messageSection = messageSection;
     }
 
-    public Utils.Action getAction() {
+    public Action getAction() {
         return action;
     }
 
     public void setAction(String action) throws ParsingException {
-        this.setAction(Utils.Action.fromString(action));
+        this.setAction(Action.fromString(action));
     }
 
-    public void setAction(Utils.Action action) {
+    public void setAction(Action action) {
         this.action = action;
     }
 
@@ -283,15 +264,15 @@ public class Operation extends Module {
         this.session = sessionName;
     }
 
-    public Utils.SessionAction getSessionAction() {
+    public SessionOperation.SessionAction getSessionAction() {
         return sessionAction;
     }
 
     public void setSessionAction(String sessionAction) throws ParsingException {
-        this.setSessionAction(Utils.SessionAction.fromString(sessionAction));
+        this.setSessionAction(SessionOperation.SessionAction.fromString(sessionAction));
     }
 
-    public void setSessionAction(Utils.SessionAction sessionAction) {
+    public void setSessionAction(SessionOperation.SessionAction sessionAction) {
         this.sessionAction = sessionAction;
     }
 
@@ -443,6 +424,70 @@ public class Operation extends Module {
         this.api = api;
         // updates the processed message from the api
         this.processed_message = api.message.build_message(api.is_request);
+    }
+
+    public void execute() {
+        // TODO
+    }
+
+    /**
+     * Enum containing all the possible Active operation actions
+     */
+    public enum Action {
+        INTERCEPT,
+        VALIDATE;
+
+        /**
+         * From a string get the corresponding enum value
+         *
+         * @param input the string
+         * @return the enum value
+         * @throws ParsingException if the input is malformed
+         */
+        public static Action fromString(String input) throws ParsingException {
+            if (input != null) {
+                switch (input) {
+                    case "intercept":
+                        return INTERCEPT;
+                    case "validate":
+                        return VALIDATE;
+                    default:
+                        throw new ParsingException("invalid check operation");
+                }
+            } else {
+                throw new NullPointerException();
+            }
+        }
+    }
+
+    /**
+     * Enum that contains all the possible action to do after a message is received
+     */
+    public enum Then {
+        FORWARD,
+        DROP;
+
+        /**
+         * From a string get the corresponding enum value
+         *
+         * @param input the string
+         * @return the enum value
+         * @throws ParsingException if the input is malformed
+         */
+        public static Then fromString(String input) throws ParsingException {
+            if (input != null) {
+                switch (input) {
+                    case "forward":
+                        return FORWARD;
+                    case "drop":
+                        return DROP;
+                    default:
+                        throw new ParsingException("invalid check operation");
+                }
+            } else {
+                throw new NullPointerException();
+            }
+        }
     }
 
     /**

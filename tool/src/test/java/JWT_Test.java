@@ -1,18 +1,8 @@
-import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.SignatureAlgorithm;
-import io.jsonwebtoken.security.Keys;
 import migt.JWT;
 import migt.ParsingException;
-import migt.Utils;
-import org.bouncycastle.util.io.pem.PemObject;
-import org.bouncycastle.util.io.pem.PemWriter;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-
-import javax.crypto.SecretKey;
-
-import java.security.*;
 
 import static org.junit.jupiter.api.Assertions.*;
 

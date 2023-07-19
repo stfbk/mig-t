@@ -13,7 +13,7 @@ public class MessageType implements Cloneable {
     Boolean isRequest;
     String regex;
     List<Check> checks;
-    Utils.MessageSection messageSection;
+    HTTPReqRes.MessageSection messageSection;
     String responseName;
     String requestName;
 

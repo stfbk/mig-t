@@ -79,13 +79,13 @@ public class ExecuteActives implements Runnable {
                                         if (actual_test.resultSession.equals("") ||
                                                 actual_test.resultSession.equals(sessionName)) {
 
-                                            if (actual_test.result == Utils.ResultType.CORRECT_FLOW) {
+                                            if (actual_test.result == Test.ResultType.CORRECT_FLOW) {
                                                 if (errors || current_url.contains("error")) {
                                                     actual_test.success = false;
                                                 }
-                                            } else if (actual_test.result == Utils.ResultType.INCORRECT_FLOW) {
+                                            } else if (actual_test.result == Test.ResultType.INCORRECT_FLOW) {
                                                 actual_test.success = errors; // Difficult to read
-                                            } else if (actual_test.result == Utils.ResultType.ASSERT_ONLY) {
+                                            } else if (actual_test.result == Test.ResultType.ASSERT_ONLY) {
                                                 actual_test.success = true;
                                                 //at this point, all the asserts have been executed, and if they failed
                                                 // they already returned a false result

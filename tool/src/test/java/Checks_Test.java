@@ -30,7 +30,7 @@ public class Checks_Test {
         Check c = new Check(new JSONObject(check_str));
 
         DecodeOperation_API dopapi = new DecodeOperation_API();
-        dopapi.type = Utils.DecodeOpType.JWT;
+        dopapi.type = DecodeOperation.DecodeOpType.JWT;
         dopapi.jwt_header = input;
         c.loader(dopapi);
 

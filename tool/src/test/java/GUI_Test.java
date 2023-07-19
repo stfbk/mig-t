@@ -1,7 +1,6 @@
 import migt.ParsingException;
 import migt.Session;
-import migt.Utils;
-import org.json.JSONObject;
+import migt.Tools;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -33,7 +32,7 @@ public class GUI_Test {
         tests.get(6).sessions.get(0).name = "4";
         tests.get(7).sessions.get(0).name = "1";
 
-        HashMap<String, List<migt.Test>> hm = Utils.batchPassivesFromSession(tests);
+        HashMap<String, List<migt.Test>> hm = Tools.batchPassivesFromSession(tests);
 
         assertEquals(3, hm.get("1").size());
         assertEquals(2, hm.get("2").size());

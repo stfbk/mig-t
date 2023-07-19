@@ -1064,7 +1064,7 @@ public class GUI extends JSplitPane {
                         tmp += myReader.nextLine();
                     }
                     myReader.close();
-                    messageTypes = Utils.readMsgTypeFromJson(tmp);
+                    messageTypes = Tools.readMsgTypeFromJson(tmp);
                 } catch (ParsingException e) {
                     lblOutput.setText("Invalid message type in message type definition file");
                     e.printStackTrace();
@@ -1073,9 +1073,9 @@ public class GUI extends JSplitPane {
                 }
             } else {
                 FileWriter w = new FileWriter(MSG_DEF_PATH);
-                w.write(Utils.getDefaultJSONMsgType());
+                w.write(Tools.getDefaultJSONMsgType());
                 w.close();
-                messageTypes = Utils.readMsgTypeFromJson(Utils.getDefaultJSONMsgType());
+                messageTypes = Tools.readMsgTypeFromJson(Tools.getDefaultJSONMsgType());
             }
         } catch (ParsingException e) {
             e.printStackTrace();
@@ -1129,7 +1129,7 @@ public class GUI extends JSplitPane {
                 }
             } else {
                 FileWriter w = new FileWriter(CONFIG_FILE_PATH);
-                w.write(Utils.getDefaultJSONConfig());
+                w.write(Tools.getDefaultJSONConfig());
                 w.close();
             }
         } catch (IOException e) {
@@ -1173,7 +1173,7 @@ public class GUI extends JSplitPane {
                 }
             } else {
                 FileWriter w = new FileWriter(CONFIG_FILE_PATH);
-                w.write(Utils.getDefaultJSONConfig());
+                w.write(Tools.getDefaultJSONConfig());
                 w.close();
             }
         } catch (IOException e) {
@@ -1344,6 +1344,7 @@ public class GUI extends JSplitPane {
                     public void onExecuteStart() {
                         ACTIVE_ENABLED = false;
                         act_active_op = new Operation();
+                        lblOutput.setText("Executing active tests");
                     }
 
                     @Override
@@ -1351,12 +1352,13 @@ public class GUI extends JSplitPane {
                         if (passives.size() == 0) {
                             update_gui_test_results();
 
-                            lblOutput.setText("Passive Tests: "
+                            lblOutput.setText("Done. Executed Passive Tests: "
                                     + (passives.isEmpty() ? 0 : passives.size())
                                     + " - Active Tests: "
                                     + (testSuite.getTests().size() - (passives.isEmpty() ? 0 : passives.size())));
+                        } else {
+                            lblOutput.setText("Executed Active tests, now doing passives");
                         }
-                        lblOutput.setText("Executed Active tests, now doing passives");
                         synchronized (lock2) {
                             active_ex_finished = true;
                         }
@@ -1479,13 +1481,13 @@ public class GUI extends JSplitPane {
 
                 @Override
                 public void onExecuteStart() {
-
+                    lblOutput.setText("Executing passive tests");
                 }
 
                 @Override
                 public void onExecuteDone(List<Test> passives_test) {
                     //TODO: Check if this is ok
-                    lblOutput.setText("Passive Tests: "
+                    lblOutput.setText("Done. Executed Passive Tests: "
                             + (passives.isEmpty() ? 0 : passives.size())
                             + " - Active Tests: "
                             + (testSuite.getTests().size() - (passives.isEmpty() ? 0 : passives.size())));

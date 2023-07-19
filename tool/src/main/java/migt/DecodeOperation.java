@@ -23,9 +23,9 @@ import static migt.Tools.executeEditOps;
 public class DecodeOperation extends Module {
     public String decoded_content; // the decoded content
     public String decode_target; // aka decode_param how to decode the raw content
-    public Utils.DecodeOperationFrom from; // where the raw content is. Depending on the containing module, can be other things
-    public List<Utils.Encoding> encodings; // the list of encoding to decode and rencode
-    public Utils.DecodeOpType type; // the type of the decoded param (used only to edit its content)
+    public DecodeOperationFrom from; // where the raw content is. Depending on the containing module, can be other things
+    public List<Encoding> encodings; // the list of encoding to decode and rencode
+    public DecodeOpType type; // the type of the decoded param (used only to edit its content)
     public List<Check> checks; // the list of checks to be executed
     public List<DecodeOperation> decodeOperations; // a list of decode operations to execute them recursevly
     public List<EditOperation> editOperations; // a list of edit operations
@@ -52,7 +52,7 @@ public class DecodeOperation extends Module {
 
             switch (key) {
                 case "type":
-                    type = Utils.DecodeOpType.fromString(decode_op_json.getString("type"));
+                    type = DecodeOpType.fromString(decode_op_json.getString("type"));
                     break;
                 case "decode param":
                     decode_target = decode_op_json.getString("decode param");
@@ -64,12 +64,12 @@ public class DecodeOperation extends Module {
                     while (it.hasNext()) {
                         String act_enc = (String) it.next();
                         this.encodings.add(
-                                Utils.Encoding.fromString(act_enc));
+                                Encoding.fromString(act_enc));
                     }
                     break;
                 case "from":
                     String f = decode_op_json.getString("from");
-                    from = Utils.DecodeOperationFrom.fromString(f);
+                    from = DecodeOperationFrom.fromString(f);
                     break;
                 case "decode operations":
                     // Recursion goes brr
@@ -81,10 +81,10 @@ public class DecodeOperation extends Module {
                     }
                     break;
                 case "checks":
-                    checks = Utils.parseChecksFromJSON(decode_op_json.getJSONArray("checks"));
+                    checks = Tools.parseChecksFromJSON(decode_op_json.getJSONArray("checks"));
                     break;
                 case "edits":
-                    editOperations = Utils.parseEditsFromJSON(decode_op_json.getJSONArray("edits"));
+                    editOperations = Tools.parseEditsFromJSON(decode_op_json.getJSONArray("edits"));
                     break;
             }
         }
@@ -104,8 +104,8 @@ public class DecodeOperation extends Module {
      * @throws ParsingException If problems are encountered during decoding
      */
     public static String decodeParam(IExtensionHelpers helpers,
-                                     Utils.DecodeOperationFrom ms,
-                                     List<Utils.Encoding> encodings,
+                                     DecodeOperationFrom ms,
+                                     List<Encoding> encodings,
                                      HTTPReqRes messageInfo,
                                      Boolean isRequest,
                                      String decode_param) throws ParsingException {
@@ -125,7 +125,7 @@ public class DecodeOperation extends Module {
                 break;
         }
 
-        decoded_param = Utils.removeNewline(decoded_param);
+        decoded_param = Tools.removeNewline(decoded_param);
 
         return decoded_param;
     }
@@ -140,7 +140,7 @@ public class DecodeOperation extends Module {
      * @return the decoded string
      * @throws ParsingException if the decoding fails
      */
-    public static String decode(List<Utils.Encoding> encodings, String encoded, IExtensionHelpers helpers) throws ParsingException {
+    public static String decode(List<Encoding> encodings, String encoded, IExtensionHelpers helpers) throws ParsingException {
         // TODO: remove dependency from helpers
         String actual = encoded;
         byte[] actual_b = null;
@@ -150,7 +150,7 @@ public class DecodeOperation extends Module {
             return "";
         }
 
-        for (Utils.Encoding e : encodings) {
+        for (Encoding e : encodings) {
             switch (e) {
                 case BASE64:
                     if (isActualString) {
@@ -230,11 +230,11 @@ public class DecodeOperation extends Module {
      * @param decoded   the string to be encoded
      * @return the encoded string
      */
-    public static String encode(List<Utils.Encoding> encodings, String decoded, IExtensionHelpers helpers) {
+    public static String encode(List<Encoding> encodings, String decoded, IExtensionHelpers helpers) {
         String actual = decoded;
         byte[] actual_b = null;
         boolean isActualString = true;
-        for (Utils.Encoding e : encodings) {
+        for (Encoding e : encodings) {
             switch (e) {
                 case BASE64:
 
@@ -350,7 +350,7 @@ public class DecodeOperation extends Module {
         encodings = new ArrayList<>();
         decodeOperations = new ArrayList<>();
         what = "";
-        type = Utils.DecodeOpType.NONE;
+        type = DecodeOpType.NONE;
         editOperations = new ArrayList<>();
     }
 
@@ -358,6 +358,24 @@ public class DecodeOperation extends Module {
     public DecodeOperation_API getAPI() {
         api = new DecodeOperation_API(this);
         return (DecodeOperation_API) api;
+    }
+
+    public void setAPI(DecodeOperation_API dop_api) {
+        this.api = dop_api;
+        // assign values returned from the api
+        switch (type) {
+            case JWT:
+                this.jwt.header = dop_api.jwt_header;
+                this.jwt.payload = dop_api.jwt_payload;
+                this.jwt.signature = dop_api.jwt_signature;
+                break;
+            case NONE:
+                this.decoded_content = dop_api.txt;
+                break;
+            case XML:
+                this.decoded_content = dop_api.xml;
+                break;
+        }
     }
 
     /**
@@ -395,7 +413,7 @@ public class DecodeOperation extends Module {
         Collections.reverse(encodings); // Set the right order for encoding
         String encoded = encode(encodings, decoded_content, helpers);
 
-        Utils.editMessageParam(
+        Tools.editMessageParam(
                 helpers,
                 decode_target,
                 from,
@@ -425,7 +443,7 @@ public class DecodeOperation extends Module {
                     decode_target);
 
             // If type is jwt, parse
-            if (Objects.requireNonNull(type) == Utils.DecodeOpType.JWT) {
+            if (Objects.requireNonNull(type) == DecodeOpType.JWT) {
                 jwt = new JWT();
 
                 jwt.parse(decoded_content);
@@ -459,7 +477,7 @@ public class DecodeOperation extends Module {
 
         // execute edit operations
         if (editOperations.size() > 0) {
-            executeEditOps(this, helpers, mainPane);
+            executeEditOps(this, mainPane);
         }
 
         // executes recursive decode operations
@@ -473,7 +491,7 @@ public class DecodeOperation extends Module {
         }
 
         // Rebuild JWT before encoding it
-        if (Objects.requireNonNull(type) == Utils.DecodeOpType.JWT) {
+        if (Objects.requireNonNull(type) == DecodeOpType.JWT) {
             decoded_content = jwt.build();
         }
         applicable = true;
@@ -497,21 +515,97 @@ public class DecodeOperation extends Module {
         return true;
     }
 
-    public void setAPI(DecodeOperation_API dop_api) {
-        this.api = dop_api;
-        // assign values returned from the api
-        switch (type) {
-            case JWT:
-                this.jwt.header = dop_api.jwt_header;
-                this.jwt.payload = dop_api.jwt_payload;
-                this.jwt.signature = dop_api.jwt_signature;
-                break;
-            case NONE:
-                this.decoded_content = dop_api.txt;
-                break;
-            case XML:
-                this.decoded_content = dop_api.xml;
-                break;
+    /**
+     * Used in decode operation to specify where to search for the content to decode
+     */
+    public enum DecodeOperationFrom {
+        // standard message
+        HEAD,
+        BODY,
+        URL,
+        // jwt
+        JWT_HEADER,
+        JWT_PAYLOAD,
+        JWT_SIGNATURE;
+
+        public static DecodeOperationFrom fromString(String input) throws ParsingException {
+            if (input != null) {
+                switch (input) {
+                    case "head":
+                        return HEAD;
+                    case "body":
+                        return BODY;
+                    case "url":
+                        return URL;
+                    case "jwt header":
+                        return JWT_HEADER;
+                    case "jwt payload":
+                        return JWT_PAYLOAD;
+                    case "jwt signature":
+                        return JWT_SIGNATURE;
+                    default:
+                        throw new ParsingException("invalid decode operation from '" + input + "'");
+                }
+            } else {
+                throw new NullPointerException();
+            }
+        }
+    }
+
+    /**
+     * The possible encodings to be used
+     */
+    public enum Encoding {
+        BASE64,
+        URL,
+        DEFLATE;
+
+        /**
+         * From a string get the corresponding enum value
+         *
+         * @param input the string
+         * @return the enum value
+         * @throws ParsingException if the input is malformed
+         */
+        public static Encoding fromString(String input) throws ParsingException {
+            if (input != null) {
+                switch (input) {
+                    case "base64":
+                        return BASE64;
+                    case "url":
+                        return URL;
+                    case "deflate":
+                        return DEFLATE;
+                    default:
+                        throw new ParsingException("invalid encoding");
+                }
+            } else {
+                throw new NullPointerException();
+            }
+        }
+    }
+
+    /**
+     * Used to specify the type of decoded content, only when that content has to be edited.
+     */
+    public enum DecodeOpType {
+        JWT,
+        NONE,
+        XML;
+
+        public static DecodeOpType fromString(String input) throws ParsingException {
+            if (input != null) {
+                switch (input) {
+                    case "jwt":
+                        return JWT;
+                    case "xml":
+                        return XML;
+                    default:
+                        throw new ParsingException("invalid message Op Type");
+                }
+            } else {
+                throw new NullPointerException();
+            }
         }
     }
 }

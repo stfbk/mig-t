@@ -61,7 +61,7 @@ public class ExecutePassives implements Runnable {
 
         HashMap<String, List<Test>> batch = null;
         try {
-            batch = Utils.batchPassivesFromSession(passives);
+            batch = Tools.batchPassivesFromSession(passives);
         } catch (ParsingException e) {
             e.printStackTrace();
             //lblOutput.setText(e.getMessage());
@@ -113,7 +113,7 @@ public class ExecutePassives implements Runnable {
             // TODO: Remove used session
             executedSession = null;
         }
-        passives = Utils.debatchPassive(batch);
+        passives = Tools.debatchPassive(batch);
         listener.onExecuteDone(passives);
     }
 

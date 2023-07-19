@@ -30,7 +30,7 @@ public class Utils_Test {
         String s = "test da aggiungere $questo$ e poi $qualcosaltro$";
         String res = "";
         try {
-            res = Utils.buildStringWithVars(vars, s);
+            res = Tools.buildStringWithVars(vars, s);
         } catch (ParsingException e) {
             e.printStackTrace();
         }
@@ -49,7 +49,7 @@ public class Utils_Test {
         v4.value = "/link/a/caso";
         vars.add(v4);
 
-        res = Utils.buildStringWithVars(vars, s);
+        res = Tools.buildStringWithVars(vars, s);
         assertEquals("open | https://www.youtube.com/link/a/caso |", res);
     }
 
@@ -57,23 +57,23 @@ public class Utils_Test {
     @DisplayName("Test find parent div")
     void testFindParentDiv() throws ParsingException {
         String in = "xpath=/html/body/div[3]/div[2]/div/div/div/div/div[3]/*[2]";
-        String res = Utils.findParentDiv(in);
+        String res = Tools.findParentDiv(in);
         assertEquals("xpath=/html/body/div[3]/div[2]/div/div/div/div/div", res);
 
         assertThrows(ParsingException.class, () -> {
-            Utils.findParentDiv("https://www.facebook.com/");
+            Tools.findParentDiv("https://www.facebook.com/");
         });
 
         assertThrows(ParsingException.class, () -> {
-            Utils.findParentDiv("https://www.ted.com/settings/account");
+            Tools.findParentDiv("https://www.ted.com/settings/account");
         });
 
         in = "xpath=/html/body/div[2]/div/div[2]/form/div/span/span/button";
-        res = Utils.findParentDiv(in);
+        res = Tools.findParentDiv(in);
         assertEquals("xpath=/html/body/div[2]/div/div[2]/form/div", res);
 
         in = "id=email";
-        res = Utils.findParentDiv(in);
+        res = Tools.findParentDiv(in);
         assertEquals("id=email", res);
     }
 

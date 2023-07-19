@@ -459,4 +459,40 @@ public class HTTPReqRes implements Cloneable {
         }
         return res;
     }
+
+    /**
+     * An enum representing the possible message sections
+     */
+    public enum MessageSection {
+        HEAD,
+        BODY,
+        URL,
+        RAW;
+
+        /**
+         * Function that given a message section in form of String, returns the corresponding MessageSection enum value
+         *
+         * @param input the input string
+         * @return the MessageSection enum value
+         * @throws ParsingException if the input does not correspond to any of the possible messagesections
+         */
+        public static MessageSection fromString(String input) throws ParsingException {
+            if (input != null) {
+                switch (input) {
+                    case "head":
+                        return HEAD;
+                    case "body":
+                        return BODY;
+                    case "url":
+                        return URL;
+                    case "raw":
+                        return RAW;
+                    default:
+                        throw new ParsingException("message section not valid");
+                }
+            } else {
+                throw new NullPointerException();
+            }
+        }
+    }
 }
