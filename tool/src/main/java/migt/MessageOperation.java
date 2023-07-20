@@ -2,9 +2,6 @@ package migt;
 
 import org.json.JSONObject;
 
-import java.util.ArrayList;
-import java.util.List;
-
 /**
  * The class storing a MessageOperation object
  *
@@ -17,8 +14,6 @@ public class MessageOperation {
     MessageOperationActions action;
     String save_as; // The name of the variable to save the parameter's value
     String use;
-    String decode_param;
-    List<DecodeOperation.Encoding> encodings;
     MessageOpType type;
 
     // GENERATE POC
@@ -33,8 +28,6 @@ public class MessageOperation {
         this.to = "";
         this.save_as = "";
         this.use = "";
-        this.decode_param = "";
-        this.encodings = new ArrayList<>();
         this.type = MessageOpType.HTTP;
         this.template = "";
         this.output_path = "";
@@ -45,8 +38,6 @@ public class MessageOperation {
         this.to = "";
         this.save_as = "";
         this.use = "";
-        this.decode_param = "";
-        this.encodings = new ArrayList<>();
         this.type = MessageOpType.HTTP;
         this.template = "";
         this.output_path = "";

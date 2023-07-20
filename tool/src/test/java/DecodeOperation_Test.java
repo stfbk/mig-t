@@ -46,6 +46,19 @@ public class DecodeOperation_Test {
             "                ]\n" +
             "              }";
 
+    String input_w_edits_save = "{\n" +
+            "                \"from\": \"body\",\n" +
+            "                \"decode param\": \"(?<=authz_request_object=)[^$\\n& ]*\",\n" +
+            "                \"type\": \"jwt\",\n" +
+            "                \"edits\": [\n" +
+            "                  {\n" +
+            "                    \"jwt from\": \"payload\",\n" +
+            "                    \"jwt save\": \"$.scope\",\n" +
+            "                    \"as\": \"varname\"\n" +
+            "                  }\n" +
+            "                ]\n" +
+            "              }";
+
     @Test
     void test_parse() throws ParsingException {
         DecodeOperation dop = new DecodeOperation(new JSONObject(input));
@@ -71,6 +84,13 @@ public class DecodeOperation_Test {
     @Test
     void test_parse_w_edits() throws ParsingException {
         DecodeOperation dop = new DecodeOperation(new JSONObject(input_w_edits));
+
+        assertEquals(1, dop.editOperations.size());
+    }
+
+    @Test
+    void test_parse_w_edits_save() throws ParsingException {
+        DecodeOperation dop = new DecodeOperation(new JSONObject(input_w_edits_save));
 
         assertEquals(1, dop.editOperations.size());
     }

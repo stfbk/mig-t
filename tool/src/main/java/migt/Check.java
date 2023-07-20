@@ -1,15 +1,11 @@
 package migt;
 
-import burp.IExtensionHelpers;
-import burp.IRequestInfo;
-import burp.IResponseInfo;
 import com.jayway.jsonpath.JsonPath;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 import java.util.regex.Matcher;
@@ -30,6 +26,7 @@ public class Check extends Module {
     List<String> value_list;
     boolean isParamCheck; // specifies if what is declared in what is a parameter name
     String regex;
+    boolean use_variable;
 
     public Check() {
         init();
@@ -59,6 +56,9 @@ public class Check extends Module {
                     break;
                 case "check regex":
                     regex = json_check.getString("check regex");
+                    break;
+                case "use variable":
+                    use_variable = json_check.getBoolean("use variable");
                     break;
                 case "is":
                     this.setOp(CheckOps.IS);
@@ -112,6 +112,7 @@ public class Check extends Module {
         isParamCheck = false;
         regex = "";
         value_list = new ArrayList<>();
+        use_variable = false;
     }
 
     public void loader(DecodeOperation_API api) {
@@ -122,19 +123,13 @@ public class Check extends Module {
      * Execute the check if it is http
      *
      * @param message
-     * @param helpers
      * @param isRequest
      * @return
      * @throws ParsingException
      */
     private boolean execute_http(HTTPReqRes message,
-                                 IExtensionHelpers helpers,
                                  boolean isRequest) throws ParsingException {
         String msg_str = "";
-        IRequestInfo req_info = null;
-        IResponseInfo res_info = null;
-        if (isRequest) req_info = helpers.analyzeRequest(message.getRequest());
-        if (!isRequest) res_info = helpers.analyzeResponse(message.getResponse());
         if (this.in == null) {
             throw new ParsingException("from tag in checks is null");
         }
@@ -150,15 +145,7 @@ public class Check extends Module {
                 msg_str = new String(message.getBody(isRequest), StandardCharsets.UTF_8);
                 break;
             case HEAD:
-                if (isRequest) {
-                    int offset = req_info.getBodyOffset();
-                    byte[] head = Arrays.copyOfRange(message.getRequest(), 0, offset);
-                    msg_str = new String(head);
-                } else {
-                    int offset = res_info.getBodyOffset();
-                    byte[] head = Arrays.copyOfRange(message.getResponse(), 0, offset);
-                    msg_str = new String(head);
-                }
+                msg_str = String.join("\r\n", message.getHeaders(isRequest));
                 break;
             default:
                 System.err.println("no valid \"in\" specified in check");
@@ -321,20 +308,29 @@ public class Check extends Module {
      * Executes the given check
      *
      * @param message
-     * @param helpers
      * @param isRequest
      * @return the result of the check (passed or not passed)
      */
     public boolean execute(HTTPReqRes message,
-                           IExtensionHelpers helpers,
-                           boolean isRequest) throws ParsingException {
-        //TODO: migrate to api
-        result = execute_http(message, helpers, isRequest);
+                           boolean isRequest,
+                           GUI gui) throws ParsingException {
+
+        if (use_variable) {
+            // Substitute to the op_val variable (that contains the name), the value of the variable
+            op_val = Tools.getVariableByName(op_val, gui).value;
+        }
+        // TODO: migrate to api
+        result = execute_http(message, isRequest);
         return result;
         // TODO REMOVE CONTENT TYPE
     }
 
-    public void execute() throws ParsingException {
+    public void execute(GUI gui) throws ParsingException {
+        if (use_variable) {
+            // Substitute to the op_val variable (that contains the name), the value of the variable
+            op_val = Tools.getVariableByName(op_val, gui).value;
+        }
+
         switch (((DecodeOperation_API) imported_api).type) {
             case JWT:
                 result = execute_json();

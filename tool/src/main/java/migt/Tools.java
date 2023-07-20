@@ -30,7 +30,7 @@ public class Tools {
     public static boolean executePassiveTest(Test test,
                                              List<HTTPReqRes> messageList,
                                              IExtensionHelpers helpers,
-                                             List<MessageType> msg_types) {
+                                             List<MessageType> msg_types) throws ParsingException {
         int i, j;
         boolean res = true;
         boolean actisreq = false;
@@ -43,20 +43,28 @@ public class Tools {
                 actisresp = false;
 
                 Operation currentOP = test.operations.get(j);
+                MessageType msg_type = MessageType.getFromList(msg_types, currentOP.getMessageType());
 
-                List<Boolean> result = null;
                 try {
-                    result = executePassiveOperation(currentOP, messageList.get(i), i, helpers, msg_types);
+                    // Check message is matched.
+                    // TODO: execute Operation exactly as actives, idk if possible
+                    if (messageList.get(i).matches_msg_type(msg_type, helpers)) {
+                        res = processOperation(
+                                currentOP,
+                                messageList.get(i),
+                                i,
+                                helpers,
+                                msg_type.isRequest
+                        );
+                    }
                 } catch (ParsingException e) {
                     e.printStackTrace();
                     res = false;
                     currentOP.applicable = false;
                     break;
                 }
-                res = result.get(0);
-                actisreq = result.get(1);
-                actisresp = result.get(2);
-                currentOP.applicable = result.get(3);
+                actisreq = msg_type.isRequest;
+                actisresp = !msg_type.isRequest;
                 j++;
             }
             if (!res) {
@@ -76,189 +84,6 @@ public class Tools {
         return res;
     }
 
-    /**
-     * Còass that executes a passive operation
-     *
-     * @param op           The operation to be executed
-     * @param message      the message to be used in the execution
-     * @param messageIndex the index of that message w.r.t. the list of messages ( if present ) otherwise write 0
-     * @param helpers      An istance of the IExtensionHelpers
-     * @param msg_types    the list of msg_types available
-     * @return a list of booleans, containing in order: the result of the operation, if the actual message is a request,
-     * if the actual message is a response, if the operation is applicable
-     * <p>
-     * Note that this function is used also to validate active checks.
-     */
-    public static List<Boolean> executePassiveOperation(Operation op,
-                                                        HTTPReqRes message,
-                                                        int messageIndex,
-                                                        IExtensionHelpers helpers,
-                                                        List<MessageType> msg_types) throws ParsingException {
-        boolean res = true;
-        boolean actisreq = false;
-        boolean actisresp = false;
-        switch (op.getMessageType()) {
-            case "request":
-                op.applicable = true;
-                actisreq = true;
-                res = processOperation(op, message, messageIndex, helpers, true);
-                break;
-            case "response":
-                op.applicable = true;
-                actisreq = true;
-                res = processOperation(op, message, messageIndex, helpers, false);
-                break;
-            default:
-                try {
-                    MessageType msg_type = MessageType.getFromList(msg_types, op.getMessageType());
-
-                    /* If the response message name is searched, the getByResponse will be true.
-                     * so messageIndex have to search for the request, and then evaluate the response*/
-                    Boolean matchedMessage = false;
-
-                    if (msg_type.getByResponse) {
-                        if (msg_type.isRegex) {
-                            matchedMessage = Tools.findInMessage(msg_type.messageSection,
-                                    msg_type.regex,
-                                    message,
-                                    helpers,
-                                    true);
-                        } else {
-                            matchedMessage = Tools.executeChecks(msg_type.checks,
-                                    message,
-                                    helpers,
-                                    true);
-                        }
-                        if (matchedMessage) {
-                            op.applicable = true;
-                            actisreq = false;
-                            actisresp = true;
-
-                            res = processOperation(op, message, messageIndex, helpers, false);
-                        }
-                    } else if (msg_type.getByRequest) {
-                        if (msg_type.isRegex) {
-                            matchedMessage = Tools.findInMessage(msg_type.messageSection,
-                                    msg_type.regex,
-                                    message,
-                                    helpers, false);
-                        } else {
-                            matchedMessage = Tools.executeChecks(msg_type.checks,
-                                    message,
-                                    helpers, false);
-                        }
-                        if (matchedMessage) {
-                            op.applicable = true;
-                            actisreq = false;
-                            actisresp = true;
-
-                            res = processOperation(op, message, messageIndex, helpers, true);
-                        }
-                    } else {
-                        if (msg_type.isRegex) {
-                            matchedMessage = Tools.findInMessage(msg_type.messageSection,
-                                    msg_type.regex,
-                                    message,
-                                    helpers,
-                                    msg_type.isRequest);
-                        } else {
-                            matchedMessage = Tools.executeChecks(msg_type.checks,
-                                    message,
-                                    helpers,
-                                    msg_type.isRequest);
-                        }
-                        if (matchedMessage) {
-                            op.applicable = true;
-                            actisreq = msg_type.isRequest;
-                            actisresp = !msg_type.isRequest;
-
-                            res = processOperation(op, message, messageIndex, helpers, msg_type.isRequest);
-                        }
-                    }
-
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-                break;
-        }
-        List<Boolean> tmp = new ArrayList<>();
-        tmp.add(res);
-        tmp.add(actisreq);
-        tmp.add(actisresp);
-        tmp.add(op.applicable);
-        return tmp;
-    }
-
-    /**
-     * Function that processes an operation over a message
-     *
-     * @param currentOP     the <code>Operation</code> to be processed
-     * @param act_message   the message over which the operation has to be executed
-     * @param message_index the index of the <code>act_message</code> in the messages list
-     * @param helpers       An istance of the helpers
-     * @param isRequest     set true if the request has to be processed
-     * @return the result of the operation
-     */
-    public static boolean processOperation(Operation currentOP,
-                                           HTTPReqRes act_message,
-                                           int message_index,
-                                           IExtensionHelpers helpers,
-                                           boolean isRequest) throws ParsingException {
-        currentOP.setAPI(new Operation_API(act_message, isRequest));
-        HTTPReqRes message = null;
-        boolean res = true;
-
-        try {
-            message = (HTTPReqRes) act_message.clone();
-        } catch (CloneNotSupportedException e) {
-            e.printStackTrace();
-            currentOP.applicable = false;
-            return false;
-        }
-
-        currentOP = executeDecodeOps(
-                currentOP,
-                helpers,
-                null
-        );
-
-        if (currentOP.hasChecks()) {
-            try {
-                res = !isRequest || Tools.executeChecks(
-                        currentOP.getChecks(), message, helpers, true);
-                if (!res) {
-                    if (isRequest)
-                        currentOP.matchedMessages.add(
-                                new Operation.MatchedMessage(
-                                        message, message_index, true, false, true));
-                    return false;
-                }
-                res = isRequest || Tools.executeChecks(
-                        currentOP.getChecks(), message, helpers, false);
-                if (!res) {
-                    if (!isRequest)
-                        currentOP.matchedMessages.add(
-                                new Operation.MatchedMessage(
-                                        message, message_index, false, true, true));
-                    return false;
-                }
-
-                if (isRequest)
-                    currentOP.matchedMessages.add(
-                            new Operation.MatchedMessage(
-                                    message, message_index, true, false, false));
-                if (!isRequest)
-                    currentOP.matchedMessages.add(
-                            new Operation.MatchedMessage(
-                                    message, message_index, false, true, false));
-            } catch (ParsingException e) {
-                currentOP.applicable = false;
-                System.err.println(e);
-            }
-        }
-
-        return res;
-    }
 
     /**
      * Function that check a regex over a given message and section
@@ -365,17 +190,16 @@ public class Tools {
      *
      * @param checks    a List of checks
      * @param message   the message to be checked
-     * @param helpers   an istance of the helpers
      * @param isRequest set true if the request has to be checked, false for the response
      * @return returns the result of the checks (true if all the tests are successful)
      */
     public static boolean executeChecks(List<Check> checks,
                                         HTTPReqRes message,
-                                        IExtensionHelpers helpers,
-                                        boolean isRequest) throws ParsingException {
+                                        boolean isRequest,
+                                        GUI gui) throws ParsingException {
         //TODO: change to module in progress
         for (Check c : checks) {
-            if (!c.execute(message, helpers, isRequest)) {
+            if (!c.execute(message, isRequest, gui)) {
                 return false;
             }
         }
@@ -389,11 +213,11 @@ public class Tools {
      * @return
      * @throws ParsingException
      */
-    public static boolean executeChecks(Operation op) throws ParsingException {
+    public static boolean executeChecks(Operation op, GUI gui) throws ParsingException {
         // TODO
         for (Check c : op.getChecks()) {
             c.loader(op.api); //TODO: change loader to an Operation api
-            c.execute();
+            c.execute(gui);
             if (!op.setResult(c)) {
                 return false;
             }

@@ -461,6 +461,46 @@ public class HTTPReqRes implements Cloneable {
     }
 
     /**
+     * Function to check if the given message matches a message_type
+     *
+     * @param msg_type the message type to check against it
+     * @return true or false, if matched or not respectively
+     */
+    public boolean matches_msg_type(MessageType msg_type, IExtensionHelpers helpers) {
+        boolean matchedMessage = false;
+        try {
+            /* If the response message name is searched, the getByResponse will be true.
+             * so messageIndex have to search for the request, and then evaluate the response
+             */
+            if (msg_type.getByResponse) {
+                matchedMessage = Tools.executeChecks(
+                        msg_type.checks,
+                        this,
+                        true,
+                        new GUI() // TODO: fix
+                );
+            } else if (msg_type.getByRequest) {
+                matchedMessage = Tools.executeChecks(
+                        msg_type.checks,
+                        this,
+                        false,
+                        new GUI() // TODO: fix
+                );
+            } else {
+                matchedMessage = Tools.executeChecks(
+                        msg_type.checks,
+                        this,
+                        msg_type.isRequest,
+                        new GUI() // TODO: fix
+                );
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return matchedMessage;
+    }
+
+    /**
      * An enum representing the possible message sections
      */
     public enum MessageSection {

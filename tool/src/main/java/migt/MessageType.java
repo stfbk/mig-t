@@ -47,18 +47,22 @@ public class MessageType implements Cloneable {
      * @return the corresponding MessageType (if found)
      * @throws Exception if the MessageType can not be found
      */
-    public static MessageType getFromList(List<MessageType> list, String name) throws Exception {
+    public static MessageType getFromList(List<MessageType> list, String name) throws ParsingException {
         for (MessageType act : list) {
-            if (act.name.equals(name)) {
-                return act;
-            } else if (act.responseName.equals(name)) {
-                MessageType tmp = (MessageType) act.clone();
-                tmp.getByResponse = true;
-                return tmp;
-            } else if (act.requestName.equals(name)) {
-                MessageType tmp = (MessageType) act.clone();
-                tmp.getByRequest = true;
-                return tmp;
+            try {
+                if (act.name.equals(name)) {
+                    return act;
+                } else if (act.responseName.equals(name)) {
+                    MessageType tmp = (MessageType) act.clone();
+                    tmp.getByResponse = true;
+                    return tmp;
+                } else if (act.requestName.equals(name)) {
+                    MessageType tmp = (MessageType) act.clone();
+                    tmp.getByRequest = true;
+                    return tmp;
+                }
+            } catch (CloneNotSupportedException e) {
+                throw new ParsingException(e.getMessage());
             }
         }
         throw new ParsingException("cannot find the specified message type");

@@ -487,7 +487,7 @@ public class DecodeOperation extends Module {
 
         // execute checks
         if (checks.size() != 0) {
-            executeChecks();
+            executeChecks(mainPane);
         }
 
         // Rebuild JWT before encoding it
@@ -504,10 +504,10 @@ public class DecodeOperation extends Module {
      * @return the result, for convenience
      * @throws ParsingException if errors are found
      */
-    public boolean executeChecks() throws ParsingException {
+    public boolean executeChecks(GUI gui) throws ParsingException {
         for (Check c : checks) {
             c.loader(getAPI());
-            c.execute();
+            c.execute(gui);
             if (!setResult(c)) {
                 return false;
             }

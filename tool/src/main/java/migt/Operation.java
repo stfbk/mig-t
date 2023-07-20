@@ -6,11 +6,10 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
+import java.util.regex.PatternSyntaxException;
 
-import static migt.Tools.buildStringWithVars;
-import static migt.Tools.findParentDiv;
+import static migt.Tools.*;
 
 /**
  * Class storing an Operation in a Test
@@ -23,8 +22,6 @@ public class Operation extends Module {
     public String to_session;
     public Then then;
     public String save_name;
-    public int to_match;
-    public int act_matched;
     public String session_port;
     public List<Check> preconditions;
     public String replace_request_name;
@@ -44,7 +41,6 @@ public class Operation extends Module {
     Operation_API api;
     private List<Check> checks;
     private String messageType;
-    private HTTPReqRes.MessageSection messageSection;
     private Action action;
     private String session;
     private SessionOperation.SessionAction sessionAction;
@@ -69,30 +65,8 @@ public class Operation extends Module {
                      List<MessageType> messageTypes) throws Exception {
         init();
 
-        if (!isActive) {
-            if (operation_json.has("decode param")) {
-                decode_param = operation_json.getString("decode param");
-
-                JSONArray encodings = operation_json.getJSONArray("encoding");
-                Iterator<Object> it = encodings.iterator();
-
-                while (it.hasNext()) {
-                    String act_enc = (String) it.next();
-                    this.encodings.add(
-                            DecodeOperation.Encoding.fromString(act_enc));
-                }
-            }
-            if (operation_json.has("checks")) {
-                //non regex version
-                JSONArray checks = operation_json.getJSONArray("checks");
-
-                if (operation_json.has("message section")) {
-                    setMessageSection(HTTPReqRes.MessageSection.fromString(operation_json.getString("message section")));
-                }
-                setChecks(Tools.parseChecksFromJSON(checks));
-            }
-        } else {
-            // If the test is active
+        if (isActive) {
+            // If the test is active parse also these
             if (operation_json.has("session")) {
                 // If is a Session Operation
                 String session = operation_json.getString("session");
@@ -114,21 +88,6 @@ public class Operation extends Module {
             // If is a standard operation
             String action = operation_json.getString("action");
             setAction(action);
-
-            // if it is a validate
-            if (getAction() == Action.VALIDATE) {
-                // TODO: to remove match?
-                if (operation_json.has("match")) {
-                    String toMatch = operation_json.getString("match");
-                    if (toMatch.equals("all")) to_match = -1;
-                    else to_match = Integer.parseInt(toMatch);
-                } else {
-                    to_match = 1;
-                }
-                //non regex version
-                JSONArray checks = operation_json.getJSONArray("checks");
-                setChecks(Tools.parseChecksFromJSON(checks));
-            }
 
             if (operation_json.has("from session")) {
                 from_session = operation_json.getString("from session");
@@ -153,28 +112,35 @@ public class Operation extends Module {
                 JSONArray checks = operation_json.getJSONArray("preconditions");
                 preconditions = Tools.parseChecksFromJSON(checks);
             }
+        }
 
-            // Message Operations
-            if (operation_json.has("message operations")) {
-                JSONArray message_ops = operation_json.getJSONArray("message operations");
-                for (int k = 0; k < message_ops.length(); k++) {
-                    JSONObject act_message_op = message_ops.getJSONObject(k);
-                    MessageOperation message_op = new MessageOperation(act_message_op);
-                    messageOerations.add(message_op);
-                }
-            }
+        setMessageType(operation_json.getString("message type"), messageTypes);
 
-            // Decode Operations
-            if (operation_json.has("decode operations")) {
-                JSONArray decode_ops = operation_json.getJSONArray("decode operations");
-                for (int k = 0; k < decode_ops.length(); k++) {
-                    JSONObject act_decode_op = decode_ops.getJSONObject(k);
-                    // recursion managed inside
-                    DecodeOperation decode_op = new DecodeOperation(act_decode_op);
-                    decodeOperations.add(decode_op);
-                }
+        // Message Operations
+        if (operation_json.has("message operations")) {
+            JSONArray message_ops = operation_json.getJSONArray("message operations");
+            for (int k = 0; k < message_ops.length(); k++) {
+                JSONObject act_message_op = message_ops.getJSONObject(k);
+                MessageOperation message_op = new MessageOperation(act_message_op);
+                messageOerations.add(message_op);
             }
-            setMessageType(operation_json.getString("message type"), messageTypes);
+        }
+
+        // checks
+        if (operation_json.has("checks")) {
+            JSONArray checks = operation_json.getJSONArray("checks");
+            setChecks(Tools.parseChecksFromJSON(checks));
+        }
+
+        // Decode Operations
+        if (operation_json.has("decode operations")) {
+            JSONArray decode_ops = operation_json.getJSONArray("decode operations");
+            for (int k = 0; k < decode_ops.length(); k++) {
+                JSONObject act_decode_op = decode_ops.getJSONObject(k);
+                // recursion managed inside
+                DecodeOperation decode_op = new DecodeOperation(act_decode_op);
+                decodeOperations.add(decode_op);
+            }
         }
     }
 
@@ -188,8 +154,6 @@ public class Operation extends Module {
         this.session_operations = new ArrayList<>();
         this.log_messages = new ArrayList<>();
         this.decodeOperations = new ArrayList<>();
-        this.to_match = 0;
-        this.act_matched = 0;
         this.from_session = "";
         this.to_session = "";
         this.save_name = "";
@@ -233,15 +197,6 @@ public class Operation extends Module {
 
     public void setChecks(List<Check> checks) {
         this.checks = checks;
-    }
-
-
-    public HTTPReqRes.MessageSection getMessageSection() {
-        return messageSection;
-    }
-
-    public void setMessageSection(HTTPReqRes.MessageSection messageSection) {
-        this.messageSection = messageSection;
     }
 
     public Action getAction() {
@@ -426,16 +381,86 @@ public class Operation extends Module {
         this.processed_message = api.message.build_message(api.is_request);
     }
 
-    public void execute() {
-        // TODO
+    public void execute(GUI mainPane) {
+        if (!preconditions.isEmpty()) {
+            try {
+                applicable = Tools.executeChecks(
+                        preconditions,
+                        api.message,
+                        api.is_request,
+                        mainPane
+                );
+                if (!applicable) return;
+            } catch (ParsingException e) {
+                applicable = false;
+                e.printStackTrace();
+                return;
+            }
+        }
+
+        // Replace the message with the saved one if asked
+        if (api.is_request) {
+            if (!replace_request_name.equals("")) {
+                try {
+                    applicable = true;
+                    processed_message = getVariableByName(replace_request_name, mainPane).message;
+                    processed_message_service = getVariableByName(replace_request_name, mainPane).service_info;
+                    //return op;
+                } catch (ParsingException e) {
+                    e.printStackTrace();
+                    applicable = false;
+                    return;
+                }
+            }
+        } else {
+            if (!replace_response_name.equals("")) {
+                try {
+                    applicable = true;
+                    processed_message = getVariableByName(replace_response_name, mainPane).message;
+                    processed_message_service = getVariableByName(replace_response_name, mainPane).service_info;
+                    //return op;
+                } catch (ParsingException e) {
+                    e.printStackTrace();
+                    applicable = false;
+                    return;
+                }
+            }
+        }
+
+        // execute the message operations and the decode ops
+        try {
+            applicable = true;
+            // TODO REINSERT
+            BurpExtender.executeMessageOps(this, api.message, api.is_request); // TOOD: change to edits
+            if (!applicable | !result)
+                return;
+            executeDecodeOps(this, helpers, mainPane);
+            if (!applicable | !result)
+                return;
+
+        } catch (ParsingException | PatternSyntaxException e) {
+            applicable = false;
+            e.printStackTrace();
+            return;
+        }
+
+        if (!save_name.equals("")) {
+            Var v = new Var();
+            v.name = save_name;
+            v.isMessage = true;
+            v.message = api.is_request ? api.message.getRequest() : api.message.getResponse();
+            v.service_info = api.message.getHttpService(helpers);
+            synchronized (mainPane.lock) {
+                mainPane.act_test_vars.add(v);
+            }
+        }
     }
 
     /**
      * Enum containing all the possible Active operation actions
      */
     public enum Action {
-        INTERCEPT,
-        VALIDATE;
+        INTERCEPT;
 
         /**
          * From a string get the corresponding enum value
@@ -446,14 +471,10 @@ public class Operation extends Module {
          */
         public static Action fromString(String input) throws ParsingException {
             if (input != null) {
-                switch (input) {
-                    case "intercept":
-                        return INTERCEPT;
-                    case "validate":
-                        return VALIDATE;
-                    default:
-                        throw new ParsingException("invalid check operation");
+                if (input.equals("intercept")) {
+                    return INTERCEPT;
                 }
+                throw new ParsingException("invalid check operation");
             } else {
                 throw new NullPointerException();
             }

@@ -101,11 +101,16 @@ public class ExecutePassives implements Runnable {
             for (Test actual_test : actual_batch) {
                 System.out.println("Actual test name: " + actual_test.getName());
 
-                boolean res = Tools.executePassiveTest(
-                        actual_test,
-                        executedSession.messages,
-                        helpers,
-                        messageTypes);
+                boolean res = false;
+                try {
+                    res = Tools.executePassiveTest(
+                            actual_test,
+                            executedSession.messages,
+                            helpers,
+                            messageTypes);
+                } catch (ParsingException e) {
+                    actual_test.applicable = false;
+                }
 
                 System.out.println("Actual test result: " + res);
                 actual_test.success = res;

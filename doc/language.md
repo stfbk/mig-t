@@ -35,14 +35,7 @@ The use of the operation tag differ based on the type of test is defined into:
 
 ### Message type
 
-With the tag `message type` it has to be specified to which message execute the given operation. There are various possible standard types:
-
-- `request`, all requests
-- `response`, all responses
-- `oauth request`, all the oauth-related requests
-- `oauth response`, all the oauth-related responses
-
-Other message types can be defined in the file _"msg_def.json"_ which will be created at the first execution of the plugin in the Burp folder. By default, some oauth message types are present, feel free to add or modify them.
+With the tag `message type` it has to be specified to which message execute the given operation. Message types can be defined in the file _"msg_def.json"_ which will be created at the first execution of the plugin in the Burp folder. By default, some oauth message types are present, feel free to add or modify them.
 The way a message type is defined is by the use of regex or checks (like in passive tests), the regex or checks are then evaluated over a message, and if the evaluation is successful, the message is then processed.
 
 To define a message type you have to tell:
@@ -68,7 +61,7 @@ Note that where you are asked to insert a regex you have to backslash (\) all th
 An operation in an active test can be used with these tags:
 
 - `message type` which specifies a message type
-- `action` The action to be done on this operation, can be `intercept` or `validate` or `clear cookies`
+- `action` The action to be done on this operation, can be `intercept` or `clear cookies`
 - `from session` specify which session has to be sniffed to search for the message, default is the standard session
 - `then` the action to be done on the intercepted message after the execution of the operation, `forward` or `drop` (default forward)
 - `save` saves the intercepted message to the given variable name
@@ -79,15 +72,6 @@ An operation in an active test can be used with these tags:
 - `replace response` used with the name of a variable containing a message. It replaces the response of the intercepted message with a saved message.
 
 Note that in active tests the operations are evaluated sequencially, this means that until an operation has not been finished (i.e. the message is not arrived yet) the next operation will not be available. This eventually means that if you have more message filtering operations, only one at the time is executed.
-
-#### Note for the Validate action
-
-If you use the `validate` action, the only tags you can use are the same as the passives checks, you can use:
-
-- `regex`
-- `checks`
-  The way they are used is the same as passive checks.
-  The purpose of the validate action is to built an oracle, in a way that if all validate operations are evaluated to true, and the result is passed, then the test is passed. Note that all the validate operations are combined with the result, see the result section for more info
 
 ### Operation and session in active tests
 
@@ -160,7 +144,7 @@ Note that the content lenght of the body section is automatically updated or rem
 
 ## Decode operation
 
-A list of decode operations can be added to each Operation. These operations are used to decode encoded content taken from inside an intercepted message. A decode operation can have its own list of decode operations; these are called recursive decode ops. and they take as input the previously decoded content.
+A list of decode operations can be added to each Operation (passive or active). These operations are used to decode encoded content taken from inside an intercepted message. A decode operation can have its own list of decode operations; these are called recursive decode ops. and they take as input the previously decoded content.
 
 The HTTP parameter containing the content to be decoded has to be specified with the `decode param` If the section of the message is 'body,' the `decode param` takes a regex (for more information, see the section below).
 
@@ -490,12 +474,15 @@ The Checks tag is a list of Check elements, which can be defined with:
 - `check` checks if the given string is present in the specified message section
 - `check param` specifies the name of the parameter to be checked, depending on the section choosed, the tool will search for the parameter using a pattern. (for the url, it will search for a query parameter, for the head, it will search for a head parameter)
 - `check regex` specify a regex that checks the selected content by matching it.
+. `use variable` (true or false) set to true if you want to specify a variable name on the following tags, to check wrt to that variable value.
 - The actual check on the value, which are self explanatory. (if none of these are specified, the check will only check if the given parameter is present)
   - `is`
   - `not is`
   - `contains`
   - `not contains`
   - `is present` specifying true or false, to check whether is present or not
+  - `is in` the value is between a list of values
+  - `is not in` the value is not between a list of values
 
 Note that you can use `check regex` OR `check` OR `check param`. If you use the `check` or `check param` tag, you can use all the other tags to verify the value, otherwise, if you use `check regex` you can just use `is present`.
 
@@ -522,7 +509,7 @@ In case a check operation is executed inside an operation that gives a JSON as a
 
 ### Note for the active tests
 
-If you need to do a check on an active test, you have to do a `validate` operation, which is basically an operation when you can do checks and regex
+If you need to do a check on an active test, you have to do a `validate` operation, which is basically an operation where you can do checks and regex
 
 ## Preconditions
 
@@ -560,8 +547,8 @@ it can be set to:
 - `incorrect flow \[sessionname\]` opposite of `correct flow`, the test succedes only if there is an error
 - `assert_only` the test result ignores the validation of the session flow but gives a result depending on the assertions defined in the track. This means, that if the execution of the session fails, the result will not take it into account.
 
-The result can be combined with the result of the checks or regex in an operation with action set to `validate`.
-The succes is evaluated with the Boolean operator AND between the result and all the validates
+The result can be combined with the result of the checks or regex in an operation.
+The succes is evaluated with the Boolean operator AND between the result and all the results of the operations
 
 Note that if correct (or incorrect) flow is used without specifying a session name, all the sessions are checked.
 
@@ -865,3 +852,5 @@ Examples: <br>
 - Added supprot of regex in checks (in future they will substitute existing regex)
 - Remove support for hardcoded standard message types such as oauth request and oauth response
 - Removed support for hardcoded identification of OAuth flow
+- removed `request`, `response`, `oauth request` `oauth response` from Message type
+- Removed validate Operation, now just use checks inside an intercept Operation

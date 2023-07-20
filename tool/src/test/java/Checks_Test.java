@@ -47,7 +47,7 @@ public class Checks_Test {
                 "}";
 
         Check c = initCheck_json(check_str);
-        c.execute();
+        c.execute(new GUI());
         assertTrue(c.getResult());
     }
 
@@ -61,7 +61,7 @@ public class Checks_Test {
                 "}";
 
         Check c = initCheck_json(check_str);
-        c.execute();
+        c.execute(new GUI());
         assertFalse(c.getResult());
     }
 
@@ -75,7 +75,7 @@ public class Checks_Test {
                 "}";
 
         Check c = initCheck_json(check_str);
-        c.execute();
+        c.execute(new GUI());
         assertTrue(c.getResult());
     }
 
@@ -89,7 +89,7 @@ public class Checks_Test {
                 "}";
 
         Check c = initCheck_json(check_str);
-        c.execute();
+        c.execute(new GUI());
         assertFalse(c.getResult());
     }
 
@@ -103,7 +103,7 @@ public class Checks_Test {
                 "}";
 
         Check c = initCheck_json(check_str);
-        c.execute();
+        c.execute(new GUI());
         assertFalse(c.getResult());
     }
 
@@ -117,7 +117,7 @@ public class Checks_Test {
                 "}";
 
         Check c = initCheck_json(check_str);
-        c.execute();
+        c.execute(new GUI());
         assertTrue(c.getResult());
     }
 
@@ -131,7 +131,7 @@ public class Checks_Test {
                 "}";
 
         Check c = initCheck_json(check_str);
-        c.execute();
+        c.execute(new GUI());
         assertFalse(c.getResult());
     }
 
@@ -145,7 +145,7 @@ public class Checks_Test {
                 "}";
 
         Check c = initCheck_json(check_str);
-        c.execute();
+        c.execute(new GUI());
         assertTrue(c.getResult());
     }
 
@@ -159,11 +159,47 @@ public class Checks_Test {
                 "}";
 
         Check c = initCheck_json(check_str);
-        c.execute();
+        c.execute(new GUI());
 
         DecodeOperation dop = new DecodeOperation();
         dop.setResult(c);
 
         assertTrue(dop.getResult());
+    }
+
+    @Test
+    @DisplayName("check")
+    void test_check_use_variable() throws ParsingException {
+        String check_str = "{\n" +
+                "        \"in\": \"header\",\n" +
+                "        \"use variable\": true,\n" +
+                "        \"check\": \"$.pageInfo.pageName\",\n" +
+                "        \"is\": \"variablename\"\n" +
+                "}";
+
+        GUI gui = new GUI();
+        gui.act_test_vars.add(new Var("variablename", "abc", false));
+
+        Check c = initCheck_json(check_str);
+        c.execute(gui);
+        assertTrue(c.getResult());
+    }
+
+    @Test
+    @DisplayName("check")
+    void test_check_use_variable_wrong() throws ParsingException {
+        String check_str = "{\n" +
+                "        \"in\": \"header\",\n" +
+                "        \"use variable\": true,\n" +
+                "        \"check\": \"$.pageInfo.pageName\",\n" +
+                "        \"is\": \"variablename\"\n" +
+                "}";
+
+        GUI gui = new GUI();
+        gui.act_test_vars.add(new Var("variablename", "ac", false));
+
+        Check c = initCheck_json(check_str);
+        c.execute(gui);
+        assertFalse(c.getResult());
     }
 }

@@ -22,4 +22,10 @@ public class Var {
         this.value = "";
         this.isMessage = false;
     }
+
+    public Var(String name, String value, Boolean isMessage) {
+        this.name = name;
+        this.value = value;
+        this.isMessage = isMessage;
+    }
 }

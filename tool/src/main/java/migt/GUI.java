@@ -47,6 +47,7 @@ public class GUI extends JSplitPane {
     private final List<Test> actives;
     private final Map<String, Component> sessions_text;
     private final Object lock2 = new Object();
+    public List<Var> act_test_vars;
     //GUI
     JTable resultTable;
     JTable testTable;
@@ -95,7 +96,6 @@ public class GUI extends JSplitPane {
     String CONFIG_FILE_PATH = "config.json";
     Operation act_active_op;
     ExecuteActives ex;
-    List<Var> act_test_vars;
     List<MessageType> messageTypes;
     private List<Test> passives;
     private String DRIVER_PATH = "";

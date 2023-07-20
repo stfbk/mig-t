@@ -8,11 +8,10 @@ import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.regex.PatternSyntaxException;
 
-import static migt.Tools.executeDecodeOps;
 import static migt.Tools.getVariableByName;
 
 /**
@@ -93,191 +92,115 @@ public class BurpExtender implements IBurpExtender, ITab, IProxyListener {
      *
      * @param messageIsRequest Indicates whether the HTTP message is a request
      *                         or a response.
-     * @param message          An
+     * @param proxy_message    An
      *                         <code>IInterceptedProxyMessage</code> object that extensions can use to
      *                         query and update details of the message, and control whether the message
      *                         should be intercepted and displayed to the user for manual review or
      */
     @Override
-    public void processProxyMessage(boolean messageIsRequest, IInterceptedProxyMessage message) {
-        String port = message.getListenerInterface().split(":")[1];
-        IHttpRequestResponse messageInfo = message.getMessageInfo();
+    public void processProxyMessage(boolean messageIsRequest, IInterceptedProxyMessage proxy_message) {
+        String port = proxy_message.getListenerInterface().split(":")[1];
+        IHttpRequestResponse messageInfo = proxy_message.getMessageInfo();
 
         if (mainPane.ACTIVE_ENABLED) {
             if (!port.equals(mainPane.act_active_op.session_port)) {
                 return;
             }
 
-            log_message(messageIsRequest, message);
+            log_message(messageIsRequest, proxy_message);
 
-            boolean matchMessage = false;
+            MessageType msg_type = null;
             try {
-                switch (mainPane.act_active_op.getMessageType()) {
-                    case "request":
-                        if (messageIsRequest) {
-                            matchMessage = true;
-                        }
-                        break;
-                    case "response":
-                        if (!messageIsRequest) {
-                            matchMessage = true;
-                        }
-                        break;
-
-                    default:
-                        MessageType msg_type = MessageType.getFromList(mainPane.messageTypes,
-                                mainPane.act_active_op.getMessageType());
-                        /* If the response message name is searched, the getByResponse will be true.
-                         * so i have to search for the request, and then evaluate the response*/
-                        if (msg_type.getByResponse) {
-                            if (!messageIsRequest) {
-                                if (msg_type.isRegex) {
-                                    matchMessage = Tools.findInMessage(msg_type.messageSection,
-                                            msg_type.regex,
-                                            new HTTPReqRes(messageInfo, helpers, true),
-                                            helpers, true);
-                                } else {
-                                    matchMessage = Tools.executeChecks(msg_type.checks,
-                                            new HTTPReqRes(messageInfo, helpers, true),
-                                            helpers, true);
-                                }
-                            }
-                        } else if (msg_type.getByRequest) {
-                            if (!messageIsRequest) {
-                                if (msg_type.isRegex) {
-                                    matchMessage = Tools.findInMessage(msg_type.messageSection,
-                                            msg_type.regex,
-                                            new HTTPReqRes(messageInfo, helpers, false),
-                                            helpers, false);
-                                } else {
-                                    matchMessage = Tools.executeChecks(msg_type.checks,
-                                            new HTTPReqRes(messageInfo, helpers, false),
-                                            helpers, false);
-                                }
-                            }
-                        } else {
-                            if (messageIsRequest == msg_type.isRequest) {
-                                if (msg_type.isRegex) {
-                                    matchMessage = Tools.findInMessage(msg_type.messageSection,
-                                            msg_type.regex,
-                                            new HTTPReqRes(messageInfo, helpers, msg_type.isRequest),
-                                            helpers, msg_type.isRequest);
-                                } else {
-                                    matchMessage = Tools.executeChecks(msg_type.checks,
-                                            new HTTPReqRes(messageInfo, helpers, msg_type.isRequest),
-                                            helpers,
-                                            msg_type.isRequest);
-                                }
-                            }
-                        }
-                        if (matchMessage) {
-                            boolean isRequest = false;
-                            if (msg_type.getByRequest) {
-                                isRequest = false;
-                            } else if (msg_type.getByResponse) {
-                                isRequest = true;
-                            } else {
-                                isRequest = msg_type.isRequest;
-                            }
-
-                            Operation.MatchedMessage m = new Operation.MatchedMessage(
-                                    new HTTPReqRes(messageInfo, helpers, isRequest),
-                                    HTTPReqRes.instances,
-                                    isRequest,
-                                    !isRequest,
-                                    false);
-                            mainPane.act_active_op.matchedMessages.add(m);
-                        }
-                }
+                msg_type = MessageType.getFromList(mainPane.messageTypes,
+                        mainPane.act_active_op.getMessageType());
             } catch (Exception e) {
                 e.printStackTrace();
                 mainPane.act_active_op.applicable = false;
             }
 
-            switch (mainPane.act_active_op.getAction()) {
-                // If the operation's action is an intercept
-                case INTERCEPT:
-                    try {
-                        switch (mainPane.act_active_op.getMessageType()) {
-                            case "request":
-                                if (matchMessage) {
-                                    processMatchedMsg(new MessageType("request", true), messageInfo);
-                                }
-                                break;
-                            case "response":
-                                if (matchMessage) {
-                                    processMatchedMsg(new MessageType("request", false), messageInfo);
-                                }
-                                break;
+            boolean matchMessage = false;
 
-                            default:
-                                MessageType msg_type = MessageType.getFromList(mainPane.messageTypes,
-                                        mainPane.act_active_op.getMessageType());
-                                /* If the response message name is searched, the getByResponse will be true.
-                                 * so i have to search for the request, and then evaluate the response*/
-                                if (msg_type.getByResponse) {
-                                    if (!messageIsRequest) {
-                                        if (matchMessage) {
-                                            processMatchedMsg(msg_type, messageInfo);
-                                        }
-                                    }
-                                } else if (msg_type.getByRequest) {
-                                    if (!messageIsRequest) {
-                                        if (matchMessage) {
-                                            processMatchedMsg(msg_type, messageInfo);
-                                        }
-                                    }
-                                } else {
-                                    if (messageIsRequest == msg_type.isRequest) {
-                                        if (matchMessage) {
-                                            processMatchedMsg(msg_type, messageInfo);
-                                            if (mainPane.act_active_op.then != null &
-                                                    mainPane.act_active_op.then == Operation.Then.DROP) {
-                                                message.setInterceptAction(IInterceptedProxyMessage.ACTION_DROP);
-                                            }
-                                        }
+            try {
+                /* If the response message name is searched, the getByResponse will be true.
+                 * so i have to search for the request, and then evaluate the response*/
+                if (msg_type.getByResponse) {
+                    if (!messageIsRequest) {
+                        matchMessage = Tools.executeChecks(msg_type.checks,
+                                new HTTPReqRes(messageInfo, helpers, true),
+                                true, mainPane);
+                    }
+                } else if (msg_type.getByRequest) {
+                    if (!messageIsRequest) {
+                        matchMessage = Tools.executeChecks(msg_type.checks,
+                                new HTTPReqRes(messageInfo, helpers, false),
+                                false, mainPane);
+                    }
+                } else {
+                    if (messageIsRequest == msg_type.isRequest) {
+                        matchMessage = Tools.executeChecks(msg_type.checks,
+                                new HTTPReqRes(messageInfo, helpers, msg_type.isRequest),
+                                msg_type.isRequest, mainPane);
+                    }
+                }
+            } catch (ParsingException e) {
+                mainPane.act_active_op.applicable = false;
+                return;
+            }
+
+            if (matchMessage) {
+                boolean isRequest = false;
+                if (msg_type.getByRequest) {
+                    isRequest = false;
+                } else if (msg_type.getByResponse) {
+                    isRequest = true;
+                } else {
+                    isRequest = msg_type.isRequest;
+                }
+
+                Operation.MatchedMessage m = new Operation.MatchedMessage(
+                        new HTTPReqRes(messageInfo, helpers, isRequest),
+                        HTTPReqRes.instances,
+                        isRequest,
+                        !isRequest,
+                        false);
+                mainPane.act_active_op.matchedMessages.add(m);
+
+                // If the operation's action is an intercept
+                if (Objects.requireNonNull(mainPane.act_active_op.getAction()) == Operation.Action.INTERCEPT) {
+                    try {
+                        /* If the response message name is searched, the getByResponse will be true.
+                         * so i have to search for the request, and then evaluate the response*/
+                        if (msg_type.getByResponse) {
+                            if (!messageIsRequest) {
+                                if (matchMessage) {
+                                    processMatchedMsg(msg_type, messageInfo);
+                                }
+                            }
+                        } else if (msg_type.getByRequest) {
+                            if (!messageIsRequest) {
+                                if (matchMessage) {
+                                    processMatchedMsg(msg_type, messageInfo);
+                                }
+                            }
+                        } else {
+                            if (messageIsRequest == msg_type.isRequest) {
+                                if (matchMessage) {
+                                    processMatchedMsg(msg_type, messageInfo);
+                                    if (mainPane.act_active_op.then != null &
+                                            mainPane.act_active_op.then == Operation.Then.DROP) {
+                                        proxy_message.setInterceptAction(IInterceptedProxyMessage.ACTION_DROP);
                                     }
                                 }
+                            }
                         }
                     } catch (Exception e) {
                         e.printStackTrace();
                         mainPane.act_active_op.applicable = false;
                     }
-                    break;
-
-                // if the operation action is a validate
-                case VALIDATE:
-                    if (matchMessage & (
-                            mainPane.act_active_op.to_match == -1 ||
-                                    mainPane.act_active_op.to_match > mainPane.act_active_op.act_matched)) {
-                        if (!messageIsRequest) {
-                            messageInfo.setHighlight("green");
-                            List<Boolean> results = null;
-                            try {
-                                results = Tools.executePassiveOperation(mainPane.act_active_op,
-                                        new HTTPReqRes(messageInfo, helpers, messageIsRequest),
-                                        0,
-                                        helpers,
-                                        mainPane.messageTypes);
-                            } catch (ParsingException e) {
-                                e.printStackTrace();
-                                mainPane.act_active_op.applicable = false;
-                                resume();
-                            }
-
-                            mainPane.act_active_op.applicable = results.get(3);
-                            if (mainPane.act_active_op.applicable) {
-                                mainPane.act_active_op.result = results.get(0);
-                                if (!mainPane.act_active_op.result) resume();
-                                mainPane.act_active_op.act_matched++;
-                            }
-                            resume();
-                        }
-                    }
-                    break;
+                }
             }
-
         }
+
         if (mainPane.recording) {
             if (!messageIsRequest) { // do not remove
                 synchronized (mainPane.interceptedMessages) {
@@ -297,9 +220,10 @@ public class BurpExtender implements IBurpExtender, ITab, IProxyListener {
                                    IHttpRequestResponse messageInfo) {
         messageInfo.setHighlight("red");
         HTTPReqRes message = new HTTPReqRes(messageInfo, helpers, msg_type.isRequest);
-        mainPane.act_active_op = executeOperation(mainPane.act_active_op,
-                message,
-                msg_type.isRequest);
+
+        mainPane.act_active_op.helpers = helpers;
+        mainPane.act_active_op.setAPI(new Operation_API(message, msg_type.isRequest));
+        mainPane.act_active_op.execute(mainPane);
 
         // if message has been edited inside operation update the value
         if (mainPane.act_active_op.processed_message != null) {
@@ -320,92 +244,6 @@ public class BurpExtender implements IBurpExtender, ITab, IProxyListener {
     }
 
     /**
-     * Executes an operation to a message, in an active test and then returns the updated Operation object, which will
-     * contains the infos about the execution
-     *
-     * @param op          the operation to be executed
-     * @param messageInfo the message info
-     * @param isRequest   true if the message is a request
-     * @return the updated operation, with its result
-     */
-    private Operation executeOperation(Operation op, HTTPReqRes messageInfo, boolean isRequest) {
-        op.setAPI(new Operation_API(messageInfo, isRequest));
-
-        if (!op.preconditions.isEmpty()) {
-            try {
-                op.applicable = Tools.executeChecks(op.preconditions,
-                        messageInfo,
-                        helpers,
-                        isRequest);
-                if (!op.applicable) return op;
-            } catch (ParsingException e) {
-                op.applicable = false;
-                e.printStackTrace();
-                return op;
-            }
-        }
-
-        // Replace the message with the saved one if asked
-        if (isRequest) {
-            if (!op.replace_request_name.equals("")) {
-                try {
-                    op.applicable = true;
-                    op.processed_message = getVariableByName(op.replace_request_name, mainPane).message;
-                    op.processed_message_service = getVariableByName(op.replace_request_name, mainPane).service_info;
-                    //return op;
-                } catch (ParsingException e) {
-                    e.printStackTrace();
-                    op.applicable = false;
-                    return op;
-                }
-            }
-        } else {
-            if (!op.replace_response_name.equals("")) {
-                try {
-                    op.applicable = true;
-                    op.processed_message = getVariableByName(op.replace_response_name, mainPane).message;
-                    op.processed_message_service = getVariableByName(op.replace_response_name, mainPane).service_info;
-                    //return op;
-                } catch (ParsingException e) {
-                    e.printStackTrace();
-                    op.applicable = false;
-                    return op;
-                }
-            }
-        }
-
-        // execute the message operations and the decode ops
-        try {
-            op.applicable = true;
-            op = executeMessageOps(op, messageInfo, isRequest);
-            if (!op.applicable | !op.result)
-                return op;
-            op = executeDecodeOps(op, helpers, mainPane);
-            if (!op.applicable | !op.result)
-                return op;
-
-        } catch (ParsingException | PatternSyntaxException e) {
-            op.applicable = false;
-            e.printStackTrace();
-            return op;
-        }
-
-        if (!op.save_name.equals("")) {
-            Var v = new Var();
-            v.name = op.save_name;
-            v.isMessage = true;
-            v.message = isRequest ? messageInfo.getRequest() : messageInfo.getResponse();
-            v.service_info = messageInfo.getHttpService(helpers);
-            synchronized (mainPane.lock) {
-                mainPane.act_test_vars.add(v);
-            }
-        }
-
-
-        return op;
-    }
-
-    /**
      * Given an operation, and a message, execute the Message operations contained in the operation
      *
      * @param op          the operation containing the message operations
@@ -422,7 +260,6 @@ public class BurpExtender implements IBurpExtender, ITab, IProxyListener {
             Pattern pattern;
             Matcher matcher;
             byte[] new_message;
-
             try {
                 if (mop.type == MessageOperation.MessageOpType.GENERATE_POC) {
                     if (!isRequest) {
