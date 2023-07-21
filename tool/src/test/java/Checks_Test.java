@@ -3,6 +3,9 @@ import org.json.JSONObject;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import static org.junit.jupiter.api.Assertions.*;
 
 public class Checks_Test {
@@ -47,7 +50,7 @@ public class Checks_Test {
                 "}";
 
         Check c = initCheck_json(check_str);
-        c.execute(new GUI());
+        c.execute(new ArrayList<Var>());
         assertTrue(c.getResult());
     }
 
@@ -61,7 +64,7 @@ public class Checks_Test {
                 "}";
 
         Check c = initCheck_json(check_str);
-        c.execute(new GUI());
+        c.execute(new ArrayList<Var>());
         assertFalse(c.getResult());
     }
 
@@ -75,7 +78,7 @@ public class Checks_Test {
                 "}";
 
         Check c = initCheck_json(check_str);
-        c.execute(new GUI());
+        c.execute(new ArrayList<Var>());
         assertTrue(c.getResult());
     }
 
@@ -89,7 +92,7 @@ public class Checks_Test {
                 "}";
 
         Check c = initCheck_json(check_str);
-        c.execute(new GUI());
+        c.execute(new ArrayList<Var>());
         assertFalse(c.getResult());
     }
 
@@ -103,7 +106,7 @@ public class Checks_Test {
                 "}";
 
         Check c = initCheck_json(check_str);
-        c.execute(new GUI());
+        c.execute(new ArrayList<Var>());
         assertFalse(c.getResult());
     }
 
@@ -117,7 +120,7 @@ public class Checks_Test {
                 "}";
 
         Check c = initCheck_json(check_str);
-        c.execute(new GUI());
+        c.execute(new ArrayList<Var>());
         assertTrue(c.getResult());
     }
 
@@ -131,7 +134,7 @@ public class Checks_Test {
                 "}";
 
         Check c = initCheck_json(check_str);
-        c.execute(new GUI());
+        c.execute(new ArrayList<Var>());
         assertFalse(c.getResult());
     }
 
@@ -145,7 +148,7 @@ public class Checks_Test {
                 "}";
 
         Check c = initCheck_json(check_str);
-        c.execute(new GUI());
+        c.execute(new ArrayList<Var>());
         assertTrue(c.getResult());
     }
 
@@ -159,7 +162,7 @@ public class Checks_Test {
                 "}";
 
         Check c = initCheck_json(check_str);
-        c.execute(new GUI());
+        c.execute(new ArrayList<Var>());
 
         DecodeOperation dop = new DecodeOperation();
         dop.setResult(c);
@@ -177,11 +180,11 @@ public class Checks_Test {
                 "        \"is\": \"variablename\"\n" +
                 "}";
 
-        GUI gui = new GUI();
-        gui.act_test_vars.add(new Var("variablename", "abc", false));
+        List<Var> vars = new ArrayList<Var>();
+        vars.add(new Var("variablename", "abc", false));
 
         Check c = initCheck_json(check_str);
-        c.execute(gui);
+        c.execute(vars);
         assertTrue(c.getResult());
     }
 
@@ -195,11 +198,11 @@ public class Checks_Test {
                 "        \"is\": \"variablename\"\n" +
                 "}";
 
-        GUI gui = new GUI();
-        gui.act_test_vars.add(new Var("variablename", "ac", false));
+        List<Var> vars = new ArrayList<Var>();
+        vars.add(new Var("variablename", "ac", false));
 
         Check c = initCheck_json(check_str);
-        c.execute(gui);
+        c.execute(vars);
         assertFalse(c.getResult());
     }
 }

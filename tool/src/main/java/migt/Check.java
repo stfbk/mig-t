@@ -23,10 +23,10 @@ public class Check extends Module {
     CheckOps op; // the check operations
     CheckIn in; // the section over which to search
     String op_val;
-    List<String> value_list;
+    List<String> value_list; // the eventual list of values to check between
     boolean isParamCheck; // specifies if what is declared in what is a parameter name
-    String regex;
-    boolean use_variable;
+    String regex; // the eventual regex to use
+    boolean use_variable; // if a variable name will be used in the check operation
 
     public Check() {
         init();
@@ -36,7 +36,7 @@ public class Check extends Module {
      * Instantiate a new Check object given its parsed JSONObject
      *
      * @param json_check the check as JSONObject
-     * @throws ParsingException
+     * @throws ParsingException if the input is not compliant with the language
      */
     public Check(JSONObject json_check) throws ParsingException {
         init();
@@ -115,17 +115,54 @@ public class Check extends Module {
         use_variable = false;
     }
 
+    /**
+     * Loads a Decode operation's API into the check
+     * @param api the Decode operation's api to load
+     */
     public void loader(DecodeOperation_API api) {
         this.imported_api = api;
     }
 
     /**
-     * Execute the check if it is http
+     * Loads an Operation's API into the check
+     * @param api the Operation's API to load
+     */
+    public void loader(Operation_API api) {
+        this.imported_api = api;
+    }
+
+    /**
+     * Executes the regex version of the check
      *
-     * @param message
-     * @param isRequest
-     * @return
-     * @throws ParsingException
+     * @param input the input content
+     * @return the result of the check
+     */
+    private boolean execute_regex(String input) {
+        Pattern p = Pattern.compile(regex);
+        Matcher m = p.matcher(input);
+        applicable = true;
+
+        String val = "";
+        if (m.find()) {
+            val = m.group();
+        }
+
+        if (this.op == null) {
+            // Return result based on matched or not
+            return (val.length() > 0);
+        } else {
+            // execute op against matched value
+            return do_check(val);
+        }
+    }
+
+    /**
+     * Execute the check over a message (in an Operation)
+     *
+     * @param message the message to check
+     * @param isRequest tells if the message is a request or a response
+     * @return the result of the check
+     * @throws ParsingException if something wrong is found wrt the language
      */
     private boolean execute_http(HTTPReqRes message,
                                  boolean isRequest) throws ParsingException {
@@ -162,65 +199,30 @@ public class Check extends Module {
         }
 
         if (this.isParamCheck) {
-            try {
-                Pattern p = this.in == CheckIn.URL ?
-                        Pattern.compile("(?<=[?&]" + this.what + "=)[^\\n&]*") :
-                        Pattern.compile("(?<=" + this.what + ":\\s?)[^\\n]*");
-                Matcher m = p.matcher(msg_str);
-
-                String val = "";
-                if (m.find()) {
-                    val = m.group();
-                } else {
-                    return false;
-                }
-
-                if (this.op == null && val.length() != 0) {
-                    // if it passed all the splits without errors, the param is present, but no checks are specified
-                    // so result is true
-                    return true;
-                }
-                switch (this.op) {
-                    case IS:
-                        if (!this.op_val.equals(val)) {
-                            return false;
-                        }
-                        break;
-                    case IS_NOT:
-                        if (this.op_val.equals(val)) {
-                            return false;
-                        }
-                        break;
-                    case CONTAINS:
-                        if (!val.contains(this.op_val)) {
-                            return false;
-                        }
-                        break;
-                    case NOT_CONTAINS:
-                        if (val.contains(this.op_val)) {
-                            return false;
-                        }
-                        break;
-                    case IS_PRESENT:
-                        return true; // if it gets to this, the searched param is already found
-                    case IS_NOT_PRESENT:
-                        return false;
-                    case IS_IN:
-                        return value_list.contains(val); // TODO check
-                    case IS_NOT_IN:
-                        return !value_list.contains(val);
-                }
-            } catch (ArrayIndexOutOfBoundsException e) {
-                //e.printStackTrace();
-                if (this.op != null) {
-                    if (this.op != IS_NOT_PRESENT) {
-                        return false;
-                    }
-                } else {
-                    return false;
-                }
+            if (in == CheckIn.BODY) {
+                throw new ParsingException("Invalid check operation, cannot do \"check param\" over body, " +
+                        "use \"check_regex instead\"");
             }
+
+            Pattern p = this.in == CheckIn.URL ?
+                    Pattern.compile("(?<=[?&]" + this.what + "=)[^\\r\\n&]*") :
+                    Pattern.compile("(?<=" + this.what + ":\\s?)[^\\r\\n]*");
+            // TODO: this could be done better by using message methods
+            Matcher m = p.matcher(msg_str);
+
+            applicable = true;
+
+            String val = "";
+            if (m.find()) {
+                val = m.group();
+                val = val.trim();
+            } else {
+                return false;
+            }
+
+            return do_check(val);
         } else {
+            applicable = true;
             if (!msg_str.contains(this.what)) {
                 if (this.op != null) {
                     return this.op == IS_NOT_PRESENT;
@@ -239,8 +241,8 @@ public class Check extends Module {
     /**
      * Execute the json version of the check
      *
-     * @return the result of the execution //TODO: change to API
-     * @throws ParsingException
+     * @return the result of the execution
+     * @throws ParsingException if something wrong is found wrt the language
      */
     private boolean execute_json() throws ParsingException {
         DecodeOperation_API tmp = ((DecodeOperation_API) this.imported_api);
@@ -305,42 +307,109 @@ public class Check extends Module {
     }
 
     /**
-     * Executes the given check
+     * Executes check operations over the selected value, and returns the result
      *
-     * @param message
-     * @param isRequest
+     * @param val_to_check the value to check
+     * @return the result of the check
+     */
+    public boolean do_check(String val_to_check) {
+        try {
+            if (this.op == null && val_to_check.length() != 0) {
+                // if it passed all the splits without errors, the param is present, but no checks are specified
+                // so result is true
+                return true;
+            }
+            switch (this.op) {
+                case IS:
+                    if (!this.op_val.equals(val_to_check)) {
+                        return false;
+                    }
+                    break;
+                case IS_NOT:
+                    if (this.op_val.equals(val_to_check)) {
+                        return false;
+                    }
+                    break;
+                case CONTAINS:
+                    if (!val_to_check.contains(this.op_val)) {
+                        return false;
+                    }
+                    break;
+                case NOT_CONTAINS:
+                    if (val_to_check.contains(this.op_val)) {
+                        return false;
+                    }
+                    break;
+                case IS_PRESENT:
+                    return true; // if it gets to this, the searched param is already found
+                case IS_NOT_PRESENT:
+                    return false;
+                case IS_IN:
+                    return value_list.contains(val_to_check); // TODO check
+                case IS_NOT_IN:
+                    return !value_list.contains(val_to_check);
+            }
+        } catch (ArrayIndexOutOfBoundsException e) {
+            //e.printStackTrace();
+            if (this.op != null) {
+                if (this.op != IS_NOT_PRESENT) {
+                    return false;
+                }
+            } else {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /**
+     * Executes the given check (without API). Used to match messages with msg_types usually.
+     *
+     * @param message the message to check
+     * @param isRequest if the message is a request or a response
      * @return the result of the check (passed or not passed)
      */
     public boolean execute(HTTPReqRes message,
                            boolean isRequest,
-                           GUI gui) throws ParsingException {
+                           List<Var> vars) throws ParsingException {
 
         if (use_variable) {
             // Substitute to the op_val variable (that contains the name), the value of the variable
-            op_val = Tools.getVariableByName(op_val, gui).value;
+            op_val = Tools.getVariableByName(op_val, vars).value;
         }
-        // TODO: migrate to api
         result = execute_http(message, isRequest);
         return result;
-        // TODO REMOVE CONTENT TYPE
     }
 
-    public void execute(GUI gui) throws ParsingException {
+    /**
+     * Execute the check by using API
+     * @param vars the variables of the actual operation (test)
+     */
+    public void execute(List<Var> vars) throws ParsingException {
         if (use_variable) {
             // Substitute to the op_val variable (that contains the name), the value of the variable
-            op_val = Tools.getVariableByName(op_val, gui).value;
+            op_val = Tools.getVariableByName(op_val, vars).value;
         }
 
-        switch (((DecodeOperation_API) imported_api).type) {
-            case JWT:
-                result = execute_json();
-                break;
-            case NONE:
-                break;
-            //TODO
-            case XML:
+        if (imported_api instanceof Operation_API) {
+            // If is inside a standard Operation
+            result = execute_http(
+                    ((Operation_API) imported_api).message,
+                    ((Operation_API) imported_api).is_request
+            );
+        } else if (imported_api instanceof DecodeOperation_API) {
+            // if inside a decode operation
+            switch (((DecodeOperation_API) imported_api).type) {
+                case JWT:
+                    result = execute_json();
+                    break;
+                case NONE:
+                    break;
                 //TODO
-                break;
+                case XML:
+                    //TODO
+                    break;
+            }
         }
     }
 
@@ -355,28 +424,6 @@ public class Check extends Module {
     @Override
     public String toString() {
         return "check: " + what + (op == null ? "" : " " + op + ": " + op_val);
-    }
-
-    /**
-     * Executes the regex of the check against the given input, and returns true if the regex found something.
-     *
-     * @param input the input text to check
-     * @return true if the regex matches, false otherwise
-     */
-    private boolean execute_regex(String input) {
-        Pattern p = Pattern.compile(regex);
-        Matcher m = p.matcher(input);
-        applicable = true;
-
-        String val = "";
-        if (m.find()) {
-            val = m.group();
-        } else {
-            return false;
-        }
-        // TODO: add is, isnot, .. ?
-
-        return true;
     }
 
     /**

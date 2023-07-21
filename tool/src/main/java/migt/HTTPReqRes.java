@@ -6,6 +6,7 @@ import burp.IHttpRequestResponsePersisted;
 import burp.IHttpService;
 
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.regex.Matcher;
@@ -477,21 +478,21 @@ public class HTTPReqRes implements Cloneable {
                         msg_type.checks,
                         this,
                         true,
-                        new GUI() // TODO: fix
+                        new ArrayList<>() // TODO: fix
                 );
             } else if (msg_type.getByRequest) {
                 matchedMessage = Tools.executeChecks(
                         msg_type.checks,
                         this,
                         false,
-                        new GUI() // TODO: fix
+                        new ArrayList<>() // TODO: fix
                 );
             } else {
                 matchedMessage = Tools.executeChecks(
                         msg_type.checks,
                         this,
                         msg_type.isRequest,
-                        new GUI() // TODO: fix
+                        new ArrayList<>() // TODO: fix
                 );
             }
         } catch (Exception e) {

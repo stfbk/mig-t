@@ -45,24 +45,21 @@ public class Tools {
                 Operation currentOP = test.operations.get(j);
                 MessageType msg_type = MessageType.getFromList(msg_types, currentOP.getMessageType());
 
-                try {
-                    // Check message is matched.
-                    // TODO: execute Operation exactly as actives, idk if possible
-                    if (messageList.get(i).matches_msg_type(msg_type, helpers)) {
-                        res = processOperation(
-                                currentOP,
-                                messageList.get(i),
-                                i,
-                                helpers,
-                                msg_type.isRequest
-                        );
-                    }
-                } catch (ParsingException e) {
-                    e.printStackTrace();
-                    res = false;
-                    currentOP.applicable = false;
-                    break;
+                if (currentOP.api == null) {
+                    currentOP.api = new Operation_API(test.vars);
+                } else {
+                    currentOP.api.vars = test.vars;
                 }
+
+                if (messageList.get(i).matches_msg_type(msg_type, helpers)) {
+                    currentOP.helpers = helpers;
+                    currentOP.setAPI(new Operation_API(messageList.get(i), msg_type.isRequest));
+                    currentOP.execute();
+                    res = currentOP.getResult();
+                }
+
+                test.vars = currentOP.api.vars;
+
                 actisreq = msg_type.isRequest;
                 actisresp = !msg_type.isRequest;
                 j++;
@@ -196,10 +193,9 @@ public class Tools {
     public static boolean executeChecks(List<Check> checks,
                                         HTTPReqRes message,
                                         boolean isRequest,
-                                        GUI gui) throws ParsingException {
-        //TODO: change to module in progress
+                                        List<Var> vars) throws ParsingException {
         for (Check c : checks) {
-            if (!c.execute(message, isRequest, gui)) {
+            if (!c.execute(message, isRequest, vars)) {
                 return false;
             }
         }
@@ -207,40 +203,37 @@ public class Tools {
     }
 
     /**
-     * Execute a list of checks from an operation. Uses API.
+     * Execute a list of checks in an operation. Uses API.
      *
-     * @param op
-     * @return
-     * @throws ParsingException
+     * @param op the operation to execute checks from
+     * @return the result of the checks
+     * @throws ParsingException if something goes wrong related to the definition of the test
      */
-    public static boolean executeChecks(Operation op, GUI gui) throws ParsingException {
-        // TODO
+    public static Operation executeChecks(Operation op, List<Var> vars) throws ParsingException {
         for (Check c : op.getChecks()) {
-            c.loader(op.api); //TODO: change loader to an Operation api
-            c.execute(gui);
-            if (!op.setResult(c)) {
-                return false;
-            }
+            c.loader(op.api);
+            c.execute(vars);
+            if (!op.setResult(c))
+                break;
         }
-        return true;
+        return op;
     }
 
     /**
      * Executes the decode operations in an operation. Uses APIs. Sets the result to the operation
      *
-     * @param op       the operation to execute the decode operations from
-     * @param helpers  the Burp helpers
-     * @param mainPane reference to the mainPane object (contains the variables)
+     * @param op      the operation to execute the decode operations from
+     * @param helpers the Burp helpers
      * @return The operation (edited)
      * @throws ParsingException if something goes wrong
      */
     public static Operation executeDecodeOps(Operation op,
                                              IExtensionHelpers helpers,
-                                             GUI mainPane) throws ParsingException {
+                                             List<Var> vars) throws ParsingException {
         Operation_API api = op.getAPI();
         for (DecodeOperation dop : op.getDecodeOperations()) {
             dop.loader(api, helpers);
-            dop.execute(mainPane);
+            dop.execute(vars);
             if (!op.setResult(dop))
                 break;
             op.setAPI(dop.exporter());
@@ -250,21 +243,20 @@ public class Tools {
     }
 
     /**
-     * Executes a decode operation, from a decode operation. This is basically the recursive step.
+     * Executes the decode operations in a decode operation. This is the recursive step.
      *
-     * @param op       the decode operation executing its child decode operations
-     * @param helpers  the burp helpers
-     * @param mainPane reference to the mainPane object (contains the variables)
+     * @param op      the decode operation executing its child decode operations
+     * @param helpers the burp helpers
      * @return The operation (edited)
      * @throws ParsingException if something goes wrong
      */
     public static DecodeOperation executeDecodeOps(DecodeOperation op,
                                                    IExtensionHelpers helpers,
-                                                   GUI mainPane) throws ParsingException {
+                                                   List<Var> vars) throws ParsingException {
         DecodeOperation_API api = op.getAPI();
         for (DecodeOperation dop : op.decodeOperations) {
             dop.loader(api, helpers);
-            dop.execute(mainPane);
+            dop.execute(vars);
             if (!op.setResult(dop))
                 break;
             op.setAPI(dop.exporter());
@@ -274,19 +266,18 @@ public class Tools {
     }
 
     /**
-     * Executes the edit operations inside of a decode operation
+     * Executes the edit operations inside a decode operation
      *
-     * @param op       the decode operation to run the edit operations from
-     * @param mainPane reference to the mainPane object (contains the variables)
+     * @param op the decode operation to run the edit operations from
      * @return the Decode operation (edited)
      * @throws ParsingException if something goes wrong
      */
     public static DecodeOperation executeEditOps(DecodeOperation op,
-                                                 GUI mainPane) throws ParsingException {
+                                                 List<Var> vars) throws ParsingException {
         DecodeOperation_API api = op.getAPI();
         for (EditOperation eop : op.editOperations) {
             eop.loader(api);
-            eop.execute(mainPane);
+            eop.execute(vars);
             if (!op.setResult(eop))
                 break;
             op.setAPI(eop.exporter());
@@ -871,24 +862,6 @@ public class Tools {
     }
 
     /**
-     * Given a name, returns the corresponding variable
-     *
-     * @param name the name of the variable
-     * @return the Var object
-     * @throws ParsingException if the variable cannot be found
-     */
-    public static Var getVariableByName(String name, GUI mainPane) throws ParsingException {
-        synchronized (mainPane.lock) {
-            for (Var act : mainPane.act_test_vars) {
-                if (act.name.equals(name)) {
-                    return act;
-                }
-            }
-        }
-        throw new ParsingException("variable not defined");
-    }
-
-    /**
      * Finds the parent div of an http element
      *
      * @param in the http element in xpath format
@@ -932,18 +905,17 @@ public class Tools {
     /**
      * Given a json string and a json path, edit the json.
      *
-     * @param action   the action to do, (edit, remove, add, or save)
-     * @param content  the json content as string
-     * @param j_path   the json path as string
-     * @param mainPane the mainPane reference, to access the variables
-     * @param save_as  the name of the variable if the action is save
+     * @param action  the action to do, (edit, remove, add, or save)
+     * @param content the json content as string
+     * @param j_path  the json path as string
+     * @param save_as the name of the variable if the action is save
      * @return the edited json
      * @throws PathNotFoundException if the path in the json is not found
      */
     public static String editJson(EditOperation.Jwt_action action,
                                   String content,
                                   String j_path,
-                                  GUI mainPane,
+                                  List<Var> vars,
                                   String save_as,
                                   String newValue) throws PathNotFoundException {
         Object document = Configuration.defaultConfiguration().jsonProvider().parse(content);
@@ -963,9 +935,7 @@ public class Tools {
                 v.name = save_as;
                 v.isMessage = false;
                 v.value = JsonPath.read(content, j_path); //TODO could rise errors
-                synchronized (mainPane.lock) {
-                    mainPane.act_test_vars.add(v);
-                }
+                vars.add(v);
                 break;
         }
         return Configuration.defaultConfiguration().jsonProvider().toJson(document); //basically converts to string

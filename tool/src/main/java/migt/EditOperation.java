@@ -7,6 +7,7 @@ import org.xml.sax.SAXException;
 import samlraider.application.SamlTabController;
 import samlraider.helpers.XMLHelpers;
 
+import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -176,12 +177,12 @@ public class EditOperation extends Module {
         return (DecodeOperation_API) imported_api;
     }
 
-    public void execute(GUI mainPane) throws ParsingException {
+    public void execute(List<Var> vars) throws ParsingException {
         if (imported_api instanceof DecodeOperation_API) {
             // the edit operation is being executed inside a Decode Operation
             // If a variable value has to be used, read the value of the variable at execution time
             if (!use.equals("")) {
-                Var v = getVariableByName(use, mainPane);
+                Var v = getVariableByName(use, vars);
                 if (!v.isMessage) {
                     value = v.value;
                 } else {
@@ -257,9 +258,7 @@ public class EditOperation extends Module {
                             v.name = save_as;
                             v.isMessage = false;
                             v.value = to_save;
-                            synchronized (mainPane.lock) {
-                                mainPane.act_test_vars.add(v);
-                            }
+                            vars.add(v);
                             break;
                         }
                         case SAVE_ATTR:
@@ -270,9 +269,7 @@ public class EditOperation extends Module {
                             v.name = save_as;
                             v.isMessage = false;
                             v.value = to_save;
-                            synchronized (mainPane.lock) {
-                                mainPane.act_test_vars.add(v);
-                            }
+                            vars.add(v);
                             break;
                     }
 
@@ -292,16 +289,16 @@ public class EditOperation extends Module {
                         switch (jwt_section) {
                             case HEADER:
                                 tmp_imported_api.jwt_header = Tools.editJson(
-                                        jwt_action, tmp_imported_api.jwt_header, what, mainPane, save_as, value);
+                                        jwt_action, tmp_imported_api.jwt_header, what, vars, save_as, value);
                                 break;
                             case PAYLOAD:
                                 // TODO: pass newvalue
                                 tmp_imported_api.jwt_payload = Tools.editJson(
-                                        jwt_action, tmp_imported_api.jwt_payload, what, mainPane, save_as, value);
+                                        jwt_action, tmp_imported_api.jwt_payload, what, vars, save_as, value);
                                 break;
                             case SIGNATURE:
                                 tmp_imported_api.jwt_signature = Tools.editJson(
-                                        jwt_action, tmp_imported_api.jwt_signature, what, mainPane, save_as, value);
+                                        jwt_action, tmp_imported_api.jwt_signature, what, vars, save_as, value);
                                 break;
                         }
                     } catch (PathNotFoundException e) {
@@ -349,9 +346,7 @@ public class EditOperation extends Module {
                             v.name = save_as;
                             v.isMessage = false;
                             v.value = val;
-                            synchronized (mainPane.lock) {
-                                mainPane.act_test_vars.add(v);
-                            }
+                            vars.add(v);
                             break;
                     }
                     applicable = true;

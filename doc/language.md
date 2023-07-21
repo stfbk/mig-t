@@ -471,7 +471,7 @@ Not sure about this ^^^ , not yet implemented ^^^^
 The Checks tag is a list of Check elements, which can be defined with:
 
 - `in` says were to check the given parameter, can be _head_, _body_, _url_
-- `check` checks if the given string is present in the specified message section
+- `check` checks if the given string is present in the specified message section.
 - `check param` specifies the name of the parameter to be checked, depending on the section choosed, the tool will search for the parameter using a pattern. (for the url, it will search for a query parameter, for the head, it will search for a head parameter)
 - `check regex` specify a regex that checks the selected content by matching it.
 . `use variable` (true or false) set to true if you want to specify a variable name on the following tags, to check wrt to that variable value.
@@ -484,7 +484,9 @@ The Checks tag is a list of Check elements, which can be defined with:
   - `is in` the value is between a list of values
   - `is not in` the value is not between a list of values
 
-Note that you can use `check regex` OR `check` OR `check param`. If you use the `check` or `check param` tag, you can use all the other tags to verify the value, otherwise, if you use `check regex` you can just use `is present`.
+Note that you can use `check regex` OR `check` OR `check param`.
+
+Note that `check` accepts only the `is present` tag.
 
 In passive tests the checks's result are intended as the entire test result, so all the checks has to pass to have a successfull test.
 
@@ -511,6 +513,18 @@ In case a check operation is executed inside an operation that gives a JSON as a
 
 If you need to do a check on an active test, you have to do a `validate` operation, which is basically an operation where you can do checks and regex
 
+### Examples
+Check using a variable value: check that the value of the header "Host" is equal to the value of the variable "var1"
+```json
+"checks" : [
+  {
+    "in": "head",
+    "check param": "Host",
+    "use variable": true,
+    "is": "var1"
+  }
+]
+```
 ## Preconditions
 
 Preconditions are used in an operation of an active test to check something in the intercepted message before the execution of the message operations. If the checks in the preconditions are evaluated to false, the test is considered unsupported, not failed. Basically preconditions are a list of checks.

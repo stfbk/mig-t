@@ -1,7 +1,5 @@
 package migt;
 
-import java.util.List;
-
 /**
  * Listener class for ExecuteActive class
  *
@@ -62,27 +60,4 @@ public interface ExecuteActiveListener {
      * @param actual_test The test that was being executed
      */
     void onError(Test actual_test);
-
-    /**
-     * This method is called before the execution of the SessionOperations in a test. It is used to update the list
-     * of variables with the thread
-     *
-     * @return the updated list of variables
-     */
-    List<Var> onBeforeExSessionOps();
-
-    /**
-     * This method is called after the execution of the SessionOperations in a test. It is used to updated the list of
-     * variables with the thread
-     *
-     * @param re the list of variables to update
-     */
-    void onAfterExSessionOps(List<Var> re);
-
-    /**
-     * This method is called when a variable has to been set during the test
-     *
-     * @param v the new set variable
-     */
-    void onAddVar(Var v);
 }

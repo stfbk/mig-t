@@ -432,7 +432,7 @@ public class DecodeOperation extends Module {
      * @param mainPane the mainpane is needed to access the variables
      * @throws ParsingException
      */
-    public void execute(GUI mainPane) throws ParsingException {
+    public void execute(List<Var> vars) throws ParsingException {
         if (imported_api instanceof Operation_API) {
             decoded_content = decodeParam(
                     helpers,
@@ -477,17 +477,17 @@ public class DecodeOperation extends Module {
 
         // execute edit operations
         if (editOperations.size() > 0) {
-            executeEditOps(this, mainPane);
+            executeEditOps(this, vars);
         }
 
         // executes recursive decode operations
         if (decodeOperations.size() != 0) {
-            executeDecodeOps(this, helpers, mainPane);
+            executeDecodeOps(this, helpers, vars);
         }
 
         // execute checks
         if (checks.size() != 0) {
-            executeChecks(mainPane);
+            executeChecks(vars);
         }
 
         // Rebuild JWT before encoding it
@@ -504,10 +504,10 @@ public class DecodeOperation extends Module {
      * @return the result, for convenience
      * @throws ParsingException if errors are found
      */
-    public boolean executeChecks(GUI gui) throws ParsingException {
+    public boolean executeChecks(List<Var> vars) throws ParsingException {
         for (Check c : checks) {
             c.loader(getAPI());
-            c.execute(gui);
+            c.execute(vars);
             if (!setResult(c)) {
                 return false;
             }

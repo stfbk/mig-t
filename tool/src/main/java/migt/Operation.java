@@ -381,14 +381,14 @@ public class Operation extends Module {
         this.processed_message = api.message.build_message(api.is_request);
     }
 
-    public void execute(GUI mainPane) {
+    public void execute() {
         if (!preconditions.isEmpty()) {
             try {
                 applicable = Tools.executeChecks(
                         preconditions,
                         api.message,
                         api.is_request,
-                        mainPane
+                        api.vars
                 );
                 if (!applicable) return;
             } catch (ParsingException e) {
@@ -403,8 +403,8 @@ public class Operation extends Module {
             if (!replace_request_name.equals("")) {
                 try {
                     applicable = true;
-                    processed_message = getVariableByName(replace_request_name, mainPane).message;
-                    processed_message_service = getVariableByName(replace_request_name, mainPane).service_info;
+                    processed_message = getVariableByName(replace_request_name, api.vars).message;
+                    processed_message_service = getVariableByName(replace_request_name, api.vars).service_info;
                     //return op;
                 } catch (ParsingException e) {
                     e.printStackTrace();
@@ -416,8 +416,8 @@ public class Operation extends Module {
             if (!replace_response_name.equals("")) {
                 try {
                     applicable = true;
-                    processed_message = getVariableByName(replace_response_name, mainPane).message;
-                    processed_message_service = getVariableByName(replace_response_name, mainPane).service_info;
+                    processed_message = getVariableByName(replace_response_name, api.vars).message;
+                    processed_message_service = getVariableByName(replace_response_name, api.vars).service_info;
                     //return op;
                 } catch (ParsingException e) {
                     e.printStackTrace();
@@ -434,7 +434,10 @@ public class Operation extends Module {
             BurpExtender.executeMessageOps(this, api.message, api.is_request); // TOOD: change to edits
             if (!applicable | !result)
                 return;
-            executeDecodeOps(this, helpers, mainPane);
+            executeDecodeOps(this, helpers, api.vars);
+            if (!applicable | !result)
+                return;
+            executeChecks(this, api.vars);
             if (!applicable | !result)
                 return;
 
@@ -450,9 +453,7 @@ public class Operation extends Module {
             v.isMessage = true;
             v.message = api.is_request ? api.message.getRequest() : api.message.getResponse();
             v.service_info = api.message.getHttpService(helpers);
-            synchronized (mainPane.lock) {
-                mainPane.act_test_vars.add(v);
-            }
+            api.vars.add(v);
         }
     }
 

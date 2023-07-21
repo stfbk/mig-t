@@ -47,7 +47,6 @@ public class GUI extends JSplitPane {
     private final List<Test> actives;
     private final Map<String, Component> sessions_text;
     private final Object lock2 = new Object();
-    public List<Var> act_test_vars;
     //GUI
     JTable resultTable;
     JTable testTable;
@@ -115,7 +114,6 @@ public class GUI extends JSplitPane {
         actives = new ArrayList<>();
         sessions_names = new ArrayList<>();
         ACTIVE_ENABLED = false;
-        act_test_vars = new ArrayList<>();
         sessions_text = new HashMap<>();
         messageTypes = new ArrayList<>();
         session_port = new HashMap<>();
@@ -1287,9 +1285,6 @@ public class GUI extends JSplitPane {
         passives.clear();
         act_active_op = null;
         ex = null;
-        synchronized (lock) {
-            act_test_vars = new ArrayList<>();
-        }
         active_ex_finished = false;
 
         // clears the test suite result table
@@ -1404,9 +1399,6 @@ public class GUI extends JSplitPane {
 
                     @Override
                     public void onNewTest(Test actual_test) {
-                        synchronized (lock) {
-                            act_test_vars = new ArrayList<>();
-                        }
                         act_active_op = null;
                     }
 
@@ -1425,27 +1417,6 @@ public class GUI extends JSplitPane {
                         System.err.println("Error executing the test:" + actual_test.name);
                         synchronized (lock2) {
                             active_ex_finished = true;
-                        }
-                    }
-
-                    @Override
-                    public List<Var> onBeforeExSessionOps() {
-                        synchronized (lock) {
-                            return act_test_vars;
-                        }
-                    }
-
-                    @Override
-                    public void onAfterExSessionOps(List<Var> re) {
-                        synchronized (lock) {
-                            act_test_vars = re;
-                        }
-                    }
-
-                    @Override
-                    public void onAddVar(Var v) {
-                        synchronized (lock) {
-                            act_test_vars.add(v);
                         }
                     }
                 });

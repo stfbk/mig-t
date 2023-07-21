@@ -28,6 +28,7 @@ public class Test {
     public String violated_properties;
     public String affected_entity;
     public String mitigations;
+    public List<Var> vars;
     Boolean isActive;
     List<Operation> operations;
     boolean success = false;
@@ -42,19 +43,7 @@ public class Test {
      * Empty constructor for tests
      */
     public Test() {
-        this.resultSession = "";
-        this.name = "";
-        this.description = "";
-        this.error_srt = "";
-        this.operations = new ArrayList<>();
-        this.sessions = new ArrayList<>();
-
-        this.success = false;
-        this.isActive = false;
-
-        references = "";
-        violated_properties = "";
-        mitigations = "";
+        init();
     }
 
     /**
@@ -63,19 +52,7 @@ public class Test {
     public Test(JSONObject test_json,
                 Session defaultSession,
                 List<MessageType> messageTypes) throws Exception {
-        this.resultSession = "";
-        this.name = "";
-        this.description = "";
-        this.error_srt = "";
-        this.operations = new ArrayList<>();
-        this.sessions = new ArrayList<>();
-
-        this.success = false;
-        this.isActive = false;
-
-        references = "";
-        violated_properties = "";
-        mitigations = "";
+        init();
 
         description = test_json.getString("description");
         name = test_json.getString("name");
@@ -152,6 +129,23 @@ public class Test {
         }
     }
 
+    public void init() {
+        vars = new ArrayList<>();
+        this.resultSession = "";
+        this.name = "";
+        this.description = "";
+        this.error_srt = "";
+        this.operations = new ArrayList<>();
+        this.sessions = new ArrayList<>();
+
+        this.success = false;
+        this.isActive = false;
+
+        references = "";
+        violated_properties = "";
+        mitigations = "";
+    }
+
     public String getName() {
         return name;
     }
@@ -187,7 +181,7 @@ public class Test {
                 String[] tmp = new String[]{
                         String.valueOf(count),
                         String.valueOf(op.getMessageType()),
-                        String.valueOf(op.getMessageSection()),
+                        "",
                         op.getChecks().toString(),
                         msg.index.toString(),
                         msg.isFail ? "failed" : "passed"};

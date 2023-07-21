@@ -172,7 +172,7 @@ public class ExecuteActives implements Runnable {
 
                                     @Override
                                     public void onSetVar(Var v) {
-                                        listener.onAddVar(v);
+                                        actual_test.vars.add(v);
                                     }
                                 });
 
@@ -214,9 +214,9 @@ public class ExecuteActives implements Runnable {
                                 break;
                         }
 
-                        List<Var> act_vars = listener.onBeforeExSessionOps();
+                        List<Var> act_vars = actual_test.vars;
                         List<Var> updated_vars = op.executeSessionOps(actual_test, act_vars);
-                        listener.onAfterExSessionOps(updated_vars);
+                        actual_test.vars = updated_vars;
 
                     } else {
                         //if it is a normal operation
@@ -227,6 +227,12 @@ public class ExecuteActives implements Runnable {
                             op.session_port = actual_test.getSession(op.to_session).port;
                         } else {
                             op.session_port = "8080";
+                        }
+
+                        if (op.api == null) {
+                            op.api = new Operation_API(actual_test.vars);
+                        } else {
+                            op.api.vars = actual_test.vars;
                         }
 
                         listener.onNewProcessOperation(op);
@@ -241,17 +247,8 @@ public class ExecuteActives implements Runnable {
 
                         op = listener.onOperationDone(); // Take the operation from the caller
 
-                        List<Var> act_vars = listener.onBeforeExSessionOps();
-                        if (act_vars.size() == 0) {
-                            try {
-                                Thread.sleep(500);
-                                act_vars = listener.onBeforeExSessionOps();
-                            } catch (InterruptedException e) {
-                            }
-                        }
-
-                        List<Var> updated_vars = op.executeSessionOps(actual_test, act_vars);
-                        listener.onAfterExSessionOps(updated_vars);
+                        actual_test.vars = op.api.vars;
+                        actual_test.vars = op.executeSessionOps(actual_test, actual_test.vars);
 
                         if (op.applicable) {
                             actual_test.success = op.result;
