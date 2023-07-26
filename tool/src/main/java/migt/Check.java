@@ -117,6 +117,7 @@ public class Check extends Module {
 
     /**
      * Loads a Decode operation's API into the check
+     *
      * @param api the Decode operation's api to load
      */
     public void loader(DecodeOperation_API api) {
@@ -125,6 +126,7 @@ public class Check extends Module {
 
     /**
      * Loads an Operation's API into the check
+     *
      * @param api the Operation's API to load
      */
     public void loader(Operation_API api) {
@@ -159,7 +161,7 @@ public class Check extends Module {
     /**
      * Execute the check over a message (in an Operation)
      *
-     * @param message the message to check
+     * @param message   the message to check
      * @param isRequest tells if the message is a request or a response
      * @return the result of the check
      * @throws ParsingException if something wrong is found wrt the language
@@ -365,7 +367,7 @@ public class Check extends Module {
     /**
      * Executes the given check (without API). Used to match messages with msg_types usually.
      *
-     * @param message the message to check
+     * @param message   the message to check
      * @param isRequest if the message is a request or a response
      * @return the result of the check (passed or not passed)
      */
@@ -383,6 +385,7 @@ public class Check extends Module {
 
     /**
      * Execute the check by using API
+     *
      * @param vars the variables of the actual operation (test)
      */
     public void execute(List<Var> vars) throws ParsingException {

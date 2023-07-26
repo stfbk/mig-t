@@ -17,7 +17,7 @@ import static migt.Tools.*;
  * @author Matteo Bitussi
  */
 public class Operation extends Module {
-    public List<MessageOperation> messageOerations;
+    public List<MessageOperation> messageOperations;
     public String from_session;
     public String to_session;
     public Then then;
@@ -30,8 +30,6 @@ public class Operation extends Module {
     public List<MatchedMessage> matchedMessages;
     public byte[] processed_message;
     public IHttpService processed_message_service;  // null if it is not changed
-    public String decode_param;
-    public List<DecodeOperation.Encoding> encodings;
     public List<IInterceptedProxyMessage> log_messages;
     public List<SessionOperation> session_operations;
     // Decode operations
@@ -122,7 +120,7 @@ public class Operation extends Module {
             for (int k = 0; k < message_ops.length(); k++) {
                 JSONObject act_message_op = message_ops.getJSONObject(k);
                 MessageOperation message_op = new MessageOperation(act_message_op);
-                messageOerations.add(message_op);
+                messageOperations.add(message_op);
             }
         }
 
@@ -145,12 +143,11 @@ public class Operation extends Module {
     }
 
     private void init() {
-        this.messageOerations = new ArrayList<>();
+        this.messageOperations = new ArrayList<>();
         this.preconditions = new ArrayList<>();
         this.checks = new ArrayList<>();
         this.setChecks(new ArrayList<>());
         this.matchedMessages = new ArrayList<>();
-        this.encodings = new ArrayList<>();
         this.session_operations = new ArrayList<>();
         this.log_messages = new ArrayList<>();
         this.decodeOperations = new ArrayList<>();
@@ -162,7 +159,6 @@ public class Operation extends Module {
         this.replace_request_name = "";
         this.messageType = "";
         this.session = "";
-        this.decode_param = "";
         this.processed_message_service = null;
         this.processed_message = null;
     }
@@ -187,8 +183,8 @@ public class Operation extends Module {
         this.messageType = messageType;
     }
 
-    public List<MessageOperation> getMessageOerations() {
-        return messageOerations;
+    public List<MessageOperation> getMessageOperations() {
+        return messageOperations;
     }
 
     public List<Check> getChecks() {
@@ -231,10 +227,6 @@ public class Operation extends Module {
         this.sessionAction = sessionAction;
     }
 
-    public boolean hasChecks() {
-        return this.checks.size() > 0;
-    }
-
     public List<DecodeOperation> getDecodeOperations() {
         return decodeOperations;
     }
@@ -250,7 +242,6 @@ public class Operation extends Module {
      */
     public List<Var> executeSessionOps(Test t,
                                        List<Var> vars) throws ParsingException {
-        Object[] res = new Object[2];
         List<Var> updated_vars = vars;
         for (SessionOperation sop : this.session_operations) {
 /*
@@ -430,8 +421,7 @@ public class Operation extends Module {
         // execute the message operations and the decode ops
         try {
             applicable = true;
-            // TODO REINSERT
-            BurpExtender.executeMessageOps(this, api.message, api.is_request); // TOOD: change to edits
+            executeMessageOperations(this, helpers); // TOOD: change to edits
             if (!applicable | !result)
                 return;
             executeDecodeOps(this, helpers, api.vars);

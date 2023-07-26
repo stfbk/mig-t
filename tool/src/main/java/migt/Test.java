@@ -29,12 +29,12 @@ public class Test {
     public String affected_entity;
     public String mitigations;
     public List<Var> vars;
+    public String error_str;
+    public Boolean error;
     Boolean isActive;
     List<Operation> operations;
     boolean success = false;
     boolean applicable = true;
-    boolean error = false;
-    String error_srt;
     // Infos
     String name;
     String description;
@@ -134,9 +134,10 @@ public class Test {
         this.resultSession = "";
         this.name = "";
         this.description = "";
-        this.error_srt = "";
         this.operations = new ArrayList<>();
         this.sessions = new ArrayList<>();
+        this.error_str = "";
+        this.error = false;
 
         this.success = false;
         this.isActive = false;

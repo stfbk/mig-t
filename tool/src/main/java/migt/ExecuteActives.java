@@ -69,7 +69,7 @@ public class ExecuteActives implements Runnable {
                             case START: {
                                 Session selected = actual_test.getSession(op.getSession());
                                 if (selected == null) {
-                                    actual_test.error_srt = "Invalid session name, maybe you didn't declare it?";
+                                    actual_test.error_str = "Invalid session name, maybe you didn't declare it?";
                                     actual_test.error = true;
                                     break;
                                 }
@@ -195,7 +195,7 @@ public class ExecuteActives implements Runnable {
                             case STOP: {
                                 Session selected = actual_test.getSession(op.getSession());
                                 if (selected == null) {
-                                    actual_test.error_srt = "Invalid session name, maybe you didn't declare it?";
+                                    actual_test.error_str = "Invalid session name, maybe you didn't declare it?";
                                     actual_test.error = true;
                                     break;
                                 }
@@ -206,7 +206,7 @@ public class ExecuteActives implements Runnable {
                             case CLEAR_COOKIES:
                                 Session selected = actual_test.getSession(op.getSession());
                                 if (selected == null) {
-                                    actual_test.error_srt = "Invalid session name, maybe you didn't declare it?";
+                                    actual_test.error_str = "Invalid session name, maybe you didn't declare it?";
                                     actual_test.error = true;
                                     break;
                                 }

@@ -12,8 +12,6 @@ public class TestSuite {
     String name;
     String description;
     List<Test> tests;
-    Test currentTest;
-    boolean metadata = false;
 
     /**
      * Instantiate the TestSuite
@@ -22,8 +20,6 @@ public class TestSuite {
         this.name = "";
         this.description = "";
         this.tests = new ArrayList<>();
-
-        this.currentTest = null;
     }
 
     /**
@@ -37,8 +33,6 @@ public class TestSuite {
         this.name = name;
         this.description = description;
         this.tests = tests;
-
-        this.currentTest = null;
     }
 
     public List<Test> getTests() {

@@ -8,7 +8,10 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.nio.charset.StandardCharsets;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -51,7 +54,7 @@ public class Tools {
                     currentOP.api.vars = test.vars;
                 }
 
-                if (messageList.get(i).matches_msg_type(msg_type, helpers)) {
+                if (messageList.get(i).matches_msg_type(msg_type)) {
                     currentOP.helpers = helpers;
                     currentOP.setAPI(new Operation_API(messageList.get(i), msg_type.isRequest));
                     currentOP.execute();
@@ -79,92 +82,6 @@ public class Tools {
         }
 
         return res;
-    }
-
-
-    /**
-     * Function that check a regex over a given message and section
-     *
-     * @param section the section of the message to be checked with the regex
-     * @param regex   the regex
-     * @param message the message to be checked
-     * @param helpers an instance of the helpers
-     * @return the result of the check, if the regex matches 1 or more time it returns true
-     */
-    public static boolean findInMessage(HTTPReqRes.MessageSection section,
-                                        String regex,
-                                        HTTPReqRes message,
-                                        IExtensionHelpers helpers,
-                                        boolean isRequest) throws ParsingException {
-        int occ = 0;
-
-        Pattern pattern;
-        Matcher matcher;
-
-        switch (section) {
-            case URL:
-                if (!isRequest) {
-                    throw new ParsingException("Searching URL in response");
-                }
-                String url = message.getRequest_url();
-                pattern = Pattern.compile(regex);
-                matcher = pattern.matcher(url);
-
-                while (matcher.find()) {
-                    occ++;
-                }
-                break;
-
-            case HEAD:
-                pattern = Pattern.compile(regex);
-                List<String> header = isRequest ? helpers.analyzeRequest(message.getRequest()).getHeaders() :
-                        helpers.analyzeResponse(message.getResponse()).getHeaders();
-
-                String headersString = getAllHeaders(header);
-
-                matcher = pattern.matcher(headersString);
-
-                while (matcher.find()) {
-                    occ++;
-                }
-                break;
-
-            case BODY:
-                pattern = Pattern.compile(regex, Pattern.DOTALL);
-                int index = isRequest ?
-                        helpers.analyzeRequest(message.getRequest()).getBodyOffset()
-                        : helpers.analyzeResponse(message.getResponse()).getBodyOffset();
-
-                byte[] body = isRequest ?
-                        Arrays.copyOfRange(message.getRequest(), index, message.getRequest().length)
-                        : Arrays.copyOfRange(message.getResponse(), index, message.getResponse().length);
-
-                String rawBody = new String(body);
-                matcher = pattern.matcher(rawBody);
-
-                while (matcher.find()) {
-                    occ++;
-                }
-                break;
-
-            case RAW:
-                String raw_msg = isRequest ?
-                        new String(message.getRequest(), StandardCharsets.UTF_8) :
-                        new String(message.getResponse(), StandardCharsets.UTF_8);
-
-                pattern = Pattern.compile(regex, Pattern.DOTALL);
-                matcher = pattern.matcher(raw_msg);
-
-                while (matcher.find()) {
-                    occ++;
-                }
-                break;
-
-            default:
-                System.out.println("No right message section selected");
-        }
-
-        return (occ > 0);
     }
 
     /**
@@ -286,6 +203,17 @@ public class Tools {
         return op;
     }
 
+    public static Operation executeMessageOperations(Operation op, IExtensionHelpers helpers) throws ParsingException {
+        for (MessageOperation mop : op.messageOperations) {
+            mop.loader(op.api);
+            mop.execute(op, helpers);
+            op.setAPI(mop.exporter());
+            if (op.setResult(op))
+                break;
+        }
+        return op;
+    }
+
     /**
      * Function that parses checks from a JSON array
      *
@@ -353,12 +281,7 @@ public class Tools {
             }
 
             if (act_msg_type.has("checks")) {
-                msg_obj.isRegex = false;
                 msg_obj.checks = parseChecksFromJSON(act_msg_type.getJSONArray("checks"));
-            } else if (act_msg_type.has("regex")) {
-                msg_obj.isRegex = true;
-                msg_obj.regex = act_msg_type.getString("regex");
-                msg_obj.messageSection = HTTPReqRes.MessageSection.fromString(act_msg_type.getString("message section"));
             } else {
                 throw new ParsingException("message type definition is invalid, no checks or regex found");
             }
@@ -366,6 +289,23 @@ public class Tools {
         }
 
         return msg_types;
+    }
+
+    /**
+     * Returns the adding of a message operation, decides if the value to be inserted/edited should be a variable or
+     * a typed value and return it
+     *
+     * @param m the message operation which has to be examined
+     * @return the adding to be used in add/edit
+     * @throws ParsingException if the variable name is not valid or the variable has not been initiated
+     */
+    public static String getAdding(MessageOperation m, List<Var> vars) throws ParsingException {
+        if (!m.use.isEmpty()) {
+            return getVariableByName(m.use, vars).value;
+        } else {
+
+            return m.to;
+        }
     }
 
     /**
@@ -520,11 +460,9 @@ public class Tools {
      * Generates a CSRF POC from an HTTP request message
      *
      * @param message the message to generate the POC from
-     * @param helpers Burp's IExtensionHelper instance
      * @return the html poc as a string
      */
-    public static String generate_CSRF_POC(HTTPReqRes message,
-                                           IExtensionHelpers helpers) {
+    public static String generate_CSRF_POC(HTTPReqRes message) {
 
         String CSFR_TEMPLATE = "<!DOCTYPE html>\n" +
                 "<html>\n" +
@@ -557,7 +495,6 @@ public class Tools {
                 "        </td>\n" +
                 "      </tr>";
 
-        List<String> headers = message.getHeaders(true);
         String encoding = message.getHeadParam(true, "Content-Type").strip();
         String body = new String(message.getBody(true), StandardCharsets.UTF_8); // splitMessage(message, helpers, true).get(2);
         String url = message.getUrl();
@@ -786,7 +723,6 @@ public class Tools {
                                           boolean isRequest,
                                           String new_value,
                                           boolean isBodyRegex) throws ParsingException {
-        List<String> splitted = null;
         Pattern pattern = null;
         Matcher matcher = null;
         switch (message_section) {

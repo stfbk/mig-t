@@ -391,8 +391,6 @@ public class HTTPReqRes implements Cloneable {
 
         for (String s : headers) {
             if (s.contains(param)) {
-                String[] splitted = s.split(":");
-
                 String value = s.substring(s.indexOf(":") + 1);
                 return value.strip();
             }
@@ -467,7 +465,7 @@ public class HTTPReqRes implements Cloneable {
      * @param msg_type the message type to check against it
      * @return true or false, if matched or not respectively
      */
-    public boolean matches_msg_type(MessageType msg_type, IExtensionHelpers helpers) {
+    public boolean matches_msg_type(MessageType msg_type) {
         boolean matchedMessage = false;
         try {
             /* If the response message name is searched, the getByResponse will be true.

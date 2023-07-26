@@ -429,7 +429,6 @@ public class DecodeOperation extends Module {
     /**
      * Executes this decode operation
      *
-     * @param mainPane the mainpane is needed to access the variables
      * @throws ParsingException
      */
     public void execute(List<Var> vars) throws ParsingException {

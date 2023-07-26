@@ -11,15 +11,12 @@ import java.util.List;
 public class MessageType implements Cloneable {
     String name;
     Boolean isRequest;
-    String regex;
     List<Check> checks;
-    HTTPReqRes.MessageSection messageSection;
     String responseName;
     String requestName;
 
     Boolean getByResponse;
     Boolean getByRequest;
-    Boolean isRegex;
 
     /**
      * Instantiate a MessageType
@@ -30,9 +27,7 @@ public class MessageType implements Cloneable {
     public MessageType(String name, Boolean isRequest) {
         this.name = name;
         this.isRequest = isRequest;
-        this.regex = "";
         this.checks = new ArrayList<>();
-        this.isRegex = false;
         this.responseName = "";
         this.requestName = "";
         this.getByResponse = false;

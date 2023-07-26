@@ -36,7 +36,7 @@ The use of the operation tag differ based on the type of test is defined into:
 ### Message type
 
 With the tag `message type` it has to be specified to which message execute the given operation. Message types can be defined in the file _"msg_def.json"_ which will be created at the first execution of the plugin in the Burp folder. By default, some oauth message types are present, feel free to add or modify them.
-The way a message type is defined is by the use of regex or checks (like in passive tests), the regex or checks are then evaluated over a message, and if the evaluation is successful, the message is then processed.
+The way a message type is defined is by the use of checks (like in passive tests), the checks are then evaluated over a message, and if the evaluation is successful, the message is then processed.
 
 To define a message type you have to tell:
 
@@ -44,17 +44,16 @@ To define a message type you have to tell:
 - `is request` if the message is a request or not (true, false)
 - `response name` (optional) if you want to also associate a name to the response of that message (often useful when you know the request but not the response)
 - `request name` (optional) if you need to intercept a message by its response, but you want do access the request, just put the name of the request to use it in the language. Note that if you intercept the response, you can not edit the request anymore, because it has already been sent.
-- `regex` or `checks` list (see check section for details)
+- `checks` list (see check section for details)
 
 ### Operation in passive tests
 
 When an operation in a passive test is defined with the `message type` tag, the other possible tags are (in an exclusive way):
 
-- `regex`: which will specify a regex to be tested to the given `message section` in the message
 - `checks`: which is a list of `check`
 
-To consider a test successful the regex has to match at least one occurrence in the specified `message section`, or all the checks has to be evaluated to true.
-Note that where you are asked to insert a regex you have to backslash (\) all the regex operators such as (?{}.\*) if you need them to be searched instead of executed.
+To consider a test successful all the checks has to be evaluated to true.
+Note that where you are using a regex you have to backslash (\) all the regex operators such as (?{}.\*) if you need them to be searched instead of executed.
 
 ### Operation in active tests
 
@@ -511,7 +510,7 @@ In case a check operation is executed inside an operation that gives a JSON as a
 
 ### Note for the active tests
 
-If you need to do a check on an active test, you have to do a `validate` operation, which is basically an operation where you can do checks and regex
+If you need to do a check on an active test, you have to do a `validate` operation, which is basically an operation where you can do checks
 
 ### Examples
 Check using a variable value: check that the value of the header "Host" is equal to the value of the variable "var1"
@@ -561,7 +560,7 @@ it can be set to:
 - `incorrect flow \[sessionname\]` opposite of `correct flow`, the test succedes only if there is an error
 - `assert_only` the test result ignores the validation of the session flow but gives a result depending on the assertions defined in the track. This means, that if the execution of the session fails, the result will not take it into account.
 
-The result can be combined with the result of the checks or regex in an operation.
+The result can be combined with the result of the checks in an operation.
 The succes is evaluated with the Boolean operator AND between the result and all the results of the operations
 
 Note that if correct (or incorrect) flow is used without specifying a session name, all the sessions are checked.
@@ -681,7 +680,7 @@ Note that if you are filling a field where a regex is expected, you have to back
 
 ### Example of with passive tests
 
-#### Example 1: PKCE is used
+#### Example 1: PKCE is used (TO BE CHANGED TO NEW LANGUAGE)
 
 This passive test checks whether PKCE is used in an OAuth flow, checking if the authorization grant message contains the parameters "code_challenge" or "code_challenge_method", which are necessary to use PKCE. More precisely, the test:
 
@@ -696,7 +695,6 @@ This passive test checks whether PKCE is used in an OAuth flow, checking if the 
   "test suite": {
     "name": "Test Suite 01",
     "description": "Only Passive Test",
-    "metadata": true
   },
   "tests": [
     {
@@ -719,7 +717,7 @@ This passive test checks whether PKCE is used in an OAuth flow, checking if the 
 }
 ```
 
-#### Other passive tests
+#### Other passive tests (TO BE CHANGED TO NEW LANGUAGE)
 
 ```json
 {
@@ -867,4 +865,7 @@ Examples: <br>
 - Remove support for hardcoded standard message types such as oauth request and oauth response
 - Removed support for hardcoded identification of OAuth flow
 - removed `request`, `response`, `oauth request` `oauth response` from Message type
+- removed `regex` and `message section` tag from Message Type, now only checks are available (that contains also regex)
+- removed `regex` from Operation in passive tests
 - Removed validate Operation, now just use checks inside an intercept Operation
+- Removed OAuth metadata tag in test

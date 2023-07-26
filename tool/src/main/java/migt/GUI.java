@@ -32,7 +32,6 @@ public class GUI extends JSplitPane {
     private static DefaultTableModel testTableModel;
     public final ArrayList<HTTPReqRes> interceptedMessages;
     final Object waiting = new Object();
-    final Object lock = new Object();
     final String LOG_FOLDER = "logs/";
     private final String[] foundTableColNames = {"Op. num", "Message Type", "message section", "check/regex", "index", "result"};
     private final String[] testSuiteColNames = {
@@ -1197,10 +1196,6 @@ public class GUI extends JSplitPane {
             //Getting Test suite data
             String suite_name = obj.getJSONObject("test suite").getString("name");
             String suite_description = obj.getJSONObject("test suite").getString("description");
-            boolean metadata = false;
-            if (obj.getJSONObject("test suite").has("metadata")) {
-                metadata = obj.getJSONObject("test suite").getBoolean("metadata");
-            }
 
             if (obj.getJSONObject("test suite").has("filter messages")) {
                 FILTERING = obj.getJSONObject("test suite").getBoolean("filter messages");
@@ -1228,7 +1223,6 @@ public class GUI extends JSplitPane {
             //JSONArray result = obj.getJSONArray("Test Suite Result Table");
 
             this.testSuite = new TestSuite(suite_name, suite_description, tests);
-            this.testSuite.metadata = metadata;
             lblInfo.setText("JSON read successfully, Test Suite Object has been created");
 
         } catch (ParsingException e) {

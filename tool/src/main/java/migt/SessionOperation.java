@@ -298,7 +298,6 @@ public class SessionOperation {
             if (s.contains(".")) {
                 String[] splitted;
                 splitted = s.split("\\.");
-                String left = splitted[0];
                 boolean parent = false;
                 if (splitted.length == 3) {
                     if (splitted[2].equals("parent")) {
