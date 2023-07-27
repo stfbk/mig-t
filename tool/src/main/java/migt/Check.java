@@ -253,15 +253,15 @@ public class Check extends Module {
 
         switch (in) {
             case JWT_HEADER: {
-                j = tmp.jwt_header;
+                j = tmp.jwt.header;
                 break;
             }
             case JWT_PAYLOAD: {
-                j = tmp.jwt_payload;
+                j = tmp.jwt.payload;
                 break;
             }
             case JWT_SIGNATURE: {
-                j = tmp.jwt_signature;
+                j = tmp.jwt.signature;
                 break;
             }
         }

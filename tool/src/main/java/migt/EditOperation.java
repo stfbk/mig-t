@@ -33,6 +33,7 @@ public class EditOperation extends Module {
     Jwt_section jwt_section;
     Jwt_action jwt_action;
     boolean sign;
+    String jwt_private_key_pem;
 
     String what;
 
@@ -126,7 +127,8 @@ public class EditOperation extends Module {
                     what = eop_json.getString("jwt save");
                     break;
                 case "jwt sign":
-                    sign = eop_json.getBoolean("jwt sign");
+                    sign = true;
+                    jwt_private_key_pem = eop_json.getString("jwt sign");
                     break;
 
                 case "txt remove":
@@ -283,30 +285,36 @@ public class EditOperation extends Module {
                     break;
 
                 case JWT:
-                    //edit
-                    //TODO: add remove or add
-                    try {
-                        switch (jwt_section) {
-                            case HEADER:
-                                tmp_imported_api.jwt_header = Tools.editJson(
-                                        jwt_action, tmp_imported_api.jwt_header, what, vars, save_as, value);
-                                break;
-                            case PAYLOAD:
-                                // TODO: pass newvalue
-                                tmp_imported_api.jwt_payload = Tools.editJson(
-                                        jwt_action, tmp_imported_api.jwt_payload, what, vars, save_as, value);
-                                break;
-                            case SIGNATURE:
-                                tmp_imported_api.jwt_signature = Tools.editJson(
-                                        jwt_action, tmp_imported_api.jwt_signature, what, vars, save_as, value);
-                                break;
+                    if (jwt_section != null) { // if only sign, there will be no jwt section
+                        try {
+                            switch (jwt_section) {
+                                case HEADER:
+                                    tmp_imported_api.jwt.header = Tools.editJson(
+                                            jwt_action, tmp_imported_api.jwt.header, what, vars, save_as, value);
+                                    break;
+                                case PAYLOAD:
+                                    // TODO: pass newvalue
+                                    tmp_imported_api.jwt.payload = Tools.editJson(
+                                            jwt_action, tmp_imported_api.jwt.payload, what, vars, save_as, value);
+                                    break;
+                                case SIGNATURE:
+                                    tmp_imported_api.jwt.signature = Tools.editJson(
+                                            jwt_action, tmp_imported_api.jwt.signature, what, vars, save_as, value);
+                                    break;
+                            }
+                        } catch (PathNotFoundException e) {
+                            this.applicable = false;
+                            this.result = false;
+                            return;
                         }
-                    } catch (PathNotFoundException e) {
-                        this.applicable = false;
-                        this.result = false;
-                        return;
                     }
                     applicable = true;
+
+                    if (sign) {
+                        tmp_imported_api.jwt.sign = true;
+                        tmp_imported_api.jwt.private_key_pem = jwt_private_key_pem;
+                    }
+
                     break;
 
                 case NONE:

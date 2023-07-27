@@ -3,32 +3,32 @@ package migt;
 public class DecodeOperation_API extends API {
     public DecodeOperation.DecodeOpType type; // the type of the decoded param
 
-    public String jwt_header;
-    public String jwt_payload;
-    public String jwt_signature;
+    public JWT jwt; // TODO: use this instead of single strings
     public String txt;
     public String xml;
 
-
     public DecodeOperation_API() {
-
+        init();
     }
 
     public DecodeOperation_API(DecodeOperation dop) {
+        init();
         type = dop.type;
         switch (dop.type) {
             case NONE:
                 txt = dop.decoded_content;
                 break;
             case JWT:
-                jwt_header = dop.jwt.header;
-                jwt_payload = dop.jwt.payload;
-                jwt_signature = dop.jwt.signature;
+                jwt = dop.jwt;
                 break;
             case XML:
                 xml = dop.decoded_content;
                 break;
         }
+    }
+
+    public void init() {
+        jwt = new JWT();
     }
 
     public String getDecodedContent(DecodeOperation.DecodeOperationFrom dopfrom) throws ParsingException {
@@ -42,17 +42,17 @@ public class DecodeOperation_API extends API {
             case JWT_HEADER:
                 if (type != DecodeOperation.DecodeOpType.JWT)
                     throw new ParsingException("cannot decode in a jwt header if previous decode was not a jwt");
-                return jwt_header;
+                return jwt.header;
 
             case JWT_PAYLOAD:
                 if (type != DecodeOperation.DecodeOpType.JWT)
                     throw new ParsingException("cannot decode in a jwt payload if previous decode was not a jwt");
-                return jwt_payload;
+                return jwt.payload;
 
             case JWT_SIGNATURE:
                 if (type != DecodeOperation.DecodeOpType.JWT)
                     throw new ParsingException("cannot decode in a jwt signature if previous decode was not a jwt");
-                return jwt_signature;
+                return jwt.signature;
             default:
                 throw new UnsupportedOperationException("invalid Decode operation from");
         }

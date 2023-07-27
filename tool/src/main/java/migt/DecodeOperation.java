@@ -29,9 +29,8 @@ public class DecodeOperation extends Module {
     public List<Check> checks; // the list of checks to be executed
     public List<DecodeOperation> decodeOperations; // a list of decode operations to execute them recursevly
     public List<EditOperation> editOperations; // a list of edit operations
-
+    public boolean check_jwt = false;
     JWT jwt;
-
     String what;
 
     public DecodeOperation() {
@@ -85,6 +84,10 @@ public class DecodeOperation extends Module {
                     break;
                 case "edits":
                     editOperations = Tools.parseEditsFromJSON(decode_op_json.getJSONArray("edits"));
+                    break;
+                case "jwt check sig":
+                    check_jwt = true;
+                    jwt.public_key_pem = decode_op_json.getString("jwt check sig");
                     break;
             }
         }
@@ -352,6 +355,7 @@ public class DecodeOperation extends Module {
         what = "";
         type = DecodeOpType.NONE;
         editOperations = new ArrayList<>();
+        jwt = new JWT();
     }
 
     @Override
@@ -365,9 +369,7 @@ public class DecodeOperation extends Module {
         // assign values returned from the api
         switch (type) {
             case JWT:
-                this.jwt.header = dop_api.jwt_header;
-                this.jwt.payload = dop_api.jwt_payload;
-                this.jwt.signature = dop_api.jwt_signature;
+                this.jwt = dop_api.jwt;
                 break;
             case NONE:
                 this.decoded_content = dop_api.txt;
@@ -441,13 +443,6 @@ public class DecodeOperation extends Module {
                     ((Operation_API) imported_api).is_request,
                     decode_target);
 
-            // If type is jwt, parse
-            if (Objects.requireNonNull(type) == DecodeOpType.JWT) {
-                jwt = new JWT();
-
-                jwt.parse(decoded_content);
-            }
-
         } else if (imported_api instanceof DecodeOperation_API) {
             switch (from) {
                 case JWT_HEADER:
@@ -471,6 +466,18 @@ public class DecodeOperation extends Module {
                     throw new UnsupportedOperationException(
                             "the from you selected in the recursive decode operation is not yet supported");
                     //TODO implement missing
+            }
+        }
+
+        // If type is jwt, parse
+        if (Objects.requireNonNull(type) == DecodeOpType.JWT) {
+            jwt.parse(decoded_content);
+            if (check_jwt) {
+                if (!jwt.check_sig()) {
+                    applicable = true;
+                    result = false;
+                    return;
+                }
             }
         }
 

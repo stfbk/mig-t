@@ -34,7 +34,7 @@ public class Checks_Test {
 
         DecodeOperation_API dopapi = new DecodeOperation_API();
         dopapi.type = DecodeOperation.DecodeOpType.JWT;
-        dopapi.jwt_header = input;
+        dopapi.jwt.header = input;
         c.loader(dopapi);
 
         return c;

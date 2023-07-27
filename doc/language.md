@@ -171,6 +171,13 @@ optional tags:
 An important note about the body (from) section is that the input of `decode param` has to be a regex, and whatever is matched with that regex is decoded.
 An useful regex to match a parameter's value could be `(?<=SAMLResponse=)[^$\n& ]*` which searches the SAMLResponse= string in the body, and matches everything that is not $ or \n or & or whitespace
 
+#### Decoding JWTs
+When decoding a jwt (by using tag type=jwt) it is possible to check the signature of that jwt by providing a public key. To do this, use the `jwt check sig` tag, assigning to it value the PEM-encoded public key to be used to check.
+
+Note: The supported algorithms are:
+- RS256
+- RS512
+
 ## Tag table
 In this table you can find a description of all the tags available for this Operation based on the input Module.
 
@@ -185,6 +192,7 @@ In this table you can find a description of all the tags available for this Oper
 |                             | decode operations |          | list[decode Operation] | \*                                     |
 |                             | checks            |          | list[check Operation]  | \*                                     |
 |                             | edits             |          | list[edit Operation]   | \*                                     |
+|                             | jwt check sig     |          | str(PEM)               | PEM-encoded public key                 |
 
 ### Recursive Decode operations
 
@@ -266,7 +274,12 @@ This type is used to edit decoded JWT tokens. This way is possible to edit, add,
 - `jwt edit` `value` If used on signature edits the entire signature.
 - `jwt add` `value`
 - `jwt save` `as` if used on sinature saves the entire signature
-- `jwt sign` (TBDeveloped)
+- `jwt sign` Specifying a PEM-encoded private key that will be used to sign the jwt
+
+##### Note on signing
+When signing a jwt, the supported algorithms are:
+- RS256
+- RS512
 
 ##### Example
 
@@ -869,3 +882,5 @@ Examples: <br>
 - removed `regex` from Operation in passive tests
 - Removed validate Operation, now just use checks inside an intercept Operation
 - Removed OAuth metadata tag in test
+- Added signing of decoded jwt with private key inside Edit Operation
+- Added check of signature of jwt inside the decode operation

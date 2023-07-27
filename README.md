@@ -104,7 +104,9 @@ limitations under the License.
 
 Developed within [Security & Trust](https://st.fbk.eu/) Research Unit at [Fondazione Bruno Kessler](https://www.fbk.eu/en/) (Italy)
 
-## Other software licenses
-### SAMLRaider License
+## Other software
+### SAMLRaider
 Some parts of the tool that manages SAML certificates has been built by using portions of SAMLRaider code (https://github.com/CompassSecurity/SAMLRaider).
 
+### nimbus-jose-jwt
+https://connect2id.com/products/nimbus-jose-jwt
