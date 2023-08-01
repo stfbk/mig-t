@@ -89,6 +89,11 @@ public class DecodeOperation extends Module {
                     check_jwt = true;
                     jwt.public_key_pem = decode_op_json.getString("jwt check sig");
                     break;
+                case "jwe decrypt":
+                    jwt.decrypt = true;
+                    jwt.public_key_pem_enc = decode_op_json.getString("jwe decrypt");
+                    jwt.private_key_pem_enc = decode_op_json.getString("jwe encrypt");
+                    break;
             }
         }
     }

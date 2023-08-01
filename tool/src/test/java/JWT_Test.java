@@ -1,8 +1,8 @@
-import com.nimbusds.jose.JOSEException;
-import com.nimbusds.jose.JWSHeader;
-import com.nimbusds.jose.JWSVerifier;
-import com.nimbusds.jose.crypto.RSASSAVerifier;
+import com.nimbusds.jose.*;
+import com.nimbusds.jose.crypto.RSAEncrypter;
+import com.nimbusds.jose.crypto.RSASSASigner;
 import com.nimbusds.jose.jwk.JWK;
+import com.nimbusds.jwt.JWTClaimsSet;
 import com.nimbusds.jwt.SignedJWT;
 import migt.JWT;
 import migt.ParsingException;
@@ -10,7 +10,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-import java.text.ParseException;
+import java.util.Date;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -22,9 +22,6 @@ public class JWT_Test {
     String raw_payload = "eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiYWRtaW4iOnRydWUsImlhdCI6MTUxNjIzOTAyMn0";
     String raw_signature = "NHVaYe26MbtOYhSKkoKYdFVomg4i8ZJd8_-RU8VNbftc4TSMb4bXP3l3YlNWACwyXPGffz5aXHc6lty1Y2t4SWRqGteragsVdZufDn5BlnJl9pdR_kdVFUsra2rWKEofkZeIC4yWytE58sMIihvo9H1ScmmVwBcQP6XETqYd0aSHp1gOa9RdUPDvoXQ5oqygTqVtxaDr6wUFKrKItgBMzWIdNZ6y7O9E0DhEPTbE9rfBo6KTFsHAZnMg4k68CDp2woYIaXbmYTWcvbzIuHO7_37GT79XdIwkm95QJ7hYC9RiwrV7mesbY4PAahERJawntho0my942XheVLmGwLMBkQ";
 
-    String header = "{\"alg\": \"HS256\",\"typ\": \"JWT\"\n}";
-    String payload = "";
-    String signature = "";
     String public_pem_ed = "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEAPq3ZL01cG1DHZ4iZLiRlRJIlupb5MGfHipSBq1hG2Jo=\n-----END PUBLIC KEY-----\n";
     String private_pem_ed = "-----BEGIN PRIVATE KEY-----\nMC4CAQAwBQYDK2VwBCIEIFlqmiu8kHunEywNZhbZjdZcT1YGTUCoOlh9aHF+43UE\n-----END PRIVATE KEY-----\n";
 
@@ -93,6 +90,47 @@ public class JWT_Test {
             "vbUYj3bwn4OrkXsb0PgzSz2Ss84fVIsFd6oLprxQn2OOj5Ra6P3ZpoosSvyD4J8z\n" +
             "VZGUhi4sHzKDL3B7/wHTjXvHYbRWkWnvde7YV7aHMY+RlT+4LscDozIYRp5fPoh/\n" +
             "DLNWfy8zTwGDWiiZGrB9RrcCAwEAAQ==\n" +
+            "-----END PUBLIC KEY-----";
+
+    String raw_jwe = "eyJjdHkiOiJKV1QiLCJlbmMiOiJBMjU2R0NNIiwiYWxnIjoiUlNBLU9BRVAtMjU2In0.df14swiSheMDVazjpF60-Vi1Qk46HBJtVhlBOhnAeouJGu0Qf5q_-ENHNVC0ur7pza3n0o3dUodgx_vTNcJq5irnfOiBk4Vq0D9r8uh9eRQCgZVTCX8fNDhGl0gLlcvOIhL9JTn6bj4KGh4MrYsEHRfI7XD-PZyDIDMliZlwesrw3D4wQaHEs3QYAYn7VpKkOXZ0uYOPcDEZKJZgfQx1bSCjEYOxrBp0-9N7Vb4iwUaDzXDQtYbzGdAfvaU9LuEci0l8PkXDjk2z28xVOEXR1biWMhci3FZoqY47CaSjHEeJStAVOm5mEWy76ype4aBJ6e1f1JNr5xvOPdQMLeGzlg.QAK60NWaZVLHOWGd.MAPO8dBIwdnCxQLPeHvPBhMISbxHcLlmX6SsUyznnTA_rL9oaX-lbwUaMnJG8JEsOQhXEpRDL8R8wGqSf_euZUFPxjMVtuJXhlnYBulNju-Ce20nq72xPq5TsPsvUUjwms_Z9VRcJiyq9t88KU-SbWY4D7A8zlIj_QYu7UE7jwP-5rJ9ZJ_9BiLQ4nxoueQARTs8IbOy-W38YU8gCpXJqkIc9FIA5sEiQE2YTppisXrUajeffARk7-0wGQTxodWTOoMSEQBVnBtYr0AglnzYOl89PmDjNhf_5ViJJV_AxbKCrTXjd_akDVkhPDAad6qtJFGJVNNdXfnd2Q3UwKGp2vTp52xY6q66t3aELZKHIM861Qry0tQZaagBXJDg2JKZCOG6ylj0a3ZVtKyworBLdbj6tvrS6lJ1LqivaahCCyXAGoWq203VR55l9k7BPW325AUTto8eUQ2qOGSB3h-nQF9rnbKdIp5VQj4o0ub7QARuhoZ7cyfLPWEs013xQnuXwdLTFAN4dV42WxTo6ZWAMwFWRSRllRRhBHCtWd1XU-y0P6rZ1AvuJDGvX5YlSwcVnkmczueEcIxlucOmwRo9JkkZ31Lck6WKVnLx_yS-7zXKOcMNdPR5dEWZGENFLiRqns3q4654zygPt9N0WZbVcPZmyVqO0EYiVor_wfij9HUyZzjVb4YiYCNAKM_QJb1c0P6xYgiCqxSaWw-BUqYPrUZXEimxo9XWrIpWBBBNXtCMZqrTNKFXmOODQT-sDLVDj4C1X1bbtgr6D02G7gzvy2lpE3u4yB7PdL4peltuP0dvGqgg19oUw3JaJK-n-mzNXy5w_gwDr2YCcZc9lpvLqZX5QnIsk6_WIhgRBC5T5jurefnj_rvTQCEdCC2hDQxFhsXOlPMXbrYzQ7MpmxnN1JJFa5W3hzMhG8SXTNdlvI9IuqF1tDA_NY6AGUkzegmdiyARa-GXq3ZsWW9idfLYYWxc5yHfiDJzjqBBRlQZKjwNopfbOiFoNe_7KfB98Kt7cf2s41eM6LeSPtynyw.yN7-uTC9ihTAVuQLA5rJUg";
+
+    String jwe_private_key_pem = "-----BEGIN PRIVATE KEY-----\n" +
+            "MIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQCZ92bxCHSFfY1V\n" +
+            "f7RPsj6sdvUhFsgOBjPMSuFxmpIk9L5+ps7dKpuoVgID5rfT6GT3l/ze3RQ16orp\n" +
+            "Oy0+iwuVCTFJlFs/L3i2dmWfvVyyiwOWp+9/MMvIVNUT7wDKGJLC9onoqAhnKEqI\n" +
+            "ERv080cD5NUns7BoUNytuEgWK+J3fRCsHGfeu+Vdl3C0hIE0grOerpWTYAZQQf3H\n" +
+            "vX/Q7PeGbDCKS+/1eOSBqJ67YiqSn66Qs4g/A89GzMMKuGZ6Lh33x/1kGvT5P8fk\n" +
+            "FzbqTJWPwN+tu9npw06MFM70/rabztNg1I6uMK/s/H85NjO4DB6SzrVcQu2mhNRG\n" +
+            "AncNuYLNAgMBAAECggEAAhUlpQYM6fxWQOphUm8a3FSrJB68J2yXR9IfBYAdrf+c\n" +
+            "I2Y0LbdEk8nzT+Q+G4s1tvcEUN+wc5dubItvwk2/UZwDVgvAKQmGUxfe2LcM5Q5d\n" +
+            "RsQ1/QFswsd4QEkpT9KBreGqmxya7zhHdaB8WJ5kE1DuVgBB7mbuJw3cAiA4s5n/\n" +
+            "QxyY3w0Lh89CTJx8IqlNihbjzY/OBanEK8IJe03twdGuGp4fiBnkPMvIzcBhdeXP\n" +
+            "+8a4NR//KaNvLGC+FcONLEtR0T2/bkjvUrMyBY2gngxYgSCldVXguuU5jGhezkmu\n" +
+            "+7gP0ipSwyRdR8G36twrpCv5fGruRoGdKqCr+viecQKBgQDINf+NGQpeoFf82UjU\n" +
+            "b27xz/4YP1td1iIyfNtTdBodC7h6o7Ce/+QNt2b0rVltXtXQ8Ci3uorBih9bMirX\n" +
+            "F6MBOj4cgdhKySDMaaex5zFr4LOYCJ2nK18sa7QobvkfN3htUcimD3/B6yiEHbpI\n" +
+            "9Tf71Ix0HOYKL1k7/JsM4TaYHQKBgQDE3o/LmeUM95PJCFAWbB+ZKM3A3x8klZ6m\n" +
+            "mntSzAFB8yLjXtN0Y34E6+tyXJvW20AE4EWdvjduC/JaxF51sBulnaZbZwDU4Q2G\n" +
+            "lJkXx7l/iHUaHedxQDvGzhtiiStd7kzh5XLckC8dvsR306z/035fic35VQhTAANv\n" +
+            "1vzFGx92cQKBgGgzWm7YMoJvV3v8pqAR4x8tjmSWTPo4oZG/U/NKQPEPEZOasCkA\n" +
+            "q3PMGWSM+DcpHYViCP8esmrqdUlkgdFytt7DrmHt3mGF7nEVKDc6SYmI6E/fZBYG\n" +
+            "R8F5yMkmgLgTibTz1MdA19BYkLy6MCMapWmHBRbFl6CDZiEHZrc8W8qtAoGBAMQi\n" +
+            "7GYvO8lQe3dFBe1g6ZZA1cS7Rp6/ReG8dPNHdlVLM84NMmR5nxquJNO6OjS0GTMC\n" +
+            "cbk3wqer1Vfi3i0oOFMnHo9frq9oTH5xW5kajc/mlqxfcK8fDK8DtrrT6FXbzdMd\n" +
+            "MvNV3usmnTy4slnqTrRGaeRneDShBcuOCCUj4ZOxAoGBAMGlZqGPjaMZKA4Ub/1y\n" +
+            "T9wwy40H2DjBfkvOd0+GGYNZkpPlMf6+OR4eaXIhR94g/jDB5rNWMOi3G54J/qsa\n" +
+            "4iqeWVRpP8kmb3NBJ/Wu0n6JaE2oMOygaMQdpSggPDU6kh9o2Q6Xm8Kc4XP4vR9f\n" +
+            "cQuZkb1AlVAWiCUHSL8mpDFC\n" +
+            "-----END PRIVATE KEY-----";
+
+    String jwe_public_key_pem = "-----BEGIN PUBLIC KEY-----\n" +
+            "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAmfdm8Qh0hX2NVX+0T7I+\n" +
+            "rHb1IRbIDgYzzErhcZqSJPS+fqbO3SqbqFYCA+a30+hk95f83t0UNeqK6TstPosL\n" +
+            "lQkxSZRbPy94tnZln71csosDlqfvfzDLyFTVE+8AyhiSwvaJ6KgIZyhKiBEb9PNH\n" +
+            "A+TVJ7OwaFDcrbhIFivid30QrBxn3rvlXZdwtISBNIKznq6Vk2AGUEH9x71/0Oz3\n" +
+            "hmwwikvv9Xjkgaieu2Iqkp+ukLOIPwPPRszDCrhmei4d98f9ZBr0+T/H5Bc26kyV\n" +
+            "j8DfrbvZ6cNOjBTO9P62m87TYNSOrjCv7Px/OTYzuAweks61XELtpoTURgJ3DbmC\n" +
+            "zQIDAQAB\n" +
             "-----END PUBLIC KEY-----";
 
     @BeforeEach
@@ -183,44 +221,68 @@ public class JWT_Test {
     }
 
     @Test
-    void test_check_key() throws JOSEException, ParseException, ParsingException {
-
-
-        JWK jwk = JWK.parseFromPEMEncodedObjects(public_pem_rsa); // NON VA PER EDDSA
-
-        System.out.println(jwk.getKeyType());
-        System.out.println(jwk.getAlgorithm());
-
-        SignedJWT decoded = SignedJWT.parse(raw_jwt);
-        JWSHeader header = decoded.getHeader();
-        switch (header.getAlgorithm().getName()) {
-
-        }
-
-        JWSVerifier verifier = new RSASSAVerifier(jwk.toRSAKey());
-        decoded.verify(verifier);
-
-        // get the algorithm from the jwt
-
+    @DisplayName("Testing jwt decode and encode")
+    void test_decrypt_encrypt_jwe() {
         JWT j = new JWT();
-        j.parse(raw_jwt);
+        boolean errors = false;
+        try {
+            j.decrypt = true;
+            j.private_key_pem_enc = jwe_private_key_pem;
+            j.public_key_pem_enc = jwe_public_key_pem;
+            j.parse(raw_jwe);
 
-        /*
-        ByteArrayInputStream tube = new ByteArrayInputStream(public_pem.getBytes());
-        Reader fRd = new BufferedReader(new InputStreamReader(tube));
-        PemReader pr = new PemReader(fRd);
-        System.out.println(pr);
+            String parsed_head = j.header;
+            String parsed_payload = j.payload;
+            String parsed_signature = j.signature;
 
-        KeyPair kp;
-        //PemObject o = pr.readPemObject();
-        PEMParser pemParser = new PEMParser(fRd);
-        Object o = pemParser.readObject();
-        if (o instanceof SubjectPublicKeyInfo) {
-            System.out.println("asd");
-            AlgorithmIdentifier ai = ((SubjectPublicKeyInfo) o).getAlgorithm();
-            System.out.print(ai);
+            String out = j.build();
+
+            JWT j2 = new JWT();
+            j2.decrypt = true;
+            j2.private_key_pem_enc = jwe_private_key_pem;
+            j2.public_key_pem_enc = jwe_public_key_pem;
+            j2.parse(out);
+
+            assertEquals(parsed_head, j2.header);
+            assertEquals(parsed_payload, j2.payload);
+            assertEquals(parsed_signature, j2.signature);
+        } catch (ParsingException e) {
+            errors = true;
         }
-        */
+        assertFalse(errors);
+    }
+
+    @Test
+    void test_check_key() throws JOSEException {
+
+        JWK senderJWK = JWK.parseFromPEMEncodedObjects(private_pem_rsa);
+        JWK recipientPublicJWK = JWK.parseFromPEMEncodedObjects(jwe_public_key_pem);
+
+        // Create JWT
+        SignedJWT signedJWT = new SignedJWT(
+                new JWSHeader.Builder(JWSAlgorithm.RS256).keyID(senderJWK.getKeyID()).build(),
+                new JWTClaimsSet.Builder()
+                        .subject("alice")
+                        .issueTime(new Date())
+                        .issuer("https://c2id.com")
+                        .build());
+
+        // Sign the JWT
+        signedJWT.sign(new RSASSASigner(senderJWK.toRSAKey()));
+
+        // Create JWE object with signed JWT as payload
+        JWEObject jweObject = new JWEObject(
+                new JWEHeader.Builder(JWEAlgorithm.RSA_OAEP_256, EncryptionMethod.A256GCM)
+                        .contentType("JWT") // required to indicate nested JWT
+                        .build(),
+                new Payload(signedJWT));
+
+        // Encrypt with the recipient's public key
+        jweObject.encrypt(new RSAEncrypter(recipientPublicJWK.toRSAKey()));
+
+        // Serialise to JWE compact form
+        String jweString = jweObject.serialize();
+        System.out.println(jweString);
     }
 
     /**

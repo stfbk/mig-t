@@ -1,8 +1,7 @@
 package migt;
 
 import com.nimbusds.jose.*;
-import com.nimbusds.jose.crypto.RSASSASigner;
-import com.nimbusds.jose.crypto.RSASSAVerifier;
+import com.nimbusds.jose.crypto.*;
 import com.nimbusds.jose.jwk.JWK;
 import com.nimbusds.jwt.SignedJWT;
 import org.json.JSONException;
@@ -21,24 +20,35 @@ public class JWT {
     public String payload;
     public String signature;
     public String raw;
-    // TODO: specify the following tags in parsing
+    SignedJWT parsed_jwt;
+
     public boolean sign; // put to true if you want to sign the jwt after edit (need private key)
     public String private_key_pem; // PEM the private key used to sign the jwt
     public String public_key_pem; // PEM public key used to check the signature of the jwt
-    SignedJWT parsed_jwt;
+
+    public boolean decrypt; // put to true if the raw is a JWE, and you want to decrypt it
+    public String private_key_pem_enc;
+    public String public_key_pem_enc;
+    public JWEObject jwe;
+    EncryptingAlg e_alg;
     SigningAlgs signing_alg;
 
     /**
      * Constructor that instantiate a JWT object
      */
     public JWT() {
-        this.raw = "";
-        this.signature = "";
-        this.header = "";
-        this.payload = "";
-        this.sign = false;
-        this.private_key_pem = "";
-        this.public_key_pem = "";
+        raw = "";
+        signature = "";
+        header = "";
+        payload = "";
+        sign = false;
+        private_key_pem = "";
+        public_key_pem = "";
+        private_key_pem_enc = "";
+        public_key_pem_enc = "";
+        decrypt = false;
+        jwe = null;
+        e_alg = null;
     }
 
     /**
@@ -50,8 +60,36 @@ public class JWT {
     public void parse(String raw_jwt) throws ParsingException {
         this.raw = raw_jwt;
 
+        if (decrypt) {
+            // it is a JWE containing a JWT
+            try {
+                jwe = JWEObject.parse(raw_jwt);
+                e_alg = EncryptingAlg.fromString(jwe.getHeader().getAlgorithm().getName());
+                JWK jwk_private_enc = JWK.parseFromPEMEncodedObjects(private_key_pem_enc);
+
+                switch (e_alg) {
+                    case RSA_OAEP:
+                    case RSA_OAEP_256:
+                        jwe.decrypt(new RSADecrypter(jwk_private_enc.toRSAKey()));
+                        break;
+                    case ECDH_ES_A128KW:
+                    case ECDH_ES_A256KW:
+                        jwe.decrypt(new ECDHDecrypter(jwk_private_enc.toECKey()));
+                        break;
+                }
+
+                parsed_jwt = jwe.getPayload().toSignedJWT();
+                if (parsed_jwt == null) {
+                    throw new ParsingException("Error, JWE payload is not a JWS");
+                }
+            } catch (ParseException | JOSEException e) {
+                throw new ParsingException("problem in decrypting JWE: " + e);
+            }
+        }
+
         try {
-            parsed_jwt = SignedJWT.parse(raw_jwt);
+            if (!decrypt) // otherwise it is already parsed
+                parsed_jwt = SignedJWT.parse(raw_jwt);
             JWSHeader header = parsed_jwt.getHeader();
             signing_alg = SigningAlgs.fromString(header.getAlgorithm().getName());
         } catch (ParseException e) {
@@ -68,7 +106,7 @@ public class JWT {
     }
 
     /**
-     * Check the signature of the jwt using the public_key_pem
+     * Check the signature of the jws using the public_key_pem
      *
      * @return true if the jwt signature is valid, false otherwise
      * @throws ParsingException if something goes wrong while checking signature of the jwt
@@ -108,7 +146,7 @@ public class JWT {
      * Builds a JWT token from the string values in this class
      *
      * @return A JWT as a string
-     * @throws ParsingException
+     * @throws ParsingException if there are problems building the jwt
      */
     public String build() throws ParsingException {
         String res = "";
@@ -167,12 +205,40 @@ public class JWT {
             }
         }
 
+        if (decrypt) {
+            // if the JWE has been decrypted, now it needs to be re-encrypted
+            if (public_key_pem_enc.length() == 0)
+                throw new ParsingException("Cannot enctypt jwe, public key not set");
+
+            JWEObject editedJWE = new JWEObject(
+                    jwe.getHeader(),
+                    new Payload(res)
+            );
+            try {
+                switch (e_alg) {
+                    case RSA_OAEP:
+                    case RSA_OAEP_256:
+                        editedJWE.encrypt(
+                                new RSAEncrypter(JWK.parseFromPEMEncodedObjects(public_key_pem_enc).toRSAKey()));
+                        break;
+                    case ECDH_ES_A128KW:
+                    case ECDH_ES_A256KW:
+                        editedJWE.encrypt(
+                                new ECDHEncrypter(JWK.parseFromPEMEncodedObjects(public_key_pem_enc).toECKey()));
+                        break;
+                }
+            } catch (JOSEException e) {
+                throw new ParsingException("Unable to encrypt JWE " + e);
+            }
+            res = editedJWE.serialize();
+        }
+
         res = res.replaceAll("=", "");
         return res;
     }
 
     /**
-     * All signing algs supported
+     * All JWS signing algs supported
      */
     public enum SigningAlgs {
         RS256,
@@ -186,6 +252,31 @@ public class JWT {
                     return RS512;
                 default:
                     throw new ParsingException("Unsupported signing algorithm \"" + algStr + "\"");
+            }
+        }
+    }
+
+    /**
+     * All JWE encrypting algs supported
+     */
+    public enum EncryptingAlg {
+        RSA_OAEP,
+        RSA_OAEP_256,
+        ECDH_ES_A128KW,
+        ECDH_ES_A256KW;
+
+        public static EncryptingAlg fromString(String algStr) throws ParsingException {
+            switch (algStr) {
+                case "RSA-OAEP":
+                    return RSA_OAEP;
+                case "RSA-OAEP-256":
+                    return RSA_OAEP_256;
+                case "ECDH-ES+A128KW":
+                    return ECDH_ES_A128KW;
+                case "ECDH-ES+A256KW":
+                    return ECDH_ES_A256KW;
+                default:
+                    throw new ParsingException("Encrypting algorithm " + algStr + " not supported");
             }
         }
     }

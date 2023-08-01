@@ -172,13 +172,32 @@ An important note about the body (from) section is that the input of `decode par
 An useful regex to match a parameter's value could be `(?<=SAMLResponse=)[^$\n& ]*` which searches the SAMLResponse= string in the body, and matches everything that is not $ or \n or & or whitespace
 
 #### Decoding JWTs
-When decoding a jwt (by using tag type=jwt) it is possible to check the signature of that jwt by providing a public key. To do this, use the `jwt check sig` tag, assigning to it value the PEM-encoded public key to be used to check.
 
-Note: The supported algorithms are:
+When decoding a jwt (by using tag type=jwt) it is possible to check the signature of that jwt by providing a public key. To do this, use the `jwt check sig` tag with value the PEM-encoded public key to be used to check.
+
+Note: The supported algorithms for signing are:
+
 - RS256
 - RS512
 
+#### Decoding JWE
+
+Note that when decrypting a JWE, a JWS is expected in the payload. Other payloads are not supproted.
+
+To decrypt a JWE to access the JWT in its payload use these two mandatory tags
+
+- `jwe decrypt` with the private key in PEM string format
+- `jwe encrypt` with the public key in PEM string format
+
+Note: Supported algorithms are:
+
+- RSA_OAEP
+- RSA_OAEP_256
+- ECDH_ES_A128KW
+- ECDH_ES_A256KW
+
 ## Tag table
+
 In this table you can find a description of all the tags available for this Operation based on the input Module.
 
 | input module (container)    | Available tags    | Required | value type             | allowed values                         |
@@ -193,6 +212,8 @@ In this table you can find a description of all the tags available for this Oper
 |                             | checks            |          | list[check Operation]  | \*                                     |
 |                             | edits             |          | list[edit Operation]   | \*                                     |
 |                             | jwt check sig     |          | str(PEM)               | PEM-encoded public key                 |
+|                             | jwe decrypt       |          | str(PEM)               | PEM-encoded private key                |
+|                             | jwe encrypt       |          | str(PEM)               | PEM-encoded public key                 |
 
 ### Recursive Decode operations
 
@@ -277,7 +298,9 @@ This type is used to edit decoded JWT tokens. This way is possible to edit, add,
 - `jwt sign` Specifying a PEM-encoded private key that will be used to sign the jwt
 
 ##### Note on signing
+
 When signing a jwt, the supported algorithms are:
+
 - RS256
 - RS512
 
@@ -486,7 +509,7 @@ The Checks tag is a list of Check elements, which can be defined with:
 - `check` checks if the given string is present in the specified message section.
 - `check param` specifies the name of the parameter to be checked, depending on the section choosed, the tool will search for the parameter using a pattern. (for the url, it will search for a query parameter, for the head, it will search for a head parameter)
 - `check regex` specify a regex that checks the selected content by matching it.
-. `use variable` (true or false) set to true if you want to specify a variable name on the following tags, to check wrt to that variable value.
+  . `use variable` (true or false) set to true if you want to specify a variable name on the following tags, to check wrt to that variable value.
 - The actual check on the value, which are self explanatory. (if none of these are specified, the check will only check if the given parameter is present)
   - `is`
   - `not is`
@@ -526,7 +549,9 @@ In case a check operation is executed inside an operation that gives a JSON as a
 If you need to do a check on an active test, you have to do a `validate` operation, which is basically an operation where you can do checks
 
 ### Examples
+
 Check using a variable value: check that the value of the header "Host" is equal to the value of the variable "var1"
+
 ```json
 "checks" : [
   {
@@ -537,6 +562,7 @@ Check using a variable value: check that the value of the header "Host" is equal
   }
 ]
 ```
+
 ## Preconditions
 
 Preconditions are used in an operation of an active test to check something in the intercepted message before the execution of the message operations. If the checks in the preconditions are evaluated to false, the test is considered unsupported, not failed. Basically preconditions are a list of checks.
@@ -707,7 +733,7 @@ This passive test checks whether PKCE is used in an OAuth flow, checking if the 
 {
   "test suite": {
     "name": "Test Suite 01",
-    "description": "Only Passive Test",
+    "description": "Only Passive Test"
   },
   "tests": [
     {
