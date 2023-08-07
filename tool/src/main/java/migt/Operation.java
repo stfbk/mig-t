@@ -368,6 +368,16 @@ public class Operation extends Module {
 
     public void setAPI(Operation_API api) {
         this.api = api;
+
+        // add the intercepted message to the matched messages to be displayed
+        matchedMessages.add(new Operation.MatchedMessage(
+                api.message,
+                0,
+                api.message.isRequest,
+                api.message.isResponse,
+                false
+        ));
+
         // updates the processed message from the api
         this.processed_message = api.message.build_message(api.is_request);
     }
@@ -519,7 +529,7 @@ public class Operation extends Module {
          * @param index      the index in the message list
          * @param isRequest  if it is a request
          * @param isResponse if it is a response
-         * @param isFail     if it maked the test fail
+         * @param isFail     if it made the test fail
          */
         public MatchedMessage(HTTPReqRes message, Integer index, boolean isRequest, boolean isResponse, boolean isFail) {
             this.message = message;

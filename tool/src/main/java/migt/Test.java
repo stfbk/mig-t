@@ -50,7 +50,6 @@ public class Test {
      * Instantiate a test
      */
     public Test(JSONObject test_json,
-                Session defaultSession,
                 List<MessageType> messageTypes) throws Exception {
         init();
 
@@ -114,7 +113,7 @@ public class Test {
                 sessions.add(new Session(act_sess_name));
             }
         } else {
-            sessions.add(defaultSession);
+            throw new ParsingException("session tag is missing");
         }
 
         //Array of Operations

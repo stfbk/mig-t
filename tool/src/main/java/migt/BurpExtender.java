@@ -4,7 +4,6 @@ import burp.*;
 
 import javax.swing.*;
 import java.awt.*;
-import java.io.FileNotFoundException;
 import java.io.OutputStream;
 import java.io.PrintStream;
 import java.util.Objects;
@@ -28,6 +27,7 @@ public class BurpExtender implements IBurpExtender, ITab, IProxyListener {
      * @param callbacks The callbacks received by Burp
      */
     public void registerExtenderCallbacks(IBurpExtenderCallbacks callbacks) {
+        /*
         try {
             System.setOut(new PrintStream("output_log.txt")); // Changes the default outstream with this file
         } catch (FileNotFoundException e) {
@@ -39,6 +39,7 @@ public class BurpExtender implements IBurpExtender, ITab, IProxyListener {
         } catch (FileNotFoundException e) {
             e.printStackTrace();
         }
+        */
 
         System.out.println("Initializing extension");
 
@@ -217,7 +218,7 @@ public class BurpExtender implements IBurpExtender, ITab, IProxyListener {
 
         mainPane.act_active_op.helpers = helpers;
         mainPane.act_active_op.api.message = message;
-        mainPane.act_active_op.api.is_request = msg_type.isRequest;
+        mainPane.act_active_op.api.is_request = msg_type.isRequest; // todo check if with getByResponse is ok
         mainPane.act_active_op.execute();
 
         // if message has been edited inside operation update the value

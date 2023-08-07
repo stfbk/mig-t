@@ -11,14 +11,29 @@ import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.awt.event.MouseEvent;
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileWriter;
-import java.io.IOException;
+import java.io.*;
 import java.util.List;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+/**
+ * Sets a JTextArea as an output of an OutputStream, used by the redirect of the stdout and stderr
+ */
+class CustomOutputStream extends OutputStream {
+    private final JTextArea textArea;
+
+    public CustomOutputStream(JTextArea textArea) {
+        this.textArea = textArea;
+    }
+
+    @Override
+    public void write(int b) throws IOException {
+        // Redirect the byte written to the OutputStream to the JTextArea
+        textArea.append(String.valueOf((char) b));
+        textArea.setCaretPosition(textArea.getDocument().getLength()); // Auto-scroll to the bottom
+    }
+}
 
 /**
  * This class contains the GUI for the plugin, also a lot of functionality methods
@@ -27,10 +42,8 @@ import java.util.regex.Pattern;
  * @author Wendy Barreto
  */
 public class GUI extends JSplitPane {
-
     private static DefaultTableModel resultTableModel;
     private static DefaultTableModel testTableModel;
-    public final ArrayList<HTTPReqRes> interceptedMessages;
     final Object waiting = new Object();
     final String LOG_FOLDER = "logs/";
     private final String[] foundTableColNames = {"Op. num", "Message Type", "message section", "check/regex", "index", "result"};
@@ -43,9 +56,8 @@ public class GUI extends JSplitPane {
             "Mitigations",
             "Result"};
     private final Object[][] foundData = {};
-    private final List<Test> actives;
-    private final Map<String, Component> sessions_text;
     private final Object lock2 = new Object();
+    public ArrayList<HTTPReqRes> interceptedMessages;
     //GUI
     JTable resultTable;
     JTable testTable;
@@ -69,6 +81,8 @@ public class GUI extends JSplitPane {
     JTextArea txtScript;
     JTextArea txtSearch;
     JTextArea txtSessionConfig;
+    JTextArea txt_out_debug_tab;
+    JTextArea txt_err_debug_tab;
     JFileChooser driverSelector;
     JSplitPane splitPane;
     IMessageEditor messageViewer;
@@ -95,6 +109,8 @@ public class GUI extends JSplitPane {
     Operation act_active_op;
     ExecuteActives ex;
     List<MessageType> messageTypes;
+    private List<Test> actives;
+    private Map<String, Component> sessions_text;
     private List<Test> passives;
     private String DRIVER_PATH = "";
     private Thread active_ex;
@@ -105,8 +121,80 @@ public class GUI extends JSplitPane {
      */
     public GUI() {
         super(JSplitPane.VERTICAL_SPLIT);
-
         //initialize vars
+        init();
+
+        set_std_out_redirect();
+
+        this.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+
+        // Top part of the UI ------------------------------------------------------------------------------------------
+        GridBagLayout top_layout = new GridBagLayout();
+        top_layout.columnWidths = new int[]{230, 230, 230, 230, 100, 100, 100};
+        top_layout.rowHeights = new int[]{20, 48, 48, 48, 48};
+        top_layout.columnWeights = new double[]{1.0, 1.0, 1.0, 1.0, 0.0, 0.0, 0.0};
+        top_layout.rowWeights = new double[]{0.0, 0.0, 0.0, 0.0, 0.0};
+
+        trackContainer = new JPanel();
+        trackContainer.setLayout(top_layout);
+
+        setup_tab_track();
+        setup_tab_butons();
+
+        this.setTopComponent(trackContainer);
+
+        // Bottom part -------------------------------------------------------------------------------------------------
+
+        GridBagLayout bot_layout = new GridBagLayout();
+        bot_layout.columnWidths = new int[]{500, 500, 100};
+        bot_layout.rowHeights = new int[]{15, 20, 20, 20, 30};
+        bot_layout.columnWeights = new double[]{Double.MIN_VALUE, 0.0};
+        bot_layout.rowWeights = new double[]{0.0, Double.MIN_VALUE, 0.0, 0.0, 0.0};
+
+        bot_tabbed = new JTabbedPane();
+
+        JPanel tab_input_json = setup_tab_input_json(bot_layout);
+        bot_tabs_index.put("Input JSON", 0);
+        bot_tabbed.addTab("Input JSON", tab_input_json);
+
+        JScrollPane tab_suite_result = setup_tab_suite_result(bot_layout);
+        bot_tabs_index.put("Test Suite Result", 1);
+        bot_tabbed.addTab("Test Suite Result", tab_suite_result);
+
+        JSplitPane tab_test_result = setup_tab_test_result(bot_layout);
+        bot_tabs_index.put("Test Result", 2);
+        bot_tabbed.addTab("Test Result", tab_test_result);
+
+        JPanel tab_session_config = setup_tab_session_config(bot_layout);
+        bot_tabs_index.put("session config", 3);
+        bot_tabbed.addTab("session config", tab_session_config);
+
+        JPanel tab_debug_panel = setub_tab_debug(bot_layout);
+        bot_tabs_index.put("debug tab", 4);
+        bot_tabbed.addTab("debug tab", tab_debug_panel);
+
+        //Set Bottom Part
+        this.setBottomComponent(bot_tabbed);
+
+        readMsgDefFile();
+        readConfigFile();
+        if (!DRIVER_PATH.equals("")) {
+            lbldriver.setText("Driver Selected");
+            btndriverSelector.setBackground(Color.GREEN);
+            btnTestTrack.setEnabled(true);
+        }
+    }
+
+    /**
+     * Function used to add an item to the resultTableModel. Contains the results of the tests
+     *
+     * @param data the string array containing the data, also a row
+     */
+    private static void addItem(String[] data) {
+        resultTableModel.addRow(data);
+    }
+
+    public void init() {
         interceptedMessages = new ArrayList<>();
         testSuite = new TestSuite();
         passives = new ArrayList<>();
@@ -117,19 +205,650 @@ public class GUI extends JSplitPane {
         messageTypes = new ArrayList<>();
         session_port = new HashMap<>();
         bot_tabs_index = new HashMap<>();
+        txt_out_debug_tab = new JTextArea();
+        txt_err_debug_tab = new JTextArea();
+    }
 
-        this.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+    /**
+     * Set a redirect of the stdout and stderr to the txtboxes in the GUI
+     */
+    private void set_std_out_redirect() {
+        // Stdout out redirect
+        PrintStream printStream = new PrintStream(
+                new CustomOutputStream(txt_out_debug_tab));
+        System.setOut(printStream);
 
-        // Top part of the UI ------------------------------------------------------------------------------------------
-        GridBagLayout gridBagLayout = new GridBagLayout();
-        gridBagLayout.columnWidths = new int[]{230, 230, 230, 230, 100, 100, 100};
-        gridBagLayout.rowHeights = new int[]{20, 48, 48, 48, 48};
-        gridBagLayout.columnWeights = new double[]{1.0, 1.0, 1.0, 1.0, 0.0, 0.0, 0.0};
-        gridBagLayout.rowWeights = new double[]{0.0, 0.0, 0.0, 0.0, 0.0};
+        // stderr out redirect
+        PrintStream printStream_err = new PrintStream(
+                new CustomOutputStream(txt_err_debug_tab));
+        System.setErr(printStream_err);
+    }
 
-        trackContainer = new JPanel();
-        trackContainer.setLayout(gridBagLayout);
+    /**
+     * Function used to read the message definition file
+     */
+    private void readMsgDefFile() {
+        File msg_def_file = new File(MSG_DEF_PATH);
+        try {
+            if (!msg_def_file.createNewFile()) {
+                Scanner myReader = null;
+                String tmp = "";
+                try {
+                    myReader = new Scanner(msg_def_file);
+                    while (myReader.hasNextLine()) {
+                        tmp += myReader.nextLine();
+                    }
+                    myReader.close();
+                    messageTypes = Tools.readMsgTypeFromJson(tmp);
+                } catch (ParsingException e) {
+                    lblOutput.setText("Invalid message type in message type definition file");
+                    e.printStackTrace();
+                } catch (FileNotFoundException e) {
+                    lblOutput.setText("Cannot find message definition file");
+                }
+            } else {
+                FileWriter w = new FileWriter(MSG_DEF_PATH);
+                w.write(Tools.getDefaultJSONMsgType());
+                w.close();
+                messageTypes = Tools.readMsgTypeFromJson(Tools.getDefaultJSONMsgType());
+            }
+        } catch (ParsingException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+            lblOutput.setText("cannot create message definition file");
+        }
+    }
 
+    /**
+     * Function used to read the json config file
+     */
+    private void readConfigFile() {
+        File config_file = new File(CONFIG_FILE_PATH);
+        try {
+            if (!config_file.createNewFile()) {
+                Scanner myReader = null;
+                String tmp = "";
+                try {
+                    myReader = new Scanner(config_file);
+                    while (myReader.hasNextLine()) {
+                        tmp += myReader.nextLine();
+                    }
+                    myReader.close();
+
+                    JSONObject obj = new JSONObject(tmp);
+                    String last_driver_path = obj.getString("last_driver_path");
+                    String last_used_browser = obj.getString("last_browser_used");
+
+                    if (!last_driver_path.equals("")) {
+                        DRIVER_PATH = last_driver_path;
+                    }
+
+                    switch (last_used_browser) {
+                        case "firefox": {
+                            btnselectChrome.setEnabled(true);
+                            btnselectFirefox.setEnabled(false);
+                            break;
+                        }
+                        case "chrome": {
+                            btnselectChrome.setEnabled(false);
+                            btnselectFirefox.setEnabled(true);
+                            break;
+                        }
+                    }
+
+                } catch (JSONException e) {
+                    lblOutput.setText("Invalid config file");
+                } catch (FileNotFoundException e) {
+                    lblOutput.setText("Cannot find config file");
+                }
+            } else {
+                FileWriter w = new FileWriter(CONFIG_FILE_PATH);
+                w.write(Tools.getDefaultJSONConfig());
+                w.close();
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+            lblOutput.setText("cannot create message definition file");
+        }
+    }
+
+    /**
+     * Function that edits the config file.
+     *
+     * @param key   the key of the config to change
+     * @param value the new value of the config
+     */
+    private void editConfigFile(String key, String value) {
+        File config_file = new File(CONFIG_FILE_PATH);
+        try {
+            if (!config_file.createNewFile()) {
+                Scanner myReader = null;
+                String tmp = "";
+                try {
+                    myReader = new Scanner(config_file);
+                    while (myReader.hasNextLine()) {
+                        tmp += myReader.nextLine();
+                    }
+                    myReader.close();
+
+                    JSONObject obj = new JSONObject(tmp);
+                    obj.remove(key);
+                    obj.put(key, value);
+
+                    FileWriter w = new FileWriter(CONFIG_FILE_PATH);
+                    w.write(obj.toString());
+                    w.close();
+
+
+                } catch (JSONException e) {
+                    lblOutput.setText("Invalid config file");
+                } catch (FileNotFoundException e) {
+                    lblOutput.setText("Cannot find config file");
+                }
+            } else {
+                FileWriter w = new FileWriter(CONFIG_FILE_PATH);
+                w.write(Tools.getDefaultJSONConfig());
+                w.close();
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+            lblOutput.setText("cannot create message definition file");
+        }
+    }
+
+    /**
+     * This function parses the given jsonInput string of the language
+     *
+     * @param jsonInput the json input
+     */
+    private void readJSONinput(String jsonInput) {
+        sessions_names.clear();
+        txtSearch.setBorder(BorderFactory.createEmptyBorder());
+        setJSONError(false, "");
+
+        try {
+            JSONObject obj = new JSONObject(jsonInput);
+            List<Test> tests = new ArrayList<>();
+
+            //Getting Test suite data
+            String suite_name = obj.getJSONObject("test suite").getString("name");
+            String suite_description = obj.getJSONObject("test suite").getString("description");
+
+            if (obj.getJSONObject("test suite").has("filter messages")) {
+                FILTERING = obj.getJSONObject("test suite").getBoolean("filter messages");
+            }
+
+            //Array of Tests
+            JSONArray arrTests = obj.getJSONArray("tests");
+
+            //scorro tutti i test
+            for (int i = 0; i < arrTests.length(); i++) {
+                JSONObject act_test = arrTests.getJSONObject(i).getJSONObject("test");
+
+                Test test = new Test(act_test, messageTypes);
+                tests.add(test);
+
+                for (Session s : test.sessions) {
+                    if (!sessions_names.contains(s.name)) {
+                        sessions_names.add(s.name);
+                        session_port.put(s.name, "8080"); // set default port to session
+                    }
+                }
+            }
+            updateSessionTabs();
+            updateTxtSessionConfig();
+            //JSONArray result = obj.getJSONArray("Test Suite Result Table");
+
+            this.testSuite = new TestSuite(suite_name, suite_description, tests);
+            lblInfo.setText("JSON read successfully, Test Suite Object has been created");
+
+        } catch (ParsingException e) {
+            e.printStackTrace();
+
+            setJSONError(true, "Problem in parsing JSON: " + e.getMessage());
+        } catch (Exception e) {
+            e.printStackTrace();
+
+            setJSONError(true, "PROBLEM IN READING JSON, check it please");
+        }
+
+    }
+
+    /**
+     * This function reads the selected file deserializing the messages and creating a new Session
+     *
+     * @return if the reading has been succesfull
+     */
+    private boolean readSavedMessages() {
+        if (!SAVE_FILE_PATH.isEmpty()) {
+            try {
+                if (defaultSession == null) {
+                    defaultSession = new Session("default");
+                    defaultSession.isOffline = true;
+
+                    File f = new File(SAVE_FILE_PATH);
+                    Scanner r = new Scanner(f);
+
+                    Gson json = new Gson();
+                    while (r.hasNextLine()) {
+                        HTTPReqRes tmp = json.fromJson(r.nextLine(), HTTPReqRes.class);
+                        defaultSession.messages.add(tmp);
+                    }
+                } else {
+                    System.out.println("main session already created, skipping message reading from file");
+                }
+                return true;
+            } catch (FileNotFoundException fileNotFoundException) {
+                fileNotFoundException.printStackTrace();
+                return false;
+            }
+        } else {
+            return false;
+        }
+    }
+
+    /**
+     * Method which executes the entire test suite
+     */
+    private void executeSuite() {
+        // clears all previously saved tests
+        actives.clear();
+        passives.clear();
+        act_active_op = null;
+        ex = null;
+        active_ex_finished = false;
+
+        // clears the test suite result table
+        DefaultTableModel dm = (DefaultTableModel) resultTable.getModel();
+        dm.getDataVector().removeAllElements();
+        dm.fireTableDataChanged();
+
+        System.out.println("Number of test found: " + testSuite.getTests().size());
+        for (Test t : testSuite.getTests()) {
+            if (t.isActive) {
+                actives.add(t);
+            } else {
+                passives.add(t);
+            }
+        }
+
+        if (OFFLINE) {
+            if (!readSavedMessages()) {
+                System.err.println("Can't read message file");
+                lblOutput.setText("Can't read message file");
+                return;
+            }
+        }//TODO: re-enable OFFLINE mode
+        /* else if (passives.size() > 0 && defaultSession == null && actives.size() == 0) {
+            lblOutput.setText("Track need to be run for passive tests before executing tests");
+            return;
+        }
+        */
+
+        if (actives.size() == 0) {
+            synchronized (lock2) {
+                active_ex_finished = true;
+            }
+        }
+
+        //FIXME: Passives thread starts without waiting for the end of actives one
+        // Execute active tests
+        if (actives.size() != 0) {
+            try {
+                for (String key : session_port.keySet()) {
+                    if (session_port.get(key).equals("")) {
+                        lblOutput.setText("session port not configured");
+                        return;
+                    }
+                }
+                ex = new ExecuteActives(actives, waiting);
+
+                editConfigFile("last_browser_used", btnselectChrome.isEnabled() ? "firefox" : "chrome");
+
+                ex.registerExecuteActivesListener(new ExecuteActiveListener() {
+                    @Override
+                    public void onExecuteStart() {
+                        ACTIVE_ENABLED = false;
+                        act_active_op = new Operation();
+                        lblOutput.setText("Executing active tests");
+                    }
+
+                    @Override
+                    public void onExecuteDone() {
+                        if (passives.size() == 0) {
+                            update_gui_test_results();
+
+                            lblOutput.setText("Done. Executed Passive Tests: "
+                                    + (passives.isEmpty() ? 0 : passives.size())
+                                    + " - Active Tests: "
+                                    + (testSuite.getTests().size() - (passives.isEmpty() ? 0 : passives.size())));
+                        } else {
+                            lblOutput.setText("Executed Active tests, now doing passives");
+                        }
+                        synchronized (lock2) {
+                            active_ex_finished = true;
+                        }
+                    }
+
+
+                    @Override
+                    public void onNewProcessOperation(Operation op) {
+                        ACTIVE_ENABLED = true;
+                        act_active_op = op;
+                    }
+
+                    @Override
+                    public Operation onOperationDone() {
+                        ACTIVE_ENABLED = false;
+                        Operation tmp = act_active_op;
+
+                        act_active_op = new Operation();
+                        return tmp;
+                    }
+
+                    @Override
+                    public Session onNewSession(Session s) {
+                        Track track = null;
+                        try {
+                            track = s.setTrackFromString(getSessionTxt(s.name));
+                        } catch (ParsingException e) {
+                            lblOutput.setText("error in parsing session track");
+                            return null;
+                        }
+                        String port = session_port.get(s.name);
+                        s.port = port;
+                        s.track = track;
+
+                        s.ex = new ExecuteTrack(false,
+                                !btnselectChrome.isEnabled(),
+                                DRIVER_PATH,
+                                track,
+                                port,
+                                s.name);
+                        return s;
+                    }
+
+                    @Override
+                    public void onNewTest(Test actual_test) {
+                        act_active_op = null;
+                    }
+
+                    public void onTestDone(Test actual_test) {
+                        int indx = testSuite.tests.indexOf(actual_test);
+                        if (indx != -1) {
+                            System.out.printf("Saving test %s in test results", actual_test.getName());
+                            //TODO: add log of sessions
+                            testSuite.tests.set(indx, actual_test);
+                            actual_test.logTest(LOG_FOLDER);
+                        }
+                    }
+
+                    @Override
+                    public void onError(Test actual_test) {
+                        System.err.println("Error executing the test:" + actual_test.name);
+                        synchronized (lock2) {
+                            active_ex_finished = true;
+                        }
+                    }
+                });
+
+                active_ex = new Thread(ex);
+                active_ex.start();
+
+            } catch (Exception er) {
+                er.printStackTrace();
+                System.out.println(er.getLocalizedMessage() + "nad" + er.getMessage() + "2" + er);
+
+                lblOutput.setText("PROBLEM IN Executing Suite, check it please");
+            }
+        }
+
+        // Execute passive tests
+        if (passives.size() != 0) {
+            // TODO: Add offline clause
+            /*
+            if (defaultSession.messages.size() == 0) {
+                lblOutput.setText("no message found");
+                return;
+            }
+            */
+
+            ExecutePassiveListener listener = new ExecutePassiveListener() {
+                @Override
+                public boolean onWaitToStart() {
+                    synchronized (lock2) {
+                        return active_ex_finished;
+                    }
+                }
+
+                @Override
+                public void onExecuteStart() {
+                    lblOutput.setText("Executing passive tests");
+                }
+
+                @Override
+                public void onExecuteDone(List<Test> passives_test) {
+                    //TODO: Check if this is ok
+                    lblOutput.setText("Done. Executed Passive Tests: "
+                            + (passives.isEmpty() ? 0 : passives.size())
+                            + " - Active Tests: "
+                            + (testSuite.getTests().size() - (passives.isEmpty() ? 0 : passives.size())));
+
+                    passives = passives_test;
+
+                    update_gui_test_results();
+                }
+
+                @Override
+                public void onError(String msg) {
+                    lblOutput.setText(msg);
+                }
+
+                @Override
+                public Session onNewSession(Session s) throws ParsingException {
+                    //TODO: implement
+                    s.setTrackFromString(getSessionTxt(s.name));
+
+                    String port = session_port.get(s.name);
+                    s.port = port;
+
+                    s.ex = new ExecuteTrack(false,
+                            !btnselectChrome.isEnabled(),
+                            DRIVER_PATH,
+                            s.track,
+                            port,
+                            s.name);
+
+                    return s;
+                }
+
+                @Override
+                public void onBeforeExecuteTrack() {
+                    //Clear previous interceptedMessages if any
+                    interceptedMessages.clear();
+                    //Tell Burp Extender class to record the intercepted messages from now on
+                    recording = true;
+                }
+
+                @Override
+                public ArrayList<HTTPReqRes> onTrackExecuteDone() {
+                    recording = false;
+                    return interceptedMessages;
+                }
+            };
+
+            ExecutePassives expa = new ExecutePassives(helpers,
+                    passives,
+                    listener,
+                    messageTypes);
+
+            new Thread(expa).start();
+        }
+    }
+
+    /**
+     * Function used to get the text of the text area of a certain session using the session name
+     *
+     * @param session_name the name of the session to get the text
+     * @return the content of the session tab if it is not empty, otherwise the main session text tab
+     */
+    private String getSessionTxt(String session_name) {
+        if (sessions_text.containsKey(session_name)) {
+            JTextArea t = (JTextArea) sessions_text.get(session_name);
+            if (t.getText().equals("")) {
+                return txtScript.getText();
+            } else {
+                return t.getText();
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Update the session config tab, using the session_port variable, at the same time reads if there are changes, and
+     * updates the session_port variable
+     */
+    private void updateTxtSessionConfig() throws ParsingException {
+        setSession_configError(false, "");
+
+        String text = txtSessionConfig.getText();
+        Pattern p = Pattern.compile("\\n");
+        Matcher m = p.matcher(text);
+        text = m.replaceAll("");
+
+        if (text.equals("")) {
+            String tmp = "";
+            for (String s : session_port.keySet()) {
+                tmp += s;
+                tmp += ":" + session_port.get(s) + ";\n";
+            }
+            txtSessionConfig.setText(tmp);
+            return;
+        }
+
+        String[] text_list = text.split(";");
+
+        for (String row : text_list) {
+            String[] splitted = row.trim().split(":");
+            if (splitted.length == 0) continue;
+            if (splitted.length <= 1) {
+                String[] splitted2 = new String[]{"", ""};
+                splitted2[0] = splitted[0];
+                splitted = splitted2;
+            }
+            String port = splitted[1].trim();
+            p = Pattern.compile("^\\d+$");
+            m = p.matcher(splitted[1].trim());
+            if (!m.find()) {
+                setSession_configError(true, "invalid port");
+
+                throw new ParsingException("Invalid port");
+            }
+            if (session_port.containsKey(splitted[0].trim())) {
+                session_port.replace(splitted[0].trim(), splitted[1].trim());
+            } else {
+                session_port.put((splitted[0]).trim(), splitted[1].trim());
+            }
+        }
+        String tmp = "";
+        for (String key : session_port.keySet()) {
+            tmp += key + ": " + session_port.get(key) + ";\n";
+        }
+
+        txtSessionConfig.setText(tmp);
+    }
+
+    /**
+     * This function updates the session tabs in the gui to match the actual value in session_names
+     */
+    private void updateSessionTabs() {
+        List<String> present = new ArrayList<>();
+
+        for (int i = 1; i < top_tabbed.getTabCount(); i++) {
+            present.add(top_tabbed.getTitleAt(i));
+            if (!sessions_names.contains(top_tabbed.getTitleAt(i))) {
+                top_tabbed.remove(i);
+            }
+        }
+        for (String name : sessions_names) {
+            if (!present.contains(name)) {
+                JTextArea tmp = new JTextArea();
+                JScrollPane sp = new JScrollPane(tmp,
+                        JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
+                        JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
+                sessions_text.put(name, tmp);
+                top_tabbed.add(name, sp);
+            }
+        }
+        JTextArea tmp = new JTextArea();
+        JScrollPane sp = new JScrollPane(tmp,
+                JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
+                JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
+    }
+
+    /**
+     * Function used to set the JSON textbox with a red colour to highlight an error.
+     *
+     * @param isInError true to highlight an error, false to remove the highlight
+     * @param msg       the error message to display
+     */
+    private void setJSONError(boolean isInError, String msg) {
+        if (isInError) {
+            txtSearch.setBorder(BorderFactory.createLineBorder(Color.RED, 3));
+            lblOutput.setText(msg);
+            bot_tabbed.setBackgroundAt(bot_tabs_index.get("Input JSON"), Color.RED);
+        } else {
+            txtSearch.setBorder(BorderFactory.createEmptyBorder());
+            lblOutput.setText("");
+            bot_tabbed.setBackgroundAt(bot_tabs_index.get("Input JSON"), Color.white);
+        }
+    }
+
+    /**
+     * Function used to set the session config textbox with a red border to highlight an error.
+     *
+     * @param isInError true to highlight an error, false to remove highlight
+     * @param msg       The error message to display
+     */
+    private void setSession_configError(boolean isInError, String msg) {
+        if (isInError) {
+            txtSessionConfig.setBorder(BorderFactory.createLineBorder(Color.RED, 3));
+            lblOutput.setText(msg);
+            bot_tabbed.setBackgroundAt(bot_tabs_index.get("session config"), Color.RED);
+        } else {
+            txtSessionConfig.setBorder(BorderFactory.createEmptyBorder());
+            lblOutput.setText("");
+            bot_tabbed.setBackgroundAt(bot_tabs_index.get("session config"), Color.white);
+        }
+    }
+
+    /**
+     * Function used to update the gui test results after the tests are executed
+     */
+    private void update_gui_test_results() {
+        for (Test t : testSuite.getTests()) {
+            String esito = "";
+            if (t.applicable) {
+                esito = t.success ? "passed" : "failed";
+            } else {
+                esito = "not applicable";
+            }
+            String[] tmp = new String[]{t.getName(),
+                    t.getDescription(),
+                    t.references,
+                    t.violated_properties,
+                    t.affected_entity,
+                    t.mitigations,
+                    esito};
+            System.out.println(t.getName() + " " + esito);
+            addItem(tmp);
+        }
+
+        btnExecuteSuite.setEnabled(false);
+    }
+
+    private void setup_tab_track() {
         lblTrack = new JLabel("Session track ");
         GridBagConstraints gbc = new GridBagConstraints();
         gbc.anchor = GridBagConstraints.WEST;
@@ -138,20 +857,6 @@ public class GUI extends JSplitPane {
         gbc.gridx = 0;
         gbc.gridy = 0;
         trackContainer.add(lblTrack, gbc);
-
-        gbc = new GridBagConstraints();
-        gbc.anchor = GridBagConstraints.EAST;
-        gbc.insets = new Insets(10, 0, 0, 0);
-        gbc.gridx = 1;
-        gbc.gridy = 0;
-        trackContainer.add(new JLabel("Download Driver for your browser"), gbc);
-
-        gbc = new GridBagConstraints();
-        gbc.anchor = GridBagConstraints.WEST;
-        gbc.insets = new Insets(10, 0, 0, 0);
-        gbc.gridx = 2;
-        gbc.gridy = 0;
-        trackContainer.add(new JLabel(" https://www.selenium.dev/downloads/"), gbc);
 
         txtScript = new JTextArea();
         gbc = new GridBagConstraints();
@@ -163,14 +868,16 @@ public class GUI extends JSplitPane {
         gbc.gridwidth = 4;
         gbc.gridheight = 4;
 
-        top_tabbed = new JTabbedPane();
-
         JScrollPane scrollPane1 = new JScrollPane(txtScript,
                 JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
                 JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
+
+        top_tabbed = new JTabbedPane();
         top_tabbed.add("main", scrollPane1);
         trackContainer.add(top_tabbed, gbc);
+    }
 
+    private void setup_tab_butons() {
         driverSelector = new JFileChooser();
         btndriverSelector = new JButton("Select Driver");
 
@@ -196,7 +903,7 @@ public class GUI extends JSplitPane {
             }
         });
 
-        gbc = new GridBagConstraints();
+        GridBagConstraints gbc = new GridBagConstraints();
         gbc.anchor = GridBagConstraints.WEST;
         gbc.insets = new Insets(0, 0, 0, 10);
         gbc.gridx = 4;
@@ -657,25 +1364,14 @@ public class GUI extends JSplitPane {
         gbc.gridx = 6;
         gbc.gridy = 3;
         trackContainer.add(btnSaveToFile, gbc);
+    }
 
-        this.setTopComponent(trackContainer);
-
-        // Bottom part -------------------------------------------------------------------------------------------------
-
-        bot_tabbed = new JTabbedPane();
-
-        // Input Search Tabm
-        GridBagLayout gridBagLayout3 = new GridBagLayout();
-        gridBagLayout3.columnWidths = new int[]{1000, 100};
-        gridBagLayout3.rowHeights = new int[]{15, 20, 20, 20, 30};
-        gridBagLayout3.columnWeights = new double[]{Double.MIN_VALUE, 0.0};
-        gridBagLayout3.rowWeights = new double[]{0.0, Double.MIN_VALUE, 0.0, 0.0, 0.0};
-
+    private JPanel setup_tab_input_json(GridBagLayout bottom_layout) {
         inputContainer = new JPanel();
-        inputContainer.setLayout(gridBagLayout3);
+        inputContainer.setLayout(bottom_layout);
 
         lblInfo = new JLabel(" ");
-        gbc = new GridBagConstraints();
+        GridBagConstraints gbc = new GridBagConstraints();
         gbc.anchor = GridBagConstraints.WEST;
         gbc.fill = GridBagConstraints.HORIZONTAL;
         gbc.insets = new Insets(10, 10, 10, 10);
@@ -695,52 +1391,6 @@ public class GUI extends JSplitPane {
         inputContainer.add(lblOutput, gbc);
 
         txtSearch = new JTextArea();
-        txtSearch.setText("{\n" +
-                "  \"test suite\": {\n" +
-                "    \"name\": \"Correct Generation\",\n" +
-                "    \"description\": \"tests of type Correct Generation for the OP\",\n" +
-                "    \"filter messages\": true\n" +
-                "  },\n" +
-                "  \"tests\": [\n" +
-                "    {\n" +
-                "      \"test\": {\n" +
-                "        \"name\": \"Test decoding jwt\",\n" +
-                "        \"description\": \"\",\n" +
-                "        \"type\": \"active\",\n" +
-                "        \"sessions\": [\n" +
-                "          \"s1\"\n" +
-                "        ],\n" +
-                "        \"operations\": [\n" +
-                "          {\n" +
-                "            \"session\": \"s1\",\n" +
-                "            \"action\": \"start\"\n" +
-                "          },\n" +
-                "          {\n" +
-                "            \"action\": \"intercept\",\n" +
-                "            \"from session\": \"s1\",\n" +
-                "            \"then\": \"forward\",\n" +
-                "            \"message type\": \"authz_request\",\n" +
-                "            \"decode operations\": [\n" +
-                "              {\n" +
-                "                \"from\": \"body\",\n" +
-                "                \"decode param\": \"(?<=authz_request_object=)[^$\\n& ]*\",\n" +
-                "                \"type\": \"jwt\",\n" +
-                "                \"edits\": [\n" +
-                "                  {\n" +
-                "                    \"jwt from\": \"payload\",\n" +
-                "                    \"jwt edit\": \"$.scope\",\n" +
-                "                    \"value\": \"qualcosaltro\"\n" +
-                "                  }\n" +
-                "                ]\n" +
-                "              }\n" +
-                "            ]\n" +
-                "          }\n" +
-                "        ],\n" +
-                "        \"result\": \"correct flow s1\"\n" +
-                "      }\n" +
-                "    }\n" +
-                "  ]\n" +
-                "}");
 
         JScrollPane scrollPane2 = new JScrollPane(txtSearch,
                 JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED, JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
@@ -750,7 +1400,7 @@ public class GUI extends JSplitPane {
         gbc.insets = new Insets(10, 10, 10, 10);
         gbc.gridx = 0;
         gbc.gridy = 1;
-        gbc.gridwidth = 1;
+        gbc.gridwidth = 2;
         gbc.gridheight = 3;
         inputContainer.add(scrollPane2, gbc);
 
@@ -758,7 +1408,7 @@ public class GUI extends JSplitPane {
         gbc = new GridBagConstraints();
         gbc.anchor = GridBagConstraints.WEST;
         gbc.insets = new Insets(10, 10, 10, 10);
-        gbc.gridx = 1;
+        gbc.gridx = 2;
         gbc.gridy = 2;
         inputContainer.add(btnReadJSON, gbc);
 
@@ -766,29 +1416,8 @@ public class GUI extends JSplitPane {
             testSuite = new TestSuite();
 
             readMsgDefFile(); // Updates the Message Definitions
-
             readJSONinput(txtSearch.getText());
 
-            // if there's only a session, set the default port
-            // TODO: Check if this is useful or just call updateTxtSessionConfig
-            /*
-            if (session_port.size() > 0) {
-                Integer port = 8080;
-                for (String ses_name : session_port.keySet()) {
-                    if (session_port.get(ses_name).equals("")) {
-                        session_port.replace(ses_name, port.toString());
-                        port++;
-                    }
-                }
-
-                String tmp = "";
-                for (String key : session_port.keySet()) {
-                    tmp += key + ": " + session_port.get(key) + ";\n";
-                }
-
-                txtSessionConfig.setText(tmp);
-            }
-            */
             try {
                 updateTxtSessionConfig();
             } catch (ParsingException exc) {
@@ -806,7 +1435,7 @@ public class GUI extends JSplitPane {
         gbc = new GridBagConstraints();
         gbc.anchor = GridBagConstraints.WEST;
         gbc.insets = new Insets(10, 10, 10, 10);
-        gbc.gridx = 1;
+        gbc.gridx = 2;
         gbc.gridy = 1;
         inputContainer.add(btnStop, gbc);
 
@@ -829,14 +1458,13 @@ public class GUI extends JSplitPane {
         gbc = new GridBagConstraints();
         gbc.anchor = GridBagConstraints.SOUTHWEST;
         gbc.insets = new Insets(10, 10, 10, 10);
-        gbc.gridx = 1;
+        gbc.gridx = 2;
         gbc.gridy = 3;
         inputContainer.add(btnExecuteSuite, gbc);
-        bot_tabs_index.put("Input JSON", 0);
-        // Add Input Search tab
-        bot_tabbed.addTab("Input JSON", inputContainer);
+        return inputContainer;
+    }
 
-        // Test Suite Result Tab
+    private JScrollPane setup_tab_suite_result(GridBagLayout bottom_layout) {
         resultTableModel = new DefaultTableModel(foundData, testSuiteColNames) {
             @Override
             public boolean isCellEditable(int row, int column) {
@@ -907,11 +1535,10 @@ public class GUI extends JSplitPane {
                 }
             }
         });
+        return scrollPane;
+    }
 
-        //Add Search Result Tab
-        bot_tabs_index.put("Test Suite Result", 1);
-        bot_tabbed.addTab("Test Suite Result", scrollPane);
-
+    private JSplitPane setup_tab_test_result(GridBagLayout bottom_layout) {
         // Test Result Tab
         testTableModel = new DefaultTableModel(foundData, foundTableColNames) {
             @Override
@@ -980,25 +1607,22 @@ public class GUI extends JSplitPane {
                 return viewedMessage.getResponse();
             }
         };
+        return splitPane;
+    }
 
-        //Add Search Result Tab
-        bot_tabs_index.put("Test Result", 2);
-        bot_tabbed.addTab("Test Result", splitPane);
-
-
-        // Metadata tab
+    private JPanel setup_tab_session_config(GridBagLayout bottom_layout) {
         JPanel sessionConfig = new JPanel();
-        sessionConfig.setLayout(gridBagLayout3);
+        sessionConfig.setLayout(bottom_layout);
 
         txtSessionConfig = new JTextArea();
         JScrollPane scrollPane5 = new JScrollPane(txtSessionConfig, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED, JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
-        gbc = new GridBagConstraints();
+        GridBagConstraints gbc = new GridBagConstraints();
         gbc.anchor = GridBagConstraints.WEST;
         gbc.fill = GridBagConstraints.BOTH;
         gbc.insets = new Insets(10, 10, 10, 10);
         gbc.gridx = 0;
         gbc.gridy = 1;
-        gbc.gridwidth = 1;
+        gbc.gridwidth = 2;
         gbc.gridheight = 3;
         sessionConfig.add(scrollPane5, gbc);
 
@@ -1011,662 +1635,86 @@ public class GUI extends JSplitPane {
             }
         });
 
-
         gbc = new GridBagConstraints();
         gbc.anchor = GridBagConstraints.WEST;
         gbc.fill = GridBagConstraints.BOTH;
         gbc.insets = new Insets(10, 10, 10, 10);
-        gbc.gridx = 1;
+        gbc.gridx = 2;
         gbc.gridy = 3;
         gbc.gridwidth = 1;
         gbc.gridheight = 1;
         sessionConfig.add(btnSetSessionConfig, gbc);
 
-        bot_tabs_index.put("session config", 3);
-        bot_tabbed.addTab("session config", sessionConfig);
-
-        //Set Bottom Part
-        this.setBottomComponent(bot_tabbed);
-
-        readMsgDefFile();
-        readConfigFile();
-        if (!DRIVER_PATH.equals("")) {
-            lbldriver.setText("Driver Selected");
-            btndriverSelector.setBackground(Color.GREEN);
-            btnTestTrack.setEnabled(true);
-        }
+        return sessionConfig;
     }
 
-    /**
-     * Function used to add an item to the resultTableModel. Contains the results of the tests
-     *
-     * @param data the string array containing the data, also a row
-     */
-    private static void addItem(String[] data) {
-        resultTableModel.addRow(data);
-    }
+    private JPanel setub_tab_debug(GridBagLayout bottom_layout) {
+        // Debug Tab
+        JPanel debugPanel = new JPanel();
 
-    /**
-     * Function used to read the message definition file
-     */
-    private void readMsgDefFile() {
-        File msg_def_file = new File(MSG_DEF_PATH);
-        try {
-            if (!msg_def_file.createNewFile()) {
-                Scanner myReader = null;
-                String tmp = "";
-                try {
-                    myReader = new Scanner(msg_def_file);
-                    while (myReader.hasNextLine()) {
-                        tmp += myReader.nextLine();
-                    }
-                    myReader.close();
-                    messageTypes = Tools.readMsgTypeFromJson(tmp);
-                } catch (ParsingException e) {
-                    lblOutput.setText("Invalid message type in message type definition file");
-                    e.printStackTrace();
-                } catch (FileNotFoundException e) {
-                    lblOutput.setText("Cannot find message definition file");
-                }
-            } else {
-                FileWriter w = new FileWriter(MSG_DEF_PATH);
-                w.write(Tools.getDefaultJSONMsgType());
-                w.close();
-                messageTypes = Tools.readMsgTypeFromJson(Tools.getDefaultJSONMsgType());
-            }
-        } catch (ParsingException e) {
-            e.printStackTrace();
-        } catch (IOException e) {
-            e.printStackTrace();
-            lblOutput.setText("cannot create message definition file");
-        }
-    }
+        debugPanel.setLayout(bottom_layout);
 
-    /**
-     * Function used to read the json config file
-     */
-    private void readConfigFile() {
-        File config_file = new File(CONFIG_FILE_PATH);
-        try {
-            if (!config_file.createNewFile()) {
-                Scanner myReader = null;
-                String tmp = "";
-                try {
-                    myReader = new Scanner(config_file);
-                    while (myReader.hasNextLine()) {
-                        tmp += myReader.nextLine();
-                    }
-                    myReader.close();
-
-                    JSONObject obj = new JSONObject(tmp);
-                    String last_driver_path = obj.getString("last_driver_path");
-                    String last_used_browser = obj.getString("last_browser_used");
-
-                    if (!last_driver_path.equals("")) {
-                        DRIVER_PATH = last_driver_path;
-                    }
-
-                    switch (last_used_browser) {
-                        case "firefox": {
-                            btnselectChrome.setEnabled(true);
-                            btnselectFirefox.setEnabled(false);
-                            break;
-                        }
-                        case "chrome": {
-                            btnselectChrome.setEnabled(false);
-                            btnselectFirefox.setEnabled(true);
-                            break;
-                        }
-                    }
-
-                } catch (JSONException e) {
-                    lblOutput.setText("Invalid config file");
-                } catch (FileNotFoundException e) {
-                    lblOutput.setText("Cannot find config file");
-                }
-            } else {
-                FileWriter w = new FileWriter(CONFIG_FILE_PATH);
-                w.write(Tools.getDefaultJSONConfig());
-                w.close();
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-            lblOutput.setText("cannot create message definition file");
-        }
-    }
-
-    /**
-     * Function that edits the config file.
-     *
-     * @param key   the key of the config to change
-     * @param value the new value of the config
-     */
-    private void editConfigFile(String key, String value) {
-        File config_file = new File(CONFIG_FILE_PATH);
-        try {
-            if (!config_file.createNewFile()) {
-                Scanner myReader = null;
-                String tmp = "";
-                try {
-                    myReader = new Scanner(config_file);
-                    while (myReader.hasNextLine()) {
-                        tmp += myReader.nextLine();
-                    }
-                    myReader.close();
-
-                    JSONObject obj = new JSONObject(tmp);
-                    obj.remove(key);
-                    obj.put(key, value);
-
-                    FileWriter w = new FileWriter(CONFIG_FILE_PATH);
-                    w.write(obj.toString());
-                    w.close();
-
-
-                } catch (JSONException e) {
-                    lblOutput.setText("Invalid config file");
-                } catch (FileNotFoundException e) {
-                    lblOutput.setText("Cannot find config file");
-                }
-            } else {
-                FileWriter w = new FileWriter(CONFIG_FILE_PATH);
-                w.write(Tools.getDefaultJSONConfig());
-                w.close();
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-            lblOutput.setText("cannot create message definition file");
-        }
-    }
-
-    /**
-     * This function parses the given jsonInput string of the language
-     *
-     * @param jsonInput the json input
-     */
-    private void readJSONinput(String jsonInput) {
-        sessions_names.clear();
-        txtSearch.setBorder(BorderFactory.createEmptyBorder());
-        setJSONError(false, "");
-
-        try {
-            JSONObject obj = new JSONObject(jsonInput);
-            List<Test> tests = new ArrayList<>();
-
-            //Getting Test suite data
-            String suite_name = obj.getJSONObject("test suite").getString("name");
-            String suite_description = obj.getJSONObject("test suite").getString("description");
-
-            if (obj.getJSONObject("test suite").has("filter messages")) {
-                FILTERING = obj.getJSONObject("test suite").getBoolean("filter messages");
-            }
-
-            //Array of Tests
-            JSONArray arrTests = obj.getJSONArray("tests");
-
-            //scorro tutti i test
-            for (int i = 0; i < arrTests.length(); i++) {
-                JSONObject act_test = arrTests.getJSONObject(i).getJSONObject("test");
-
-                Test test = new Test(act_test, defaultSession, messageTypes);
-                tests.add(test);
-
-                for (Session s : test.sessions) {
-                    if (!sessions_names.contains(s.name)) {
-                        sessions_names.add(s.name);
-                        session_port.put(s.name, "8080"); // set default port to session
-                    }
-                }
-            }
-            updateSessionTabs();
-            updateTxtSessionConfig();
-            //JSONArray result = obj.getJSONArray("Test Suite Result Table");
-
-            this.testSuite = new TestSuite(suite_name, suite_description, tests);
-            lblInfo.setText("JSON read successfully, Test Suite Object has been created");
-
-        } catch (ParsingException e) {
-            e.printStackTrace();
-
-            setJSONError(true, "Problem in parsing JSON: " + e.getMessage());
-        } catch (Exception e) {
-            e.printStackTrace();
-
-            setJSONError(true, "PROBLEM IN READING JSON, check it please");
-        }
-
-    }
-
-    /**
-     * This function reads the selected file deserializing the messages and creating a new Session
-     *
-     * @return if the reading has been succesfull
-     */
-    private boolean readSavedMessages() {
-        if (!SAVE_FILE_PATH.isEmpty()) {
-            try {
-                if (defaultSession == null) {
-                    defaultSession = new Session("default");
-                    defaultSession.isOffline = true;
-
-                    File f = new File(SAVE_FILE_PATH);
-                    Scanner r = new Scanner(f);
-
-                    Gson json = new Gson();
-                    while (r.hasNextLine()) {
-                        HTTPReqRes tmp = json.fromJson(r.nextLine(), HTTPReqRes.class);
-                        defaultSession.messages.add(tmp);
-                    }
-                } else {
-                    System.out.println("main session already created, skipping message reading from file");
-                }
-                return true;
-            } catch (FileNotFoundException fileNotFoundException) {
-                fileNotFoundException.printStackTrace();
-                return false;
-            }
-        } else {
-            return false;
-        }
-    }
-
-    /**
-     * Method which executes the entire test suite
-     */
-    private void executeSuite() {
-        // clears all previously saved tests
-        actives.clear();
-        passives.clear();
-        act_active_op = null;
-        ex = null;
-        active_ex_finished = false;
-
-        // clears the test suite result table
-        DefaultTableModel dm = (DefaultTableModel) resultTable.getModel();
-        dm.getDataVector().removeAllElements();
-        dm.fireTableDataChanged();
-
-        System.out.println("Number of test found: " + testSuite.getTests().size());
-        for (Test t : testSuite.getTests()) {
-            if (t.isActive) {
-                actives.add(t);
-            } else {
-                passives.add(t);
-            }
-        }
-
-        if (OFFLINE) {
-            if (!readSavedMessages()) {
-                System.err.println("Can't read message file");
-                lblOutput.setText("Can't read message file");
-                return;
-            }
-        }//TODO: re-enable OFFLINE mode
-        /* else if (passives.size() > 0 && defaultSession == null && actives.size() == 0) {
-            lblOutput.setText("Track need to be run for passive tests before executing tests");
-            return;
-        }
-        */
-
-        if (actives.size() == 0) {
-            synchronized (lock2) {
-                active_ex_finished = true;
-            }
-        }
-
-        //FIXME: Passives thread starts without waiting for the end of actives one
-        // Execute active tests
-        if (actives.size() != 0) {
-            try {
-                for (String key : session_port.keySet()) {
-                    if (session_port.get(key).equals("")) {
-                        lblOutput.setText("session port not configured");
-                        return;
-                    }
-                }
-                ex = new ExecuteActives(actives, waiting);
-
-                editConfigFile("last_browser_used", btnselectChrome.isEnabled() ? "firefox" : "chrome");
-
-                ex.registerExecuteActivesListener(new ExecuteActiveListener() {
-                    @Override
-                    public void onExecuteStart() {
-                        ACTIVE_ENABLED = false;
-                        act_active_op = new Operation();
-                        lblOutput.setText("Executing active tests");
-                    }
-
-                    @Override
-                    public void onExecuteDone() {
-                        if (passives.size() == 0) {
-                            update_gui_test_results();
-
-                            lblOutput.setText("Done. Executed Passive Tests: "
-                                    + (passives.isEmpty() ? 0 : passives.size())
-                                    + " - Active Tests: "
-                                    + (testSuite.getTests().size() - (passives.isEmpty() ? 0 : passives.size())));
-                        } else {
-                            lblOutput.setText("Executed Active tests, now doing passives");
-                        }
-                        synchronized (lock2) {
-                            active_ex_finished = true;
-                        }
-                    }
-
-
-                    @Override
-                    public void onNewProcessOperation(Operation op) {
-                        ACTIVE_ENABLED = true;
-                        act_active_op = op;
-                    }
-
-                    @Override
-                    public Operation onOperationDone() {
-                        ACTIVE_ENABLED = false;
-                        Operation tmp = act_active_op;
-
-                        act_active_op = new Operation();
-                        return tmp;
-                    }
-
-                    @Override
-                    public Session onNewSession(Session s) {
-                        Track track = null;
-                        try {
-                            track = s.setTrackFromString(getSessionTxt(s.name));
-                        } catch (ParsingException e) {
-                            lblOutput.setText("error in parsing session track");
-                            return null;
-                        }
-                        String port = session_port.get(s.name);
-                        s.port = port;
-                        s.track = track;
-
-                        s.ex = new ExecuteTrack(false,
-                                !btnselectChrome.isEnabled(),
-                                DRIVER_PATH,
-                                track,
-                                port,
-                                s.name);
-                        return s;
-                    }
-
-                    @Override
-                    public void onNewTest(Test actual_test) {
-                        act_active_op = null;
-                    }
-
-                    public void onTestDone(Test actual_test) {
-                        int indx = testSuite.tests.indexOf(actual_test);
-                        if (indx != -1) {
-                            System.out.printf("Saving test %s in test results", actual_test.getName());
-                            //TODO: add log of sessions
-                            testSuite.tests.set(indx, actual_test);
-                            actual_test.logTest(LOG_FOLDER);
-                        }
-                    }
-
-                    @Override
-                    public void onError(Test actual_test) {
-                        System.err.println("Error executing the test:" + actual_test.name);
-                        synchronized (lock2) {
-                            active_ex_finished = true;
-                        }
-                    }
-                });
-
-                active_ex = new Thread(ex);
-                active_ex.start();
-
-            } catch (Exception er) {
-                er.printStackTrace();
-                System.out.println(er.getLocalizedMessage() + "nad" + er.getMessage() + "2" + er);
-
-                lblOutput.setText("PROBLEM IN Executing Suite, check it please");
-            }
-        }
-
-        // Execute passive tests
-        if (passives.size() != 0) {
-            // TODO: Add offline clause
-            /*
-            if (defaultSession.messages.size() == 0) {
-                lblOutput.setText("no message found");
-                return;
-            }
-            */
-
-            ExecutePassiveListener listener = new ExecutePassiveListener() {
-                @Override
-                public boolean onWaitToStart() {
-                    synchronized (lock2) {
-                        return active_ex_finished;
-                    }
-                }
-
-                @Override
-                public void onExecuteStart() {
-                    lblOutput.setText("Executing passive tests");
-                }
-
-                @Override
-                public void onExecuteDone(List<Test> passives_test) {
-                    //TODO: Check if this is ok
-                    lblOutput.setText("Done. Executed Passive Tests: "
-                            + (passives.isEmpty() ? 0 : passives.size())
-                            + " - Active Tests: "
-                            + (testSuite.getTests().size() - (passives.isEmpty() ? 0 : passives.size())));
-
-                    passives = passives_test;
-
-                    update_gui_test_results();
-                }
-
-                @Override
-                public void onError(String msg) {
-                    lblOutput.setText(msg);
-                }
-
-                @Override
-                public Session onNewSession(Session s) throws ParsingException {
-                    //TODO: implement
-                    s.setTrackFromString(getSessionTxt(s.name));
-
-                    String port = session_port.get(s.name);
-                    s.port = port;
-
-                    s.ex = new ExecuteTrack(false,
-                            !btnselectChrome.isEnabled(),
-                            DRIVER_PATH,
-                            s.track,
-                            port,
-                            s.name);
-
-                    return s;
-                }
-
-                @Override
-                public void onBeforeExecuteTrack() {
-                    //Clear previous interceptedMessages if any
-                    interceptedMessages.clear();
-                    //Tell Burp Extender class to record the intercepted messages from now on
-                    recording = true;
-                }
-
-                @Override
-                public ArrayList<HTTPReqRes> onTrackExecuteDone() {
-                    recording = false;
-                    return interceptedMessages;
-                }
-            };
-
-            ExecutePassives expa = new ExecutePassives(helpers,
-                    passives,
-                    listener,
-                    messageTypes);
-
-            new Thread(expa).start();
-        }
-    }
-
-    /**
-     * Function used to get the text of the text area of a certain session using the session name
-     *
-     * @param session_name the name of the session to get the text
-     * @return the content of the session tab if it is not empty, otherwise the main session text tab
-     */
-    private String getSessionTxt(String session_name) {
-        if (sessions_text.containsKey(session_name)) {
-            JTextArea t = (JTextArea) sessions_text.get(session_name);
-            if (t.getText().equals("")) {
-                return txtScript.getText();
-            } else {
-                return t.getText();
-            }
-        }
-        return null;
-    }
-
-    /**
-     * Update the session config tab, using the session_port variable, at the same time reads if there are changes, and
-     * updates the session_port variable
-     */
-    private void updateTxtSessionConfig() throws ParsingException {
-        setSession_configError(false, "");
-
-        String text = txtSessionConfig.getText();
-        Pattern p = Pattern.compile("\\n");
-        Matcher m = p.matcher(text);
-        text = m.replaceAll("");
-
-        if (text.equals("")) {
-            String tmp = "";
-            for (String s : session_port.keySet()) {
-                tmp += s;
-                tmp += ":" + session_port.get(s) + ";\n";
-            }
-            txtSessionConfig.setText(tmp);
-            return;
-        }
-
-        String[] text_list = text.split(";");
-
-        for (String row : text_list) {
-            String[] splitted = row.trim().split(":");
-            if (splitted.length == 0) continue;
-            if (splitted.length <= 1) {
-                String[] splitted2 = new String[]{"", ""};
-                splitted2[0] = splitted[0];
-                splitted = splitted2;
-            }
-            String port = splitted[1].trim();
-            p = Pattern.compile("^\\d+$");
-            m = p.matcher(splitted[1].trim());
-            if (!m.find()) {
-                setSession_configError(true, "invalid port");
-
-                throw new ParsingException("Invalid port");
-            }
-            if (session_port.containsKey(splitted[0].trim())) {
-                session_port.replace(splitted[0].trim(), splitted[1].trim());
-            } else {
-                session_port.put((splitted[0]).trim(), splitted[1].trim());
-            }
-        }
-        String tmp = "";
-        for (String key : session_port.keySet()) {
-            tmp += key + ": " + session_port.get(key) + ";\n";
-        }
-
-        txtSessionConfig.setText(tmp);
-    }
-
-    /**
-     * This function updates the session tabs in the gui to match the actual value in session_names
-     */
-    private void updateSessionTabs() {
-        List<String> present = new ArrayList<>();
-
-        for (int i = 1; i < top_tabbed.getTabCount(); i++) {
-            present.add(top_tabbed.getTitleAt(i));
-            if (!sessions_names.contains(top_tabbed.getTitleAt(i))) {
-                top_tabbed.remove(i);
-            }
-        }
-        for (String name : sessions_names) {
-            if (!present.contains(name)) {
-                JTextArea tmp = new JTextArea();
-                JScrollPane sp = new JScrollPane(tmp,
-                        JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
-                        JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
-                sessions_text.put(name, tmp);
-                top_tabbed.add(name, sp);
-            }
-        }
-        JTextArea tmp = new JTextArea();
-        JScrollPane sp = new JScrollPane(tmp,
+        txt_out_debug_tab.setEditable(false);
+        JScrollPane scrollPane6 = new JScrollPane(txt_out_debug_tab,
                 JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
                 JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
-    }
+        GridBagConstraints constraints1 = new GridBagConstraints();
+        constraints1.gridx = 0;
+        constraints1.gridy = 1;
+        constraints1.gridwidth = 1; // One cell wide
+        constraints1.gridheight = 3; // One cell high
+        constraints1.fill = GridBagConstraints.BOTH;
+        constraints1.weightx = 0.5; // Half of the horizontal space
+        constraints1.weighty = 0.5; // Half of the vertical space
+        debugPanel.add(scrollPane6, constraints1);
 
-    /**
-     * Function used to set the JSON textbox with a red colour to highlight an error.
-     *
-     * @param isInError true to highlight an error, false to remove the highlight
-     * @param msg       the error message to display
-     */
-    private void setJSONError(boolean isInError, String msg) {
-        if (isInError) {
-            txtSearch.setBorder(BorderFactory.createLineBorder(Color.RED, 3));
-            lblOutput.setText(msg);
-            bot_tabbed.setBackgroundAt(bot_tabs_index.get("Input JSON"), Color.RED);
-        } else {
-            txtSearch.setBorder(BorderFactory.createEmptyBorder());
-            lblOutput.setText("");
-            bot_tabbed.setBackgroundAt(bot_tabs_index.get("Input JSON"), Color.white);
-        }
-    }
+        txt_err_debug_tab.setEditable(false);
+        JScrollPane scrollPane7 = new JScrollPane(txt_err_debug_tab,
+                JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
+                JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
+        GridBagConstraints constraints2 = new GridBagConstraints();
+        constraints2.gridx = 1;
+        constraints2.gridy = 1;
+        constraints2.gridwidth = 1; // One cell wide
+        constraints2.gridheight = 3; // One cell high
+        constraints2.fill = GridBagConstraints.BOTH;
+        constraints2.weightx = 0.5; // Half of the horizontal space
+        constraints2.weighty = 0.5; // Half of the vertical space
+        debugPanel.add(scrollPane7, constraints2);
 
-    /**
-     * Function used to set the session config textbox with a red border to highlight an error.
-     *
-     * @param isInError true to highlight an error, false to remove highlight
-     * @param msg       The error message to display
-     */
-    private void setSession_configError(boolean isInError, String msg) {
-        if (isInError) {
-            txtSessionConfig.setBorder(BorderFactory.createLineBorder(Color.RED, 3));
-            lblOutput.setText(msg);
-            bot_tabbed.setBackgroundAt(bot_tabs_index.get("session config"), Color.RED);
-        } else {
-            txtSessionConfig.setBorder(BorderFactory.createEmptyBorder());
-            lblOutput.setText("");
-            bot_tabbed.setBackgroundAt(bot_tabs_index.get("session config"), Color.white);
-        }
-    }
+        JButton btn_clear = new JButton("clear");
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.anchor = GridBagConstraints.WEST;
+        gbc.insets = new Insets(10, 10, 10, 10);
+        gbc.gridx = 2;
+        gbc.gridy = 1;
+        debugPanel.add(btn_clear, gbc);
 
-    /**
-     * Function used to update the gui test results after the tests are executed
-     */
-    private void update_gui_test_results() {
-        for (Test t : testSuite.getTests()) {
-            String esito = "";
-            if (t.applicable) {
-                esito = t.success ? "passed" : "failed";
-            } else {
-                esito = "not applicable";
-            }
-            String[] tmp = new String[]{t.getName(),
-                    t.getDescription(),
-                    t.references,
-                    t.violated_properties,
-                    t.affected_entity,
-                    t.mitigations,
-                    esito};
-            System.out.println(t.getName() + " " + esito);
-            addItem(tmp);
-        }
+        btn_clear.addActionListener(e -> {
+            txt_out_debug_tab.setText("");
+            txt_err_debug_tab.setText("");
+        });
 
-        btnExecuteSuite.setEnabled(false);
+        JLabel lbl_left = new JLabel("Output log");
+        gbc = new GridBagConstraints();
+        gbc.anchor = GridBagConstraints.WEST;
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+        gbc.insets = new Insets(10, 10, 10, 10);
+        gbc.gridx = 0;
+        gbc.gridy = 0;
+        gbc.gridwidth = 2;
+        debugPanel.add(lbl_left, gbc);
+
+        JLabel lbl_right = new JLabel("Error log");
+        gbc = new GridBagConstraints();
+        gbc.anchor = GridBagConstraints.WEST;
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+        gbc.insets = new Insets(10, 10, 10, 10);
+        gbc.gridx = 1;
+        gbc.gridy = 0;
+        gbc.gridwidth = 2;
+        debugPanel.add(lbl_right, gbc);
+
+        return debugPanel;
     }
 }

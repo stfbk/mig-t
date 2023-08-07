@@ -20,16 +20,14 @@ public class JWT {
     public String payload;
     public String signature;
     public String raw;
-    SignedJWT parsed_jwt;
-
     public boolean sign; // put to true if you want to sign the jwt after edit (need private key)
     public String private_key_pem; // PEM the private key used to sign the jwt
     public String public_key_pem; // PEM public key used to check the signature of the jwt
-
     public boolean decrypt; // put to true if the raw is a JWE, and you want to decrypt it
     public String private_key_pem_enc;
     public String public_key_pem_enc;
     public JWEObject jwe;
+    SignedJWT parsed_jwt;
     EncryptingAlg e_alg;
     SigningAlgs signing_alg;
 
@@ -206,31 +204,33 @@ public class JWT {
         }
 
         if (decrypt) {
-            // if the JWE has been decrypted, now it needs to be re-encrypted
-            if (public_key_pem_enc.length() == 0)
-                throw new ParsingException("Cannot enctypt jwe, public key not set");
-
-            JWEObject editedJWE = new JWEObject(
-                    jwe.getHeader(),
-                    new Payload(res)
-            );
-            try {
-                switch (e_alg) {
-                    case RSA_OAEP:
-                    case RSA_OAEP_256:
-                        editedJWE.encrypt(
-                                new RSAEncrypter(JWK.parseFromPEMEncodedObjects(public_key_pem_enc).toRSAKey()));
-                        break;
-                    case ECDH_ES_A128KW:
-                    case ECDH_ES_A256KW:
-                        editedJWE.encrypt(
-                                new ECDHEncrypter(JWK.parseFromPEMEncodedObjects(public_key_pem_enc).toECKey()));
-                        break;
+            if (public_key_pem_enc.length() != 0) {
+                // if the JWE has been decrypted, now it needs to be re-encrypted
+                JWEObject editedJWE = new JWEObject(
+                        jwe.getHeader(),
+                        new Payload(res)
+                );
+                try {
+                    switch (e_alg) {
+                        case RSA_OAEP:
+                        case RSA_OAEP_256:
+                            editedJWE.encrypt(
+                                    new RSAEncrypter(JWK.parseFromPEMEncodedObjects(public_key_pem_enc).toRSAKey()));
+                            break;
+                        case ECDH_ES_A128KW:
+                        case ECDH_ES_A256KW:
+                            editedJWE.encrypt(
+                                    new ECDHEncrypter(JWK.parseFromPEMEncodedObjects(public_key_pem_enc).toECKey()));
+                            break;
+                    }
+                } catch (JOSEException e) {
+                    throw new ParsingException("Unable to encrypt JWE " + e);
                 }
-            } catch (JOSEException e) {
-                throw new ParsingException("Unable to encrypt JWE " + e);
+                res = editedJWE.serialize();
+            } else {
+                // if no public key is provided, the jwe will not be edited
+                res = raw;
             }
-            res = editedJWE.serialize();
         }
 
         res = res.replaceAll("=", "");

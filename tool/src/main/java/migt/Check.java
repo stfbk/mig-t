@@ -2,6 +2,7 @@ package migt;
 
 import com.jayway.jsonpath.JsonPath;
 import org.json.JSONArray;
+import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.nio.charset.StandardCharsets;
@@ -43,67 +44,75 @@ public class Check extends Module {
         Iterator<String> keys = json_check.keys();
         while (keys.hasNext()) {
             String key = keys.next();
-            switch (key) {
-                case "in":
-                    this.in = CheckIn.fromString(json_check.getString("in"));
-                    break;
-                case "check param":
-                    this.isParamCheck = true;
-                    this.setWhat(json_check.getString("check param"));
-                    break;
-                case "check":
-                    this.setWhat(json_check.getString("check"));
-                    break;
-                case "check regex":
-                    regex = json_check.getString("check regex");
-                    break;
-                case "use variable":
-                    use_variable = json_check.getBoolean("use variable");
-                    break;
-                case "is":
-                    this.setOp(CheckOps.IS);
-                    this.op_val = json_check.getString("is");
-                    break;
-                case "is not":
-                    this.setOp(CheckOps.IS_NOT);
-                    this.op_val = json_check.getString("is not");
-                    break;
-                case "contains":
-                    this.setOp(CheckOps.CONTAINS);
-                    this.op_val = json_check.getString("contains");
-                    break;
-                case "not contains":
-                    this.setOp(CheckOps.NOT_CONTAINS);
-                    this.op_val = json_check.getString("not contains");
-                    break;
-                case "is present":
-                    this.op = json_check.getBoolean("is present") ? CheckOps.IS_PRESENT :
-                            IS_NOT_PRESENT;
-                    this.op_val = json_check.getBoolean("is present") ?
-                            "is present" : "is not present";
-                    break;
-                case "is in":
-                    this.op = CheckOps.IS_IN;
-                    JSONArray jsonArr = json_check.getJSONArray("is in");
-                    Iterator<Object> it = jsonArr.iterator();
+            try {
+                switch (key) {
+                    case "in":
+                        this.in = CheckIn.fromString(json_check.getString("in"));
+                        break;
+                    case "check param":
+                        this.isParamCheck = true;
+                        this.setWhat(json_check.getString("check param"));
+                        break;
+                    case "check":
+                        this.setWhat(json_check.getString("check"));
+                        break;
+                    case "check regex":
+                        regex = json_check.getString("check regex");
+                        break;
+                    case "use variable":
+                        use_variable = json_check.getBoolean("use variable");
+                        break;
+                    case "is":
+                        this.setOp(CheckOps.IS);
+                        this.op_val = json_check.getString("is");
+                        break;
+                    case "is not":
+                        this.setOp(CheckOps.IS_NOT);
+                        this.op_val = json_check.getString("is not");
+                        break;
+                    case "contains":
+                        this.setOp(CheckOps.CONTAINS);
+                        this.op_val = json_check.getString("contains");
+                        break;
+                    case "not contains":
+                        this.setOp(CheckOps.NOT_CONTAINS);
+                        this.op_val = json_check.getString("not contains");
+                        break;
+                    case "is present":
+                        this.op = json_check.getBoolean("is present") ? CheckOps.IS_PRESENT :
+                                IS_NOT_PRESENT;
+                        this.op_val = json_check.getBoolean("is present") ?
+                                "is present" : "is not present";
+                        break;
+                    case "is in":
+                        this.op = CheckOps.IS_IN;
+                        JSONArray jsonArr = json_check.getJSONArray("is in");
+                        Iterator<Object> it = jsonArr.iterator();
 
-                    while (it.hasNext()) {
-                        String act_enc = (String) it.next();
-                        value_list.add(act_enc);
-                    }
-                    break;
-                case "is not in":
-                    this.op = CheckOps.IS_NOT_IN;
-                    JSONArray jsonArr2 = json_check.getJSONArray("is not in");
-                    Iterator<Object> it2 = jsonArr2.iterator();
+                        while (it.hasNext()) {
+                            String act_enc = (String) it.next();
+                            value_list.add(act_enc);
+                        }
+                        break;
+                    case "is not in":
+                        this.op = CheckOps.IS_NOT_IN;
+                        JSONArray jsonArr2 = json_check.getJSONArray("is not in");
+                        Iterator<Object> it2 = jsonArr2.iterator();
 
-                    while (it2.hasNext()) {
-                        String act_enc = (String) it2.next();
-                        value_list.add(act_enc);
-                    }
-                    break;
+                        while (it2.hasNext()) {
+                            String act_enc = (String) it2.next();
+                            value_list.add(act_enc);
+                        }
+                        break;
+                }
+            } catch (JSONException e) {
+                throw new ParsingException("error in parsing check: " + e);
             }
+
         }
+
+        if (regex.equals("") && what.equals(""))
+            throw new ParsingException("Error in parsing check");
     }
 
     public void init() {
@@ -202,6 +211,7 @@ public class Check extends Module {
 
         if (this.isParamCheck) {
             if (in == CheckIn.BODY) {
+                applicable = false;
                 throw new ParsingException("Invalid check operation, cannot do \"check param\" over body, " +
                         "use \"check_regex instead\"");
             }

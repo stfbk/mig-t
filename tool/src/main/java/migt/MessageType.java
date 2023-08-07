@@ -10,13 +10,15 @@ import java.util.List;
  */
 public class MessageType implements Cloneable {
     String name;
-    Boolean isRequest;
+    Boolean isRequest; // this tells if the message where the checks are executed is a request or a response
     List<Check> checks;
     String responseName;
     String requestName;
 
-    Boolean getByResponse;
-    Boolean getByRequest;
+    Boolean getByResponse; // this tells if you are getting a response by checking a request
+    Boolean getByRequest; // this tells if you are getting a request by checking a response
+
+    boolean msg_to_process_is_request; // this tells whether the message to be intercepted is a request or a response
 
     /**
      * Instantiate a MessageType
@@ -32,6 +34,8 @@ public class MessageType implements Cloneable {
         this.requestName = "";
         this.getByResponse = false;
         this.getByRequest = false;
+        this.msg_to_process_is_request = isRequest; // init with this, if getByResponse or getByRequest, then change
+        // accordingly
     }
 
     /**
@@ -50,16 +54,18 @@ public class MessageType implements Cloneable {
                 } else if (act.responseName.equals(name)) {
                     MessageType tmp = (MessageType) act.clone();
                     tmp.getByResponse = true;
+                    tmp.msg_to_process_is_request = false;
                     return tmp;
                 } else if (act.requestName.equals(name)) {
                     MessageType tmp = (MessageType) act.clone();
                     tmp.getByRequest = true;
+                    tmp.msg_to_process_is_request = true;
                     return tmp;
                 }
             } catch (CloneNotSupportedException e) {
                 throw new ParsingException(e.getMessage());
             }
         }
-        throw new ParsingException("cannot find the specified message type");
+        throw new ParsingException("cannot find the specified message type \" " + name + "\"");
     }
 }

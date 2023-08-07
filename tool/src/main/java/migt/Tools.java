@@ -56,15 +56,16 @@ public class Tools {
 
                 if (messageList.get(i).matches_msg_type(msg_type)) {
                     currentOP.helpers = helpers;
-                    currentOP.setAPI(new Operation_API(messageList.get(i), msg_type.isRequest));
+
+                    currentOP.setAPI(new Operation_API(messageList.get(i), msg_type.msg_to_process_is_request));
                     currentOP.execute();
                     res = currentOP.getResult();
                 }
 
                 test.vars = currentOP.api.vars;
 
-                actisreq = msg_type.isRequest;
-                actisresp = !msg_type.isRequest;
+                actisreq = msg_type.msg_to_process_is_request;
+                actisresp = !msg_type.msg_to_process_is_request;
                 j++;
             }
             if (!res) {
