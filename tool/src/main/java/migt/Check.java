@@ -259,6 +259,10 @@ public class Check extends Module {
     private boolean execute_json() throws ParsingException {
         DecodeOperation_API tmp = ((DecodeOperation_API) this.imported_api);
 
+        if (isParamCheck) {
+            throw new ParsingException("Cannot execute a 'check param' in a json, please use 'check'");
+        }
+
         String j = "";
 
         switch (in) {
@@ -284,17 +288,17 @@ public class Check extends Module {
         String found = "";
         // https://github.com/json-path/JsonPath
         try {
-            found = JsonPath.read(j, what);
+            Object found_obj = JsonPath.read(j, what);
+            found = (String) found_obj;
         } catch (com.jayway.jsonpath.PathNotFoundException e) {
             applicable = true;
             return op == IS_NOT_PRESENT;
+        } catch (java.lang.ClassCastException e) {
+            throw new ParsingException("Invalid JSON Path in check operation, the value matched is an array, please " +
+                    "specify the element to be matched with the correct json PATH, i.e. by using ...[0]");
         }
 
         applicable = true; // at this point the path has been found so the check is applicable
-
-        if (isParamCheck) {
-            throw new ParsingException("Cannot execute a 'check param' in a json, please use 'check'");
-        }
 
         switch (op) {
             case IS:

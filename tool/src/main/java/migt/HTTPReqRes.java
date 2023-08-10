@@ -23,8 +23,8 @@ public class HTTPReqRes implements Cloneable {
     public boolean isResponse = false;
     public int body_offset_req; // identifies the index where the body ends in the request
     public int body_offset_resp; // the index where teh body of the response starts
-    byte[] body_req; // the body of the request message
-    byte[] body_resp; // the body of the response message
+    byte[] body_req = null; // the body of the request message
+    byte[] body_resp = null; // the body of the response message
     // host data
     private String host;
     private int port = 0;

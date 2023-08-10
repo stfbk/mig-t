@@ -373,8 +373,8 @@ public class Operation extends Module {
         matchedMessages.add(new Operation.MatchedMessage(
                 api.message,
                 0,
-                api.message.isRequest,
-                api.message.isResponse,
+                api.is_request,
+                !api.is_request,
                 false
         ));
 

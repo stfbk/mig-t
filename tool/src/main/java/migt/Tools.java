@@ -741,7 +741,8 @@ public class Tools {
                 }
 
                 matcher = pattern.matcher(new String(messageInfo.getBody(isRequest)));
-                messageInfo.setBody(isRequest, matcher.replaceAll(new_value));
+                String new_body = matcher.replaceFirst(new_value);
+                messageInfo.setBody(isRequest, new_body);
                 //Automatically update content-lenght
                 return messageInfo.getMessage(isRequest, helpers);
 
