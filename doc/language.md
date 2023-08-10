@@ -184,10 +184,13 @@ Note: The supported algorithms for signing are:
 
 Note that when decrypting a JWE, a JWS is expected in the payload. Other payloads are not supproted.
 
-To decrypt a JWE to access the JWT in its payload use these two mandatory tags
+To decrypt a JWE to access the JWT in its payload use these tags
 
 - `jwe decrypt` with the private key in PEM string format
 - `jwe encrypt` with the public key in PEM string format
+
+Note: You can decrypt without specifying encrypt, this will prevent the JWE from being edited (as no encryption key is passed)
+Note: You can't encrypt, without decrypt
 
 Note: Supported algorithms are:
 

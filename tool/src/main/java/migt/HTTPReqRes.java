@@ -83,24 +83,22 @@ public class HTTPReqRes implements Cloneable {
      * @param isRequest true if the message is a request, false otherwise
      */
     public HTTPReqRes(IHttpRequestResponse message, IExtensionHelpers helpers, Boolean isRequest) {
-        this.isRequest = isRequest;
-        this.isResponse = !isRequest;
-        // TODO: in theory, if a IHttpRequestResponse object contains a response, it should contain also the request
-
-        if (isRequest) {
-            this.setRequest(message.getRequest());
-            this.setRequest_url(helpers.analyzeRequest(message).getUrl().toString());
-            helpers.analyzeRequest(message.getRequest()).getBodyOffset();
-            this.headers_req = helpers.analyzeRequest(message.getRequest()).getHeaders();
-            this.request_url = helpers.analyzeRequest(message).getUrl().toString();
-            this.body_offset_req = helpers.analyzeRequest(message.getRequest()).getBodyOffset();
-        } else {
+        if (!isRequest) {
+            this.isResponse = true;
             this.setResponse(message.getResponse());
-            helpers.analyzeResponse(message.getResponse()).getBodyOffset();
             this.headers_resp = helpers.analyzeResponse(message.getResponse()).getHeaders();
-            this.body_offset_resp = helpers.analyzeRequest(message.getRequest()).getBodyOffset();
+            this.body_offset_resp = helpers.analyzeRequest(message.getResponse()).getBodyOffset();
         }
 
+        // the request is always present in a IHTTPRequestResponse
+        this.isRequest = true;
+        this.setRequest(message.getRequest());
+        this.setRequest_url(helpers.analyzeRequest(message).getUrl().toString());
+        this.headers_req = helpers.analyzeRequest(message.getRequest()).getHeaders();
+        this.request_url = helpers.analyzeRequest(message).getUrl().toString();
+        this.body_offset_req = helpers.analyzeRequest(message.getRequest()).getBodyOffset();
+
+        // set host info
         IHttpService service = message.getHttpService();
         this.setHost(service.getHost());
         this.setPort(service.getPort());
@@ -472,6 +470,7 @@ public class HTTPReqRes implements Cloneable {
              * so messageIndex have to search for the request, and then evaluate the response
              */
             if (msg_type.getByResponse) {
+                if (!isResponse) return false; // both request and response have to be present
                 matchedMessage = Tools.executeChecks(
                         msg_type.checks,
                         this,
@@ -479,6 +478,7 @@ public class HTTPReqRes implements Cloneable {
                         new ArrayList<>() // TODO: fix
                 );
             } else if (msg_type.getByRequest) {
+                if (!isResponse) return false; // both request and response have to be present
                 matchedMessage = Tools.executeChecks(
                         msg_type.checks,
                         this,
@@ -486,6 +486,7 @@ public class HTTPReqRes implements Cloneable {
                         new ArrayList<>() // TODO: fix
                 );
             } else {
+                if (!msg_type.isRequest && !isResponse) return false; // this message is not containing a response
                 matchedMessage = Tools.executeChecks(
                         msg_type.checks,
                         this,

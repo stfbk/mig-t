@@ -97,6 +97,8 @@ public class BurpExtender implements IBurpExtender, ITab, IProxyListener {
         String port = proxy_message.getListenerInterface().split(":")[1];
         IHttpRequestResponse messageInfo = proxy_message.getMessageInfo();
 
+        HTTPReqRes message = new HTTPReqRes(messageInfo, helpers, messageIsRequest);
+
         if (mainPane.ACTIVE_ENABLED) {
             if (!port.equals(mainPane.act_active_op.session_port)) {
                 return;
@@ -113,80 +115,24 @@ public class BurpExtender implements IBurpExtender, ITab, IProxyListener {
                 mainPane.act_active_op.applicable = false;
             }
 
-            boolean matchMessage = false;
-
-            try {
-                /* If the response message name is searched, the getByResponse will be true.
-                 * so i have to search for the request, and then evaluate the response*/
-                if (msg_type.getByResponse) {
-                    if (!messageIsRequest) {
-                        matchMessage = Tools.executeChecks(msg_type.checks,
-                                new HTTPReqRes(messageInfo, helpers, true),
-                                true, mainPane.act_active_op.api.vars);
-                    }
-                } else if (msg_type.getByRequest) {
-                    if (!messageIsRequest) {
-                        matchMessage = Tools.executeChecks(msg_type.checks,
-                                new HTTPReqRes(messageInfo, helpers, false),
-                                false, mainPane.act_active_op.api.vars);
-                    }
-                } else {
-                    if (messageIsRequest == msg_type.isRequest) {
-                        matchMessage = Tools.executeChecks(msg_type.checks,
-                                new HTTPReqRes(messageInfo, helpers, msg_type.isRequest),
-                                msg_type.isRequest, mainPane.act_active_op.api.vars);
-                    }
-                }
-            } catch (ParsingException e) {
-                mainPane.act_active_op.applicable = false;
-                return;
-            }
+            boolean matchMessage = message.matches_msg_type(msg_type);
 
             if (matchMessage) {
-                boolean isRequest = false;
-                if (msg_type.getByRequest) {
-                    isRequest = false;
-                } else if (msg_type.getByResponse) {
-                    isRequest = true;
-                } else {
-                    isRequest = msg_type.isRequest;
-                }
-
                 Operation.MatchedMessage m = new Operation.MatchedMessage(
-                        new HTTPReqRes(messageInfo, helpers, isRequest),
+                        message,
                         HTTPReqRes.instances,
-                        isRequest,
-                        !isRequest,
+                        msg_type.msg_to_process_is_request,
+                        !msg_type.msg_to_process_is_request,
                         false);
                 mainPane.act_active_op.matchedMessages.add(m);
 
                 // If the operation's action is an intercept
                 if (Objects.requireNonNull(mainPane.act_active_op.getAction()) == Operation.Action.INTERCEPT) {
                     try {
-                        /* If the response message name is searched, the getByResponse will be true.
-                         * so i have to search for the request, and then evaluate the response*/
-                        if (msg_type.getByResponse) {
-                            if (!messageIsRequest) {
-                                if (matchMessage) {
-                                    processMatchedMsg(msg_type, messageInfo);
-                                }
-                            }
-                        } else if (msg_type.getByRequest) {
-                            if (!messageIsRequest) {
-                                if (matchMessage) {
-                                    processMatchedMsg(msg_type, messageInfo);
-                                }
-                            }
-                        } else {
-                            if (messageIsRequest == msg_type.isRequest) {
-                                if (matchMessage) {
-                                    processMatchedMsg(msg_type, messageInfo);
-                                    if (mainPane.act_active_op.then != null &
-                                            mainPane.act_active_op.then == Operation.Then.DROP) {
-                                        proxy_message.setInterceptAction(IInterceptedProxyMessage.ACTION_DROP);
-                                    }
-                                }
-                            }
+                        processMatchedMsg(msg_type, messageInfo);
+                        if (mainPane.act_active_op.then != null &
+                                mainPane.act_active_op.then == Operation.Then.DROP) {
+                            proxy_message.setInterceptAction(IInterceptedProxyMessage.ACTION_DROP);
                         }
                     } catch (Exception e) {
                         e.printStackTrace();
@@ -214,27 +160,25 @@ public class BurpExtender implements IBurpExtender, ITab, IProxyListener {
     private void processMatchedMsg(MessageType msg_type,
                                    IHttpRequestResponse messageInfo) {
         messageInfo.setHighlight("red");
-        HTTPReqRes message = new HTTPReqRes(messageInfo, helpers, msg_type.isRequest);
+        HTTPReqRes message = new HTTPReqRes(messageInfo, helpers, msg_type.msg_to_process_is_request);
 
         mainPane.act_active_op.helpers = helpers;
         mainPane.act_active_op.api.message = message;
-        mainPane.act_active_op.api.is_request = msg_type.isRequest; // todo check if with getByResponse is ok
+        mainPane.act_active_op.api.is_request = msg_type.msg_to_process_is_request;
         mainPane.act_active_op.execute();
 
         // if message has been edited inside operation update the value
-        if (mainPane.act_active_op.processed_message != null) {
-            //TODO: remove processed_message in future
-            if (msg_type.isRequest) {
-                messageInfo.setRequest(mainPane.act_active_op.processed_message);
-            } else {
-                messageInfo.setResponse(mainPane.act_active_op.processed_message);
+        try {
+            if (mainPane.act_active_op.processed_message != null) {
+                if (msg_type.isRequest) {
+                    messageInfo.setRequest(mainPane.act_active_op.processed_message);
+                } else {
+                    messageInfo.setResponse(mainPane.act_active_op.processed_message);
+                }
             }
-        } else {
-            if (msg_type.isRequest) {
-                messageInfo.setRequest(message.getMessage(message.isRequest, helpers));
-            } else {
-                messageInfo.setResponse(message.getMessage(message.isRequest, helpers));
-            }
+        } catch (UnsupportedOperationException e) {
+            // This is thrown when an already issued request is being substituted
+            System.err.println("Warning, edited message that has already been sent");
         }
         resume();
     }
