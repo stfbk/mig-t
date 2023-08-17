@@ -97,7 +97,12 @@ public class BurpExtender implements IBurpExtender, ITab, IProxyListener {
         String port = proxy_message.getListenerInterface().split(":")[1];
         IHttpRequestResponse messageInfo = proxy_message.getMessageInfo();
 
-        HTTPReqRes message = new HTTPReqRes(messageInfo, helpers, messageIsRequest);
+        HTTPReqRes message = new HTTPReqRes(
+                messageInfo,
+                helpers,
+                messageIsRequest,
+                proxy_message.getMessageReference()
+        );
 
         if (mainPane.ACTIVE_ENABLED) {
             if (!port.equals(mainPane.act_active_op.session_port)) {
@@ -118,18 +123,10 @@ public class BurpExtender implements IBurpExtender, ITab, IProxyListener {
             boolean matchMessage = message.matches_msg_type(msg_type);
 
             if (matchMessage) {
-                Operation.MatchedMessage m = new Operation.MatchedMessage(
-                        message,
-                        HTTPReqRes.instances,
-                        msg_type.msg_to_process_is_request,
-                        !msg_type.msg_to_process_is_request,
-                        false);
-                mainPane.act_active_op.matchedMessages.add(m);
-
                 // If the operation's action is an intercept
                 if (Objects.requireNonNull(mainPane.act_active_op.getAction()) == Operation.Action.INTERCEPT) {
                     try {
-                        processMatchedMsg(msg_type, messageInfo);
+                        processMatchedMsg(msg_type, messageInfo, message);
                         if (mainPane.act_active_op.then != null &
                                 mainPane.act_active_op.then == Operation.Then.DROP) {
                             proxy_message.setInterceptAction(IInterceptedProxyMessage.ACTION_DROP);
@@ -157,10 +154,15 @@ public class BurpExtender implements IBurpExtender, ITab, IProxyListener {
         }
     }
 
+    /**
+     * @param msg_type    the message type to be used
+     * @param messageInfo the original intercepted messageInfo to being able to edit the message
+     * @param message     a custom parsed message to be used in opeations
+     */
     private void processMatchedMsg(MessageType msg_type,
-                                   IHttpRequestResponse messageInfo) {
+                                   IHttpRequestResponse messageInfo,
+                                   HTTPReqRes message) {
         messageInfo.setHighlight("red");
-        HTTPReqRes message = new HTTPReqRes(messageInfo, helpers, msg_type.msg_to_process_is_request);
 
         mainPane.act_active_op.helpers = helpers;
         mainPane.act_active_op.api.message = message;

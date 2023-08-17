@@ -229,7 +229,7 @@ public class Check extends Module {
                 val = m.group();
                 val = val.trim();
             } else {
-                return false;
+                //return false; // TODO: check if correct, is not present?
             }
 
             return do_check(val);
@@ -357,9 +357,9 @@ public class Check extends Module {
                     }
                     break;
                 case IS_PRESENT:
-                    return true; // if it gets to this, the searched param is already found
+                    return !val_to_check.isEmpty(); // if it gets to this, the searched param is already found
                 case IS_NOT_PRESENT:
-                    return false;
+                    return val_to_check.isEmpty();
                 case IS_IN:
                     return value_list.contains(val_to_check); // TODO check
                 case IS_NOT_IN:

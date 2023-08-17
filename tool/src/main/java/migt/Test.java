@@ -177,14 +177,14 @@ public class Test {
 
         int count = 0;
         for (Operation op : operations) {
-            for (Operation.MatchedMessage msg : op.matchedMessages) {
+            for (HTTPReqRes msg : op.matchedMessages) {
                 String[] tmp = new String[]{
                         String.valueOf(count),
                         String.valueOf(op.getMessageType()),
                         "",
                         op.getChecks().toString(),
                         msg.index.toString(),
-                        msg.isFail ? "failed" : "passed"};
+                        "-"}; // TODO: somehow put if the message made the test fail
                 res.add(tmp);
             }
             count++;
@@ -285,28 +285,28 @@ public class Test {
                     "/operation_" +
                     op_count +
                     "_" + o.getMessageType();
-            for (Operation.MatchedMessage m : o.matchedMessages) {
-                if (m.message != null) {
-                    if (m.message.getRequest() != null) {
+            for (HTTPReqRes m : o.matchedMessages) {
+                if (m != null) {
+                    if (m.getRequest() != null) {
                         File log_message = new File(base_path + "_request.raw");
                         try {
                             FileWriter fw = new FileWriter(log_message.getAbsoluteFile());
                             BufferedWriter bw = new BufferedWriter(fw);
                             bw.write(header);
-                            bw.write(new String(m.message.getRequest(), StandardCharsets.UTF_8));
+                            bw.write(new String(m.getRequest(), StandardCharsets.UTF_8));
                             bw.close();
                         } catch (IOException e) {
                             e.printStackTrace();
                         }
                         message_count++;
                     }
-                    if (m.message.getResponse() != null) {
+                    if (m.getResponse() != null) {
                         File log_message = new File(base_path + "_response.raw");
                         try {
                             FileWriter fw = new FileWriter(log_message.getAbsoluteFile());
                             BufferedWriter bw = new BufferedWriter(fw);
                             bw.write(header);
-                            bw.write(new String(m.message.getResponse(), StandardCharsets.UTF_8));
+                            bw.write(new String(m.getResponse(), StandardCharsets.UTF_8));
                             bw.close();
                         } catch (IOException e) {
                             e.printStackTrace();

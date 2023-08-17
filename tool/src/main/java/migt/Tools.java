@@ -36,15 +36,10 @@ public class Tools {
                                              List<MessageType> msg_types) throws ParsingException {
         int i, j;
         boolean res = true;
-        boolean actisreq = false;
-        boolean actisresp = false;
 
         for (i = 0; i < messageList.size(); i++) {
             j = 0;
             while (j < test.operations.size() && res) {
-                actisreq = false;
-                actisresp = false;
-
                 Operation currentOP = test.operations.get(j);
                 MessageType msg_type = MessageType.getFromList(msg_types, currentOP.getMessageType());
 
@@ -63,14 +58,7 @@ public class Tools {
                 }
 
                 test.vars = currentOP.api.vars;
-
-                actisreq = msg_type.msg_to_process_is_request;
-                actisresp = !msg_type.msg_to_process_is_request;
                 j++;
-            }
-            if (!res) {
-                test.operations.get(--j).matchedMessages.add(new Operation.MatchedMessage(messageList.get(i), i, actisreq, actisresp, true));
-                break;
             }
         }
 

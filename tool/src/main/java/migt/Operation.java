@@ -27,7 +27,7 @@ public class Operation extends Module {
     public String replace_request_name;
     public String replace_response_name;
     public boolean isSessionOp = false;
-    public List<MatchedMessage> matchedMessages;
+    public List<HTTPReqRes> matchedMessages;
     public byte[] processed_message;
     public IHttpService processed_message_service;  // null if it is not changed
     public List<IInterceptedProxyMessage> log_messages;
@@ -370,13 +370,7 @@ public class Operation extends Module {
         this.api = api;
 
         // add the intercepted message to the matched messages to be displayed
-        matchedMessages.add(new Operation.MatchedMessage(
-                api.message,
-                0,
-                api.is_request,
-                !api.is_request,
-                false
-        ));
+        matchedMessages.add(api.message);
 
         // updates the processed message from the api
         this.processed_message = api.message.build_message(api.is_request);
@@ -509,34 +503,6 @@ public class Operation extends Module {
             } else {
                 throw new NullPointerException();
             }
-        }
-    }
-
-    /**
-     * Class to store the index and some information about matched messages (with regex or check) in an operation
-     */
-    public static class MatchedMessage {
-        HTTPReqRes message;
-        boolean isRequest = false;
-        boolean isResponse = false;
-        boolean isFail = false;
-        Integer index;
-
-        /**
-         * Instantiates a MatchedMessage
-         *
-         * @param message    the message
-         * @param index      the index in the message list
-         * @param isRequest  if it is a request
-         * @param isResponse if it is a response
-         * @param isFail     if it made the test fail
-         */
-        public MatchedMessage(HTTPReqRes message, Integer index, boolean isRequest, boolean isResponse, boolean isFail) {
-            this.message = message;
-            this.isResponse = isResponse;
-            this.isRequest = isRequest;
-            this.index = index;
-            this.isFail = isFail;
         }
     }
 }

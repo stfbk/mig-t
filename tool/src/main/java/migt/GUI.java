@@ -1556,12 +1556,12 @@ public class GUI extends JSplitPane {
                 int op_index = Integer.parseInt((String) testTable.getModel().getValueAt(testTable.getSelectedRow(), 0));
 
                 Operation op = testSuite.tests.get(resultTable.getSelectedRow()).operations.get(op_index);
-                for (Operation.MatchedMessage m : op.matchedMessages) {
+                for (HTTPReqRes m : op.matchedMessages) {
                     if (m.index == index) {
                         if (m.isRequest) {
-                            messageViewer.setMessage(m.message.getRequest(), true);
+                            messageViewer.setMessage(m.getRequest(), true);
                         } else {
-                            messageViewer.setMessage(m.message.getResponse(), false);
+                            messageViewer.setMessage(m.getResponse(), false);
                         }
                         break;
                     }

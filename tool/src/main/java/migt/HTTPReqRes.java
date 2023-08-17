@@ -19,6 +19,7 @@ import java.util.regex.Pattern;
  */
 public class HTTPReqRes implements Cloneable {
     static public int instances;
+    public Integer index = -1; // index of the message wrt the burp proxy
     public boolean isRequest = false;
     public boolean isResponse = false;
     public int body_offset_req; // identifies the index where the body ends in the request
@@ -35,7 +36,6 @@ public class HTTPReqRes implements Cloneable {
     private byte[] response;
     private List<String> headers_req; // the headers of the request
     private List<String> headers_resp; // the headers of the response
-
 
     /**
      * Instantiate an HTTPReqRes element
@@ -82,13 +82,15 @@ public class HTTPReqRes implements Cloneable {
      * @param helpers   an istance of the IExtensionHelpers
      * @param isRequest true if the message is a request, false otherwise
      */
-    public HTTPReqRes(IHttpRequestResponse message, IExtensionHelpers helpers, Boolean isRequest) {
+    public HTTPReqRes(IHttpRequestResponse message, IExtensionHelpers helpers, Boolean isRequest, int index) {
         if (!isRequest) {
             this.isResponse = true;
             this.setResponse(message.getResponse());
             this.headers_resp = helpers.analyzeResponse(message.getResponse()).getHeaders();
             this.body_offset_resp = helpers.analyzeRequest(message.getResponse()).getBodyOffset();
         }
+
+        this.index = index;
 
         // the request is always present in a IHTTPRequestResponse
         this.isRequest = true;
