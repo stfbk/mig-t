@@ -12,7 +12,7 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import static migt.Check.CheckOps.IS_NOT_PRESENT;
+import static migt.Check.CheckOps.*;
 
 /**
  * Check Object class. This object is used in Operations to check that a parameter or some text is in as specified.
@@ -72,11 +72,33 @@ public class Check extends Module {
                         break;
                     case "contains":
                         this.setOp(CheckOps.CONTAINS);
-                        this.op_val = json_check.getString("contains");
+                        try {
+                            this.op_val = json_check.getString("contains");
+                        } catch (JSONException e) {
+                            // if not a string try an array
+                            JSONArray jsonArr = json_check.getJSONArray("contains");
+                            Iterator<Object> it = jsonArr.iterator();
+
+                            while (it.hasNext()) {
+                                String act_enc = (String) it.next();
+                                value_list.add(act_enc);
+                            }
+                        }
                         break;
                     case "not contains":
                         this.setOp(CheckOps.NOT_CONTAINS);
-                        this.op_val = json_check.getString("not contains");
+                        try {
+                            this.op_val = json_check.getString("not contains");
+                        } catch (JSONException e) {
+                            // if not a string try an array
+                            JSONArray jsonArr = json_check.getJSONArray("not contains");
+                            Iterator<Object> it = jsonArr.iterator();
+
+                            while (it.hasNext()) {
+                                String act_enc = (String) it.next();
+                                value_list.add(act_enc);
+                            }
+                        }
                         break;
                     case "is present":
                         this.op = json_check.getBoolean("is present") ? CheckOps.IS_PRESENT :
@@ -104,9 +126,22 @@ public class Check extends Module {
                             value_list.add(act_enc);
                         }
                         break;
+                    case "is subset of":
+                        this.op = IS_SUBSET_OF;
+                        JSONArray jsonArr3 = json_check.getJSONArray("is subset of");
+                        Iterator<Object> it3 = jsonArr3.iterator();
+
+                        while (it3.hasNext()) {
+                            String act_enc = (String) it3.next();
+                            value_list.add(act_enc);
+                        }
+                        break;
                 }
             } catch (JSONException e) {
                 throw new ParsingException("error in parsing check: " + e);
+            } catch (ClassCastException e) {
+                throw new ParsingException("Only allowed values in arrays are Strings, if you are using integers or " +
+                        "floats, please convert them as strings");
             }
 
         }
@@ -286,16 +321,53 @@ public class Check extends Module {
         }
 
         String found = "";
+        List<String> found_array = null;
+        boolean value_is_array = false;
         // https://github.com/json-path/JsonPath
         try {
             Object found_obj = JsonPath.read(j, what);
-            found = (String) found_obj;
+
+            if (op == IS_PRESENT | op == IS_NOT_PRESENT) {
+                // whatever is the type of the value, if it is found return the result
+                applicable = true;
+                return op == IS_PRESENT;
+            }
+
+            if (found_obj instanceof net.minidev.json.JSONArray) {
+                // the value is a list, allowed ops are: contains/not-contains
+                if (!(op == CONTAINS | op == NOT_CONTAINS | op == IS_SUBSET_OF)) {
+                    throw new ParsingException("Check error, used " + op.toString() + " over a matched list");
+                }
+
+                Iterator<Object> i = ((net.minidev.json.JSONArray) found_obj).iterator();
+
+                List<String> new_array = new ArrayList<>();
+                while (i.hasNext()) {
+                    try {
+                        String elem = String.valueOf(i.next());
+                        new_array.add(elem);
+                    } catch (java.lang.ClassCastException e) {
+                        throw new ParsingException("Cannot convert element in jwt matched array to string");
+                    }
+                }
+                found_array = new_array;
+                value_is_array = true;
+
+            } else if (found_obj instanceof java.lang.String) {
+                // the value is a string, can do all ops
+                found = (String) found_obj;
+
+            } else if (found_obj instanceof java.lang.Double |
+                    found_obj instanceof java.lang.Integer) {
+                // the value is an double or integer, convert to string
+                found = String.valueOf(found_obj);
+            }
+
         } catch (com.jayway.jsonpath.PathNotFoundException e) {
             applicable = true;
             return op == IS_NOT_PRESENT;
         } catch (java.lang.ClassCastException e) {
-            throw new ParsingException("Invalid JSON Path in check operation, the value matched is an array, please " +
-                    "specify the element to be matched with the correct json PATH, i.e. by using ...[0]");
+            throw new ParsingException("Error in check, json matched value cast exception: " + e);
         }
 
         applicable = true; // at this point the path has been found so the check is applicable
@@ -306,17 +378,54 @@ public class Check extends Module {
             case IS_NOT:
                 return !op_val.equals(found);
             case CONTAINS:
-                return found.contains(op_val);
+                if (!value_is_array)
+                    return found.contains(op_val);
+                else {
+                    // the matched value is an array
+                    if (!value_list.isEmpty()) {
+                        // check against a value array
+                        for (String elem : value_list) {
+                            if (!found_array.contains(elem)) {
+                                return false;
+                            }
+                        }
+                        return true;
+                    } else {
+                        // check against single string value
+                        return found_array.contains(op_val);
+                    }
+                }
             case NOT_CONTAINS:
-                return !found.contains(op_val);
+                if (!value_is_array)
+                    return !found.contains(op_val);
+                else {
+                    //the matched value is an array
+                    if (!value_list.isEmpty()) {
+                        // check against a value array
+                        for (String elem : value_list) {
+                            if (found_array.contains(elem)) {
+                                return false;
+                            }
+                        }
+                        return true;
+                    } else {
+                        // check against single string value
+                        return found_array.contains(op_val);
+                    }
+                }
             case IS_PRESENT:
-                return !found.equals("");
+                return !found.isEmpty();
             case IS_NOT_PRESENT:
-                return found.equals("");
+                return found.isEmpty();
             case IS_IN:
                 return value_list.contains(found);
             case IS_NOT_IN:
                 return !value_list.contains(found);
+            case IS_SUBSET_OF:
+                if (!value_is_array)
+                    throw new ParsingException("Matched single element in jwt, but should be an array when using IS SUBSET OF");
+
+                return value_list.containsAll(found_array);
         }
 
         return false;
@@ -454,7 +563,8 @@ public class Check extends Module {
         IS_PRESENT,
         IS_NOT_PRESENT,
         IS_IN,
-        IS_NOT_IN;
+        IS_NOT_IN,
+        IS_SUBSET_OF;
 
         /**
          * Function that given a String, returns the corresponding CheckOps enum's value

@@ -28,10 +28,16 @@ class CustomOutputStream extends OutputStream {
     }
 
     @Override
-    public void write(int b) throws IOException {
+    public void write(int b) {
         // Redirect the byte written to the OutputStream to the JTextArea
-        textArea.append(String.valueOf((char) b));
-        textArea.setCaretPosition(textArea.getDocument().getLength()); // Auto-scroll to the bottom
+        retry:
+        try {
+            textArea.append(String.valueOf((char) b));
+            textArea.setCaretPosition(textArea.getDocument().getLength()); // Auto-scroll to the bottom
+        } catch (java.lang.Error e) {
+            // for some reason write lock acquire is interrupted sometimes
+            break retry; // TODO: fix
+        }
     }
 }
 
@@ -1556,9 +1562,17 @@ public class GUI extends JSplitPane {
                 int op_index = Integer.parseInt((String) testTable.getModel().getValueAt(testTable.getSelectedRow(), 0));
 
                 Operation op = testSuite.tests.get(resultTable.getSelectedRow()).operations.get(op_index);
+
+                MessageType msg_type;
+                try {
+                    msg_type = MessageType.getFromList(messageTypes, op.getMessageType());
+                } catch (ParsingException e) {
+                    throw new RuntimeException(e);
+                }
+
                 for (HTTPReqRes m : op.matchedMessages) {
                     if (m.index == index) {
-                        if (m.isRequest) {
+                        if (msg_type.msg_to_process_is_request) {
                             messageViewer.setMessage(m.getRequest(), true);
                         } else {
                             messageViewer.setMessage(m.getResponse(), false);

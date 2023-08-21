@@ -521,6 +521,7 @@ The Checks tag is a list of Check elements, which can be defined with:
   - `is present` specifying true or false, to check whether is present or not
   - `is in` the value is between a list of values
   - `is not in` the value is not between a list of values
+  - `is subset of` used to check that a matched JSON array is a subset of the given array
 
 Note that you can use `check regex` OR `check` OR `check param`.
 
@@ -530,7 +531,11 @@ In passive tests the checks's result are intended as the entire test result, so 
 
 ### Checks on JSON content
 
-In case a check operation is executed inside an operation that gives a JSON as an output (e.g. decode operations with type=jwt), the check operation is enabled to use JSON paths to identify keys and values specified with `check` tag. The `in` tag specifies the section of the JWT (header, payload, signature). Note that signature is treated as plain text
+In case a check operation is executed inside an operation that gives a JSON as an output (e.g. decode operations with type=jwt), the check operation is enabled to use JSON paths to identify keys and values specified with `check` tag. The `in` tag specifies the section of the JWT (header, payload, signature). Note that signature is treated as plain text.
+
+Note: when using `check regex` with json content, the specified content will be treated as plain text. e.g the header of a jwt will be treated as plain text, and the regex will be executed over the entire header.
+
+Note: matched array contents will always be converted to string for simplicity. This means that if you want to check an integer or float, you should write it as a string (e.g. 12.3 -> "12.3")
 
 ```json
 "decode operations": [

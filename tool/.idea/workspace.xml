@@ -1,10 +1,22 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
+  <component name="AnalysisUIOptions">
+    <option name="SCOPE_TYPE" value="3" />
+  </component>
   <component name="AutoImportSettings">
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="d077b4bd-9cbb-4d2e-a960-593989806ce4" name="Changes" comment="" />
+    <list default="true" id="d077b4bd-9cbb-4d2e-a960-593989806ce4" name="Changes" comment="">
+      <change beforePath="$PROJECT_DIR$/../doc/language.md" beforeDir="false" afterPath="$PROJECT_DIR$/../doc/language.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/pom.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/migt/Check.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/migt/Check.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/migt/GUI.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/migt/GUI.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/test/java/Checks_Test.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/test/java/Checks_Test.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/testfile.pdf" beforeDir="false" afterPath="$PROJECT_DIR$/testfile.pdf" afterDir="false" />
+    </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -31,75 +43,98 @@
   <component name="MarkdownSettingsMigration">
     <option name="stateVersion" value="1" />
   </component>
+  <component name="ProblemsViewState">
+    <option name="selectedTabId" value="ProjectErrors" />
+  </component>
   <component name="ProjectId" id="2AFAnRQ54TqeWlHUpzwUKzCYLiG" />
   <component name="ProjectLevelVcsManager" settingsEditedManually="true" />
   <component name="ProjectViewState">
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent"><![CDATA[{
-  "keyToString": {
-    "ASKED_ADD_EXTERNAL_FILES": "true",
-    "RunOnceActivity.OpenProjectViewOnStart": "true",
-    "RunOnceActivity.ShowReadmeOnStart": "true",
-    "WebServerToolWindowFactoryState": "false",
-    "last_opened_file_path": "/home/matte/Desktop/FBK/mig-t/tool",
-    "project.structure.last.edited": "Project",
-    "project.structure.proportion": "0.0",
-    "project.structure.side.proportion": "0.0",
-    "settings.editor.selected.configurable": "reference.projectsettings.compiler.javacompiler"
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;ASKED_ADD_EXTERNAL_FILES&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.OpenProjectViewOnStart&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;WebServerToolWindowFactoryState&quot;: &quot;false&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;dev&quot;,
+    &quot;last_opened_file_path&quot;: &quot;/home/zero/Desktop/mig-t/tool&quot;,
+    &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
+    &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
+    &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
+    &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
+    &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
+    &quot;project.structure.last.edited&quot;: &quot;Modules&quot;,
+    &quot;project.structure.proportion&quot;: &quot;0.0&quot;,
+    &quot;project.structure.side.proportion&quot;: &quot;0.2&quot;,
+    &quot;run.code.analysis.last.selected.profile&quot;: &quot;pProject Default&quot;,
+    &quot;settings.editor.selected.configurable&quot;: &quot;project.propCompiler&quot;,
+    &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
   }
-}]]></component>
+}</component>
   <component name="RecentsManager">
+    <key name="MoveMembersDialog.RECENTS_KEY">
+      <recent name="migt.EditOperation" />
+      <recent name="migt.SessionOperation" />
+      <recent name="migt.MessageOperation" />
+      <recent name="migt.Test" />
+      <recent name="migt.HTTPReqRes" />
+    </key>
+    <key name="MoveClassesOrPackagesDialog.RECENTS_KEY">
+      <recent name="migt" />
+      <recent name="" />
+    </key>
     <key name="CopyClassDialog.RECENTS_KEY">
       <recent name="" />
     </key>
   </component>
-  <component name="RunManager" selected="JAR Application.burp">
-    <configuration name="JWT_Test.test_decodeRawJwt" type="JUnit" factoryName="JUnit" temporary="true" nameIsGenerated="true">
-      <module name="tool" />
+  <component name="RunManager" selected="JUnit.Checks_Test.test_check_json_array_is_subset_of_wrong">
+    <configuration name="Checks_Test.test_check_json_array_is_subset_of_ok" type="JUnit" factoryName="JUnit" temporary="true" nameIsGenerated="true">
+      <module name="mig-t" />
       <option name="PACKAGE_NAME" value="" />
-      <option name="MAIN_CLASS_NAME" value="JWT_Test" />
-      <option name="METHOD_NAME" value="test_decodeRawJwt" />
+      <option name="MAIN_CLASS_NAME" value="Checks_Test" />
+      <option name="METHOD_NAME" value="test_check_json_array_is_subset_of_ok" />
       <option name="TEST_OBJECT" value="method" />
       <method v="2">
         <option name="Make" enabled="true" />
       </method>
     </configuration>
-    <configuration name="Track_Test" type="JUnit" factoryName="JUnit" temporary="true" nameIsGenerated="true">
-      <module name="tool" />
+    <configuration name="Checks_Test.test_check_json_array_is_subset_of_wrong" type="JUnit" factoryName="JUnit" temporary="true" nameIsGenerated="true">
+      <module name="mig-t" />
       <option name="PACKAGE_NAME" value="" />
-      <option name="MAIN_CLASS_NAME" value="Track_Test" />
-      <option name="TEST_OBJECT" value="class" />
-      <method v="2">
-        <option name="Make" enabled="true" />
-      </method>
-    </configuration>
-    <configuration name="Track_Test.rangeTest" type="JUnit" factoryName="JUnit" temporary="true" nameIsGenerated="true">
-      <module name="tool" />
-      <option name="PACKAGE_NAME" value="" />
-      <option name="MAIN_CLASS_NAME" value="Track_Test" />
-      <option name="METHOD_NAME" value="rangeTest" />
+      <option name="MAIN_CLASS_NAME" value="Checks_Test" />
+      <option name="METHOD_NAME" value="test_check_json_array_is_subset_of_wrong" />
       <option name="TEST_OBJECT" value="method" />
       <method v="2">
         <option name="Make" enabled="true" />
       </method>
     </configuration>
-    <configuration name="Track_Test.testTrackRemove" type="JUnit" factoryName="JUnit" temporary="true" nameIsGenerated="true">
-      <module name="tool" />
+    <configuration name="Checks_Test.test_check_json_string_contains_integer" type="JUnit" factoryName="JUnit" temporary="true" nameIsGenerated="true">
+      <module name="mig-t" />
       <option name="PACKAGE_NAME" value="" />
-      <option name="MAIN_CLASS_NAME" value="Track_Test" />
-      <option name="METHOD_NAME" value="testTrackRemove" />
+      <option name="MAIN_CLASS_NAME" value="Checks_Test" />
+      <option name="METHOD_NAME" value="test_check_json_string_contains_integer" />
       <option name="TEST_OBJECT" value="method" />
       <method v="2">
         <option name="Make" enabled="true" />
       </method>
     </configuration>
-    <configuration name="Utils_Test.executeSessioOps_test" type="JUnit" factoryName="JUnit" temporary="true" nameIsGenerated="true">
-      <module name="tool" />
+    <configuration name="Checks_Test.test_check_json_string_not_contains_elem" type="JUnit" factoryName="JUnit" temporary="true" nameIsGenerated="true">
+      <module name="mig-t" />
       <option name="PACKAGE_NAME" value="" />
-      <option name="MAIN_CLASS_NAME" value="Utils_Test" />
-      <option name="METHOD_NAME" value="executeSessioOps_test" />
+      <option name="MAIN_CLASS_NAME" value="Checks_Test" />
+      <option name="METHOD_NAME" value="test_check_json_string_not_contains_elem" />
+      <option name="TEST_OBJECT" value="method" />
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="Checks_Test.test_check_json_string_not_contains_elem_wrong" type="JUnit" factoryName="JUnit" temporary="true" nameIsGenerated="true">
+      <module name="mig-t" />
+      <option name="PACKAGE_NAME" value="" />
+      <option name="MAIN_CLASS_NAME" value="Checks_Test" />
+      <option name="METHOD_NAME" value="test_check_json_string_not_contains_elem_wrong" />
       <option name="TEST_OBJECT" value="method" />
       <method v="2">
         <option name="Make" enabled="true" />
@@ -111,21 +146,36 @@
       <option name="ALTERNATIVE_JRE_PATH" />
       <method v="2" />
     </configuration>
+    <configuration name="docker" type="Remote">
+      <module name="mig-t" />
+      <option name="USE_SOCKET_TRANSPORT" value="true" />
+      <option name="SERVER_MODE" value="false" />
+      <option name="SHMEM_ADDRESS" />
+      <option name="HOST" value="localhost" />
+      <option name="PORT" value="5005" />
+      <option name="AUTO_RESTART" value="false" />
+      <RunnerSettings RunnerId="Debug">
+        <option name="DEBUG_PORT" value="5005" />
+        <option name="LOCAL" value="false" />
+      </RunnerSettings>
+      <method v="2" />
+    </configuration>
     <list>
       <item itemvalue="JAR Application.burp" />
-      <item itemvalue="JUnit.Track_Test" />
-      <item itemvalue="JUnit.Utils_Test.executeSessioOps_test" />
-      <item itemvalue="JUnit.Track_Test.testTrackRemove" />
-      <item itemvalue="JUnit.Track_Test.rangeTest" />
-      <item itemvalue="JUnit.JWT_Test.test_decodeRawJwt" />
+      <item itemvalue="JUnit.Checks_Test.test_check_json_array_is_subset_of_ok" />
+      <item itemvalue="JUnit.Checks_Test.test_check_json_array_is_subset_of_wrong" />
+      <item itemvalue="JUnit.Checks_Test.test_check_json_string_contains_integer" />
+      <item itemvalue="JUnit.Checks_Test.test_check_json_string_not_contains_elem" />
+      <item itemvalue="JUnit.Checks_Test.test_check_json_string_not_contains_elem_wrong" />
+      <item itemvalue="Remote JVM Debug.docker" />
     </list>
     <recent_temporary>
       <list>
-        <item itemvalue="JUnit.Utils_Test.executeSessioOps_test" />
-        <item itemvalue="JUnit.Track_Test" />
-        <item itemvalue="JUnit.Track_Test.testTrackRemove" />
-        <item itemvalue="JUnit.JWT_Test.test_decodeRawJwt" />
-        <item itemvalue="JUnit.Track_Test.rangeTest" />
+        <item itemvalue="JUnit.Checks_Test.test_check_json_array_is_subset_of_wrong" />
+        <item itemvalue="JUnit.Checks_Test.test_check_json_array_is_subset_of_ok" />
+        <item itemvalue="JUnit.Checks_Test.test_check_json_string_not_contains_elem_wrong" />
+        <item itemvalue="JUnit.Checks_Test.test_check_json_string_contains_integer" />
+        <item itemvalue="JUnit.Checks_Test.test_check_json_string_not_contains_elem" />
       </list>
     </recent_temporary>
   </component>
@@ -190,7 +240,64 @@
       <workItem from="1671436873564" duration="974000" />
       <workItem from="1673518294087" duration="1528000" />
       <workItem from="1673598091374" duration="271000" />
-      <workItem from="1674485843482" duration="679000" />
+      <workItem from="1674485843482" duration="2918000" />
+      <workItem from="1677749613960" duration="2742000" />
+      <workItem from="1677754903107" duration="1048000" />
+      <workItem from="1677759579133" duration="1427000" />
+      <workItem from="1678804511467" duration="28000" />
+      <workItem from="1679472760280" duration="65000" />
+      <workItem from="1680089730659" duration="615000" />
+      <workItem from="1681729704339" duration="1985000" />
+      <workItem from="1681914338392" duration="3122000" />
+      <workItem from="1682437280882" duration="2220000" />
+      <workItem from="1682686907672" duration="598000" />
+      <workItem from="1682950611663" duration="2377000" />
+      <workItem from="1683027381909" duration="33000" />
+      <workItem from="1683189559554" duration="30049000" />
+      <workItem from="1683524445077" duration="16934000" />
+      <workItem from="1683623095193" duration="318000" />
+      <workItem from="1683632139394" duration="987000" />
+      <workItem from="1684329531294" duration="8950000" />
+      <workItem from="1684394549989" duration="12812000" />
+      <workItem from="1684484206840" duration="12324000" />
+      <workItem from="1686815374590" duration="3532000" />
+      <workItem from="1686818929837" duration="5687000" />
+      <workItem from="1687340921297" duration="511000" />
+      <workItem from="1687341438609" duration="60000" />
+      <workItem from="1687341504945" duration="892000" />
+      <workItem from="1687435370923" duration="22772000" />
+      <workItem from="1687600684860" duration="23000" />
+      <workItem from="1687936108240" duration="6580000" />
+      <workItem from="1688023825727" duration="2865000" />
+      <workItem from="1688030529052" duration="3725000" />
+      <workItem from="1689749706839" duration="13273000" />
+      <workItem from="1689854562470" duration="1456000" />
+      <workItem from="1689856202749" duration="8187000" />
+      <workItem from="1689937764833" duration="11137000" />
+      <workItem from="1690351723875" duration="2100000" />
+      <workItem from="1690361841217" duration="7053000" />
+      <workItem from="1690445015177" duration="9146000" />
+      <workItem from="1690534846548" duration="7606000" />
+      <workItem from="1690786009021" duration="3664000" />
+      <workItem from="1690871532230" duration="2853000" />
+      <workItem from="1690963608853" duration="8464000" />
+      <workItem from="1691050757831" duration="6485000" />
+      <workItem from="1691066407366" duration="192000" />
+      <workItem from="1691146062571" duration="77000" />
+      <workItem from="1691146160539" duration="9101000" />
+      <workItem from="1691393691517" duration="11338000" />
+      <workItem from="1691477503133" duration="7438000" />
+      <workItem from="1691649523050" duration="12217000" />
+      <workItem from="1691734604818" duration="14000" />
+      <workItem from="1691995096353" duration="1813000" />
+      <workItem from="1692024400574" duration="38000" />
+      <workItem from="1692266206464" duration="1573000" />
+      <workItem from="1692343281639" duration="5894000" />
+      <workItem from="1692349264665" duration="6010000" />
+      <workItem from="1692356800657" duration="1248000" />
+      <workItem from="1692529419096" duration="43000" />
+      <workItem from="1692617695405" duration="5365000" />
+      <workItem from="1692623372481" duration="955000" />
     </task>
     <servers />
   </component>
@@ -198,6 +305,7 @@
     <option name="version" value="3" />
   </component>
   <component name="UnknownFeatures">
+    <option featureType="dependencySupport" implementationName="java:org.seleniumhq.selenium:selenium-java" />
     <option featureType="com.intellij.fileTypeFactory" implementationName="*.log" />
   </component>
   <component name="Vcs.Log.Tabs.Properties">
@@ -214,33 +322,27 @@
   <component name="XDebuggerManager">
     <breakpoint-manager>
       <breakpoints>
-        <breakpoint type="java-exception">
-          <properties class="org.openqa.selenium.WebDriverException" package="org.openqa.selenium" />
-          <option name="timeStamp" value="56" />
-        </breakpoint>
         <breakpoint enabled="true" type="java-exception">
-          <properties class="burp.ParsingException" package="burp" />
-          <option name="timeStamp" value="69" />
-        </breakpoint>
-        <breakpoint type="java-exception">
-          <properties class="org.openqa.selenium.remote.UnreachableBrowserException" package="org.openqa.selenium.remote" />
-          <option name="timeStamp" value="85" />
+          <properties class="migt.ParsingException" package="migt" />
+          <option name="timeStamp" value="147" />
         </breakpoint>
         <breakpoint enabled="true" type="java-exception">
           <properties class="java.lang.NullPointerException" package="java.lang" />
-          <option name="timeStamp" value="97" />
+          <option name="timeStamp" value="165" />
         </breakpoint>
-        <line-breakpoint enabled="true" type="java-line">
-          <url>file://$PROJECT_DIR$/src/main/java/burp/GUI.java</url>
-          <line>1812</line>
-          <option name="timeStamp" value="99" />
-        </line-breakpoint>
+        <breakpoint enabled="true" type="java-exception">
+          <properties class="java.lang.Error" package="java.lang" />
+          <option name="timeStamp" value="217" />
+        </breakpoint>
       </breakpoints>
     </breakpoint-manager>
     <pin-to-top-manager>
       <pinned-members>
         <PinnedItemInfo parentTag="org.openqa.selenium.chrome.ChromeDriver" memberName="locationContext" />
+        <PinnedItemInfo parentTag="migt.Test" memberName="isActive" />
         <PinnedItemInfo parentTag="burp.Operation" memberName="applicable" />
+        <PinnedItemInfo parentTag="migt.Test" memberName="error_str" />
+        <PinnedItemInfo parentTag="migt.Operation" memberName="decode_param" />
       </pinned-members>
     </pin-to-top-manager>
     <watches-manager>

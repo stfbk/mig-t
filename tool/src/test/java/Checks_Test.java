@@ -14,7 +14,10 @@ public class Checks_Test {
         String input = "{\n" +
                 "  \"pageInfo\": {\n" +
                 "    \"pageName\": \"abc\",\n" +
-                "    \"pagePic\": \"http://example.com/content.jpg\"\n" +
+                "    \"pagePic\": \"http://example.com/content.jpg\",\n" +
+                "    \"entry\": [123, \"abc\",\"cde\"],\n" +
+                "    \"imaninteger\": 123,\n" +
+                "    \"imafloat\": 123.321,\n" +
                 "  },\n" +
                 "  \"posts\": [\n" +
                 "    {\n" +
@@ -24,7 +27,7 @@ public class Checks_Test {
                 "      \"nameOfPersonWhoPosted\": \"Jane Doe\",\n" +
                 "      \"message\": \"Sounds cool. Can't wait to see it!\",\n" +
                 "      \"likesCount\": \"2\",\n" +
-                "      \"comments\": [],\n" +
+                "      \"comments\": [\"abc\",\"cde\"],\n" +
                 "      \"timeOfPost\": \"1234567890\"\n" +
                 "    }\n" +
                 "  ]\n" +
@@ -203,6 +206,76 @@ public class Checks_Test {
 
         Check c = initCheck_json(check_str);
         c.execute(vars);
+        assertFalse(c.getResult());
+    }
+
+    @Test
+    @DisplayName("check")
+    void test_check_json_string_contains_elem() throws ParsingException {
+        String check_str = "{\n" +
+                "        \"in\": \"header\",\n" +
+                "        \"check\": \"$.pageInfo.entry\",\n" +
+                "        \"contains\": [\"123\"]\n" +
+                "}";
+
+        Check c = initCheck_json(check_str);
+        c.execute(new ArrayList<Var>());
+        assertTrue(c.getResult());
+    }
+
+    @Test
+    @DisplayName("check")
+    void test_check_json_string_not_contains_elem_wrong() throws ParsingException {
+        String check_str = "{\n" +
+                "        \"in\": \"header\",\n" +
+                "        \"check\": \"$.pageInfo.entry\",\n" +
+                "        \"not contains\": [\"123\"]\n" +
+                "}";
+
+        Check c = initCheck_json(check_str);
+        c.execute(new ArrayList<Var>());
+        assertFalse(c.getResult());
+    }
+
+    @Test
+    @DisplayName("check")
+    void test_check_json_string_not_contains_elem() throws ParsingException {
+        String check_str = "{\n" +
+                "        \"in\": \"header\",\n" +
+                "        \"check\": \"$.pageInfo.entry\",\n" +
+                "        \"not contains\": [\"aaa\"]\n" +
+                "}";
+
+        Check c = initCheck_json(check_str);
+        c.execute(new ArrayList<Var>());
+        assertTrue(c.getResult());
+    }
+
+    @Test
+    @DisplayName("check")
+    void test_check_json_array_is_subset_of_ok() throws ParsingException {
+        String check_str = "{\n" +
+                "        \"in\": \"header\",\n" +
+                "        \"check\": \"$.pageInfo.entry\",\n" +
+                "        \"is subset of\": [\"123\", \"abc\",\"cde\", \"altro\"]\n" +
+                "}";
+
+        Check c = initCheck_json(check_str);
+        c.execute(new ArrayList<Var>());
+        assertTrue(c.getResult());
+    }
+
+    @Test
+    @DisplayName("check")
+    void test_check_json_array_is_subset_of_wrong() throws ParsingException {
+        String check_str = "{\n" +
+                "        \"in\": \"header\",\n" +
+                "        \"check\": \"$.pageInfo.entry\",\n" +
+                "        \"is subset of\": [\"123\", \"abc\",\"aaa\", \"altro\"]\n" +
+                "}";
+
+        Check c = initCheck_json(check_str);
+        c.execute(new ArrayList<Var>());
         assertFalse(c.getResult());
     }
 }
