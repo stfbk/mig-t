@@ -521,7 +521,7 @@ The Checks tag is a list of Check elements, which can be defined with:
   - `is present` specifying true or false, to check whether is present or not
   - `is in` the value is between a list of values
   - `is not in` the value is not between a list of values
-  - `is subset of` used to check that a matched JSON array is a subset of the given array
+  - `is subset of` used to check that a matched JSON array is a subset of the given array. Is subset means that all the values in the matched array are present in the given array.
 
 Note that you can use `check regex` OR `check` OR `check param`.
 
@@ -551,6 +551,12 @@ Note: matched array contents will always be converted to string for simplicity. 
   }
 ]
 ```
+
+#### Note on JSON values types
+When checking the value of json keys, you have to consider the type of the value. 
+  - mig-t will convert each int or float type as string, this means that when using the check operators, you should always use a string, not an int or a double.
+  - checking a value that is a JSON Array is only allowed when using the `contains` or `not contains` or `is subset of` operators
+  - When matching a JSON Array, the values of the array are all converted to string
 
 ### Note for the active tests
 

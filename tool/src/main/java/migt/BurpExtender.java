@@ -165,8 +165,7 @@ public class BurpExtender implements IBurpExtender, ITab, IProxyListener {
         messageInfo.setHighlight("red");
 
         mainPane.act_active_op.helpers = helpers;
-        mainPane.act_active_op.api.message = message;
-        mainPane.act_active_op.api.is_request = msg_type.msg_to_process_is_request;
+        mainPane.act_active_op.setAPI(new Operation_API(message, msg_type.msg_to_process_is_request));
         mainPane.act_active_op.execute();
 
         // if message has been edited inside operation update the value

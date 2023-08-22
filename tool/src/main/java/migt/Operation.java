@@ -370,7 +370,11 @@ public class Operation extends Module {
         this.api = api;
 
         // add the intercepted message to the matched messages to be displayed
-        matchedMessages.add(api.message);
+        if (!matchedMessages.contains(api.message)) {
+            // it could be added multiple times because this method is called by other Modules that returns this api
+            // edited
+            matchedMessages.add(api.message);
+        }
 
         // updates the processed message from the api
         this.processed_message = api.message.build_message(api.is_request);
