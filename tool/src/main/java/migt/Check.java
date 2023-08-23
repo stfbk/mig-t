@@ -136,6 +136,14 @@ public class Check extends Module {
                             value_list.add(act_enc);
                         }
                         break;
+                    case "matches regex":
+                        this.op = MATCHES_REGEX;
+                        this.op_val = json_check.getString("matches regex");
+                        break;
+                    case "not matches regex":
+                        this.op = NOT_MATCHES_REGEX;
+                        this.op_val = json_check.getString("not matches regex");
+                        break;
                 }
             } catch (JSONException e) {
                 throw new ParsingException("error in parsing check: " + e);
@@ -183,7 +191,7 @@ public class Check extends Module {
      * @param input the input content
      * @return the result of the check
      */
-    private boolean execute_regex(String input) {
+    private boolean execute_regex(String input) throws ParsingException {
         Pattern p = Pattern.compile(regex);
         Matcher m = p.matcher(input);
         applicable = true;
@@ -426,6 +434,18 @@ public class Check extends Module {
                     throw new ParsingException("Matched single element in jwt, but should be an array when using IS SUBSET OF");
 
                 return value_list.containsAll(found_array);
+            case MATCHES_REGEX: {
+                if (value_is_array) throw new ParsingException("Check error: cannot execute a regex over a list");
+                Pattern p = Pattern.compile(op_val);
+                Matcher m = p.matcher(found);
+                return m.find();
+            }
+            case NOT_MATCHES_REGEX: {
+                if (value_is_array) throw new ParsingException("Check error: cannot execute a regex over a list");
+                Pattern p = Pattern.compile(op_val);
+                Matcher m = p.matcher(found);
+                return !m.find();
+            }
         }
 
         return false;
@@ -437,7 +457,7 @@ public class Check extends Module {
      * @param val_to_check the value to check
      * @return the result of the check
      */
-    public boolean do_check(String val_to_check) {
+    public boolean do_check(String val_to_check) throws ParsingException {
         try {
             if (this.op == null && val_to_check.length() != 0) {
                 // if it passed all the splits without errors, the param is present, but no checks are specified
@@ -473,6 +493,18 @@ public class Check extends Module {
                     return value_list.contains(val_to_check); // TODO check
                 case IS_NOT_IN:
                     return !value_list.contains(val_to_check);
+                case MATCHES_REGEX: {
+                    Pattern p = Pattern.compile(op_val);
+                    Matcher m = p.matcher(val_to_check);
+                    return m.find();
+                }
+                case NOT_MATCHES_REGEX: {
+                    Pattern p = Pattern.compile(op_val);
+                    Matcher m = p.matcher(val_to_check);
+                    return !m.find();
+                }
+                default:
+                    throw new ParsingException("Unsupported operand for Check in a message: " + op.toString());
             }
         } catch (ArrayIndexOutOfBoundsException e) {
             //e.printStackTrace();
@@ -564,7 +596,9 @@ public class Check extends Module {
         IS_NOT_PRESENT,
         IS_IN,
         IS_NOT_IN,
-        IS_SUBSET_OF;
+        IS_SUBSET_OF,
+        MATCHES_REGEX,
+        NOT_MATCHES_REGEX;
 
         /**
          * Function that given a String, returns the corresponding CheckOps enum's value
@@ -588,6 +622,12 @@ public class Check extends Module {
                         return IS_IN;
                     case "is not in":
                         return IS_NOT_IN;
+                    case "is subset of":
+                        return IS_SUBSET_OF;
+                    case "matches regex":
+                        return MATCHES_REGEX;
+                    case "not matches regex":
+                        return NOT_MATCHES_REGEX;
                     default:
                         throw new ParsingException("invalid check operation");
                 }

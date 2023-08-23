@@ -522,6 +522,8 @@ The Checks tag is a list of Check elements, which can be defined with:
   - `is in` the value is between a list of values
   - `is not in` the value is not between a list of values
   - `is subset of` used to check that a matched JSON array is a subset of the given array. Is subset means that all the values in the matched array are present in the given array.
+  - `matches regex` when using `check param` or `check` in json, you can use this tag to execute a regex to the matched value of the parameter or the value of the json key specified with the jsonpath
+  - `not matches regex` as `match regex` but the result is true when the regex doesn't match
 
 Note that you can use `check regex` OR `check` OR `check param`.
 

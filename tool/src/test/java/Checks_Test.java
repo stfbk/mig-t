@@ -278,4 +278,60 @@ public class Checks_Test {
         c.execute(new ArrayList<Var>());
         assertFalse(c.getResult());
     }
+
+    @Test
+    @DisplayName("check")
+    void test_check_json_matches_regex() throws ParsingException {
+        String check_str = "{\n" +
+                "        \"in\": \"header\",\n" +
+                "        \"check\": \"$.pageInfo.pagePic\",\n" +
+                "        \"matches regex\": \"example\"\n" +
+                "}";
+
+        Check c = initCheck_json(check_str);
+        c.execute(new ArrayList<Var>());
+        assertTrue(c.getResult());
+    }
+
+    @Test
+    @DisplayName("check")
+    void test_check_json_matches_regex_wrong() throws ParsingException {
+        String check_str = "{\n" +
+                "        \"in\": \"header\",\n" +
+                "        \"check\": \"$.pageInfo.pagePic\",\n" +
+                "        \"matches regex\": \"exampsle\"\n" +
+                "}";
+
+        Check c = initCheck_json(check_str);
+        c.execute(new ArrayList<Var>());
+        assertFalse(c.getResult());
+    }
+
+    @Test
+    @DisplayName("check")
+    void test_check_json_not_matches_regex() throws ParsingException {
+        String check_str = "{\n" +
+                "        \"in\": \"header\",\n" +
+                "        \"check\": \"$.pageInfo.pagePic\",\n" +
+                "        \"not matches regex\": \"exampsle\"\n" +
+                "}";
+
+        Check c = initCheck_json(check_str);
+        c.execute(new ArrayList<Var>());
+        assertTrue(c.getResult());
+    }
+
+    @Test
+    @DisplayName("check")
+    void test_check_json_not_matches_regex_wrong() throws ParsingException {
+        String check_str = "{\n" +
+                "        \"in\": \"header\",\n" +
+                "        \"check\": \"$.pageInfo.pagePic\",\n" +
+                "        \"not matches regex\": \"example\"\n" +
+                "}";
+
+        Check c = initCheck_json(check_str);
+        c.execute(new ArrayList<Var>());
+        assertFalse(c.getResult());
+    }
 }
