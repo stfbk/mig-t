@@ -6,7 +6,6 @@ import be.quodlibet.boxable.Row;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.pdmodel.PDPage;
 import org.apache.pdfbox.pdmodel.PDPageContentStream;
-import org.apache.pdfbox.pdmodel.font.PDType1Font;
 
 import java.awt.*;
 import java.io.IOException;
@@ -26,7 +25,7 @@ public class Report {
 
             try (PDPageContentStream contents = new PDPageContentStream(doc, page)) {
                 contents.beginText();
-                contents.setFont(PDType1Font.HELVETICA_BOLD, 12);
+                //contents.setFont(PDType1Font.HELVETICA_BOLD, 12);
                 contents.newLineAtOffset(100, 700);
                 contents.showText(message);
                 contents.endText();
@@ -46,7 +45,7 @@ public class Report {
             //Create Header row
             Row<PDPage> headerRow = table.createRow(15f);
             Cell<PDPage> cell = headerRow.createCell(100, "Awesome Facts About Belgium");
-            cell.setFont(PDType1Font.HELVETICA_BOLD);
+            //cell.setFont(PDType1Font.HELVETICA_BOLD);
             cell.setFillColor(Color.BLACK);
             table.addHeaderRow(headerRow);
 
