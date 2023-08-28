@@ -513,7 +513,8 @@ The Checks tag is a list of Check elements, which can be defined with:
 - `check param` specifies the name of the parameter to be checked, depending on the section choosed, the tool will search for the parameter using a pattern. (for the url, it will search for a query parameter, for the head, it will search for a head parameter)
 - `check regex` specify a regex that checks the selected content by matching it.
   . `use variable` (true or false) set to true if you want to specify a variable name on the following tags, to check wrt to that variable value.
-- The actual check on the value, which are self explanatory. (if none of these are specified, the check will only check if the given parameter is present)
+- `url decode` if you want to disable url decoding in http messages, see the note below for details.
+- The actual check on the value. (if none of these are specified, the check will only check if the given parameter is present)
   - `is`
   - `not is`
   - `contains`
@@ -528,6 +529,8 @@ The Checks tag is a list of Check elements, which can be defined with:
 Note that you can use `check regex` OR `check` OR `check param`.
 
 Note that `check` accepts only the `is present` tag.
+
+Note: by default, all the values read from a message (only message, not json) are URL-decoded before the checks are executed. You can disable this behaviour by using `url decode` = false
 
 In passive tests the checks's result are intended as the entire test result, so all the checks has to pass to have a successfull test.
 

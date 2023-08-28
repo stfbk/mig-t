@@ -1,5 +1,6 @@
 package migt;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -13,6 +14,7 @@ public class Operation_API extends API {
     public Operation_API(HTTPReqRes message, boolean is_request) {
         this.message = message;
         this.is_request = is_request;
+        this.vars = new ArrayList<>();
     }
 
     public Operation_API(List<Var> vars) {

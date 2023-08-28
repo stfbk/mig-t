@@ -5,6 +5,7 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -28,6 +29,7 @@ public class Check extends Module {
     boolean isParamCheck; // specifies if what is declared in what is a parameter name
     String regex; // the eventual regex to use
     boolean use_variable; // if a variable name will be used in the check operation
+    boolean url_decode = true; // this can be used to disable url decoding
 
     public Check() {
         init();
@@ -144,6 +146,9 @@ public class Check extends Module {
                         this.op = NOT_MATCHES_REGEX;
                         this.op_val = json_check.getString("not matches regex");
                         break;
+                    case "url decode":
+                        url_decode = json_check.getBoolean("url decode");
+                        break;
                 }
             } catch (JSONException e) {
                 throw new ParsingException("error in parsing check: " + e);
@@ -246,6 +251,10 @@ public class Check extends Module {
         if (msg_str.length() == 0) {
             return false;
         }
+
+        // URL-decode matched content
+        if (url_decode)
+            msg_str = URLDecoder.decode(msg_str, StandardCharsets.UTF_8);
 
         // if a regex is present, execute it
         if (!regex.equals("")) {
@@ -504,7 +513,7 @@ public class Check extends Module {
                     return !m.find();
                 }
                 default:
-                    throw new ParsingException("Unsupported operand for Check in a message: " + op.toString());
+                    throw new ParsingException("Unsupported operand for Check in a message: " + op);
             }
         } catch (ArrayIndexOutOfBoundsException e) {
             //e.printStackTrace();
