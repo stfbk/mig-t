@@ -91,7 +91,7 @@ public class DecodeOperation extends Module {
                     break;
                 case "jwe decrypt":
                     jwt.decrypt = true;
-                    jwt.public_key_pem_enc = decode_op_json.getString("jwe decrypt");
+                    jwt.private_key_pem_enc = decode_op_json.getString("jwe decrypt");
                     break;
                 case "jwe encrypt":
                     // if encrypt specified, also decrypt has to be specified
