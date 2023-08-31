@@ -27,7 +27,7 @@ public class JWT {
     public String private_key_pem_enc;
     public String public_key_pem_enc;
     public JWEObject jwe;
-    SignedJWT parsed_jwt;
+    JOSEObject parsed_jwt;
     EncryptingAlg e_alg;
     SigningAlgs signing_alg;
 
@@ -76,7 +76,8 @@ public class JWT {
                         break;
                 }
 
-                parsed_jwt = jwe.getPayload().toSignedJWT();
+                parsed_jwt = jwe;
+
                 if (parsed_jwt == null) {
                     throw new ParsingException("Error, JWE payload is not a JWS");
                 }
@@ -88,8 +89,10 @@ public class JWT {
         try {
             if (!decrypt) // otherwise it is already parsed
                 parsed_jwt = SignedJWT.parse(raw_jwt);
-            JWSHeader header = parsed_jwt.getHeader();
-            signing_alg = SigningAlgs.fromString(header.getAlgorithm().getName());
+            if (parsed_jwt instanceof JWSObject) {
+                Header header = parsed_jwt.getHeader();
+                signing_alg = SigningAlgs.fromString(header.getAlgorithm().getName());
+            }
         } catch (ParseException e) {
             throw new ParsingException("Error while parsing jwt: " + e);
         }
@@ -97,7 +100,8 @@ public class JWT {
         try {
             header = parsed_jwt.getHeader().toString();
             payload = parsed_jwt.getPayload().toString();
-            signature = parsed_jwt.getSignature().toString();
+            signature = parsed_jwt instanceof JWSObject ?
+                    ((JWSObject) parsed_jwt).getSignature().toString() : null;
         } catch (JSONException e) {
             throw new ParsingException("Error parsing JWT tokens");
         }
@@ -115,6 +119,9 @@ public class JWT {
             throw new RuntimeException("JWT need to be parsed before checking signature");
         }
 
+        if (!(parsed_jwt instanceof JWSObject))
+            throw new RuntimeException("trying to check the signature of a JWE");
+
         JWK pub_key_jwk = null;
         try {
             pub_key_jwk = JWK.parseFromPEMEncodedObjects(public_key_pem);
@@ -131,7 +138,7 @@ public class JWT {
                     throw new ParsingException("Invalid public key used do verify jwt. " + e);
                 }
                 try {
-                    res = parsed_jwt.verify(verifier);
+                    res = ((JWSObject) parsed_jwt).verify(verifier);
                 } catch (JOSEException e) {
                     throw new ParsingException("The jws could not be verified. " + e);
                 }
@@ -204,13 +211,17 @@ public class JWT {
         }
 
         if (decrypt) {
+            if (!(parsed_jwt instanceof JWEObject))
+                throw new RuntimeException("tried to encrypt a JWT");
+
             if (public_key_pem_enc.length() != 0) {
                 // if the JWE has been decrypted, now it needs to be re-encrypted
-                JWEObject editedJWE = new JWEObject(
-                        jwe.getHeader(),
-                        new Payload(res)
-                );
                 try {
+                    JWEObject editedJWE = new JWEObject(
+                            JWEHeader.parse(header),
+                            new Payload(payload)
+                    );
+
                     switch (e_alg) {
                         case RSA_OAEP:
                         case RSA_OAEP_256:
@@ -223,10 +234,11 @@ public class JWT {
                                     new ECDHEncrypter(JWK.parseFromPEMEncodedObjects(public_key_pem_enc).toECKey()));
                             break;
                     }
-                } catch (JOSEException e) {
+
+                    res = editedJWE.serialize();
+                } catch (JOSEException | java.text.ParseException e) {
                     throw new ParsingException("Unable to encrypt JWE " + e);
                 }
-                res = editedJWE.serialize();
             } else {
                 // if no public key is provided, the jwe will not be edited
                 res = raw;
