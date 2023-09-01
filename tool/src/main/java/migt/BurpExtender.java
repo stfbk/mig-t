@@ -171,7 +171,7 @@ public class BurpExtender implements IBurpExtender, ITab, IProxyListener {
         // if message has been edited inside operation update the value
         try {
             if (mainPane.act_active_op.processed_message != null) {
-                if (msg_type.isRequest) {
+                if (msg_type.msg_to_process_is_request) {
                     messageInfo.setRequest(mainPane.act_active_op.processed_message);
                 } else {
                     messageInfo.setResponse(mainPane.act_active_op.processed_message);
