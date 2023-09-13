@@ -86,7 +86,6 @@ public class ExecuteActives implements Runnable {
                                             } else if (actual_test.result == Test.ResultType.INCORRECT_FLOW) {
                                                 actual_test.success = errors; // Difficult to read
                                             } else if (actual_test.result == Test.ResultType.ASSERT_ONLY) {
-                                                actual_test.success = true;
                                                 //at this point, all the asserts have been executed, and if they failed
                                                 // they already returned a false result
                                             }
