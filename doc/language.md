@@ -29,46 +29,28 @@ A test is defined by:
 
 ## Operation
 
-An operation could be a message interception or a session operation, it could also be a validate operation (more info down here).
-The most basic and useful type of operation is the one that makes you able to intercept message that you can then edit, just specify message type and the required tags and you are ready to go.
-The use of the operation tag differ based on the type of test is defined into:
+An operation can be either a message interception or a session operation. The most basic and useful type of operation is message interception, which allows you to intercept messages and then edit them. To do this, you simply need to specify the message type and the required tags
 
 ### Message type
 
-With the tag `message type` it has to be specified to which message execute the given operation. There are various possible standard types:
+The message type tag specifies the message to which the given operation should be applied. Message types can be defined in the msg_def.json file, which is created in the Burp folder at the first execution of the plugin. By default, some OAuth message types are present, but you can add or modify them as needed.
 
-- `request`, all requests
-- `response`, all responses
-- `oauth request`, all the oauth-related requests
-- `oauth response`, all the oauth-related responses
-
-Other message types can be defined in the file _"msg_def.json"_ which will be created at the first execution of the plugin in the Burp folder. By default, some oauth message types are present, feel free to add or modify them.
-The way a message type is defined is by the use of regex or checks (like in passive tests), the regex or checks are then evaluated over a message, and if the evaluation is successful, the message is then processed.
+A message type is defined by a set of checks. These checks are evaluated against a message, and if all of the checks pass, then the message is processed by the operation.
 
 To define a message type you have to tell:
 
 - The `name`
 - `is request` if the message is a request or not (true, false)
-- `response name` (optional) if you want to also associate a name to the response of that message (often useful when you know the request but not the response)
-- `request name` (optional) if you need to intercept a message by its response, but you want do access the request, just put the name of the request to use it in the language. Note that if you intercept the response, you can not edit the request anymore, because it has already been sent.
-- `regex` or `checks` list (see check section for details)
+- `response name` (optional) if you want to also associate a name to the response of that message (often useful when you know how a request is, but not the response)
+- `request name` (optional) if you need to intercept a message by its response, but you want to access the request, just put the name of the request to use it in the language. Note that if you intercept the response, you can not edit the request anymore, because it has already been sent.
+- `checks` list (see check section for details)
 
-### Operation in passive tests
+### Operation tags
 
-When an operation in a passive test is defined with the `message type` tag, the other possible tags are (in an exclusive way):
-
-- `regex`: which will specify a regex to be tested to the given `message section` in the message
-- `checks`: which is a list of `check`
-
-To consider a test successful the regex has to match at least one occurrence in the specified `message section`, or all the checks has to be evaluated to true.
-Note that where you are asked to insert a regex you have to backslash (\) all the regex operators such as (?{}.\*) if you need them to be searched instead of executed.
-
-### Operation in active tests
-
-An operation in an active test can be used with these tags:
+An operation can be used with these tags:
 
 - `message type` which specifies a message type
-- `action` The action to be done on this operation, can be `intercept` or `validate` or `clear cookies`
+- `action` The action to be done on this operation, can be `intercept` or `clear cookies`
 - `from session` specify which session has to be sniffed to search for the message, default is the standard session
 - `then` the action to be done on the intercepted message after the execution of the operation, `forward` or `drop` (default forward)
 - `save` saves the intercepted message to the given variable name
@@ -77,29 +59,26 @@ An operation in an active test can be used with these tags:
 - `message operations` List of `message operation` to do on the message. See the proper section for details
 - `replace request` used with the name of a variable containing a message. It replaces the request of the intercepted message with a saved message.
 - `replace response` used with the name of a variable containing a message. It replaces the response of the intercepted message with a saved message.
+- `checks`: which is a list of `check`. To consider an operation successful all the checks has to be evaluated to true.
 
-Note that in active tests the operations are evaluated sequencially, this means that until an operation has not been finished (i.e. the message is not arrived yet) the next operation will not be available. This eventually means that if you have more message filtering operations, only one at the time is executed.
+### Differences between operations inside active and passives tests
 
-#### Note for the Validate action
+The execution of the operations differs depending on the type of test:
 
-If you use the `validate` action, the only tags you can use are the same as the passives checks, you can use:
-
-- `regex`
-- `checks`
-  The way they are used is the same as passive checks.
-  The purpose of the validate action is to built an oracle, in a way that if all validate operations are evaluated to true, and the result is passed, then the test is passed. Note that all the validate operations are combined with the result, see the result section for more info
+- active tests: The operations are executed sequentially one after the other. This means that until an operation has not been finished (i.e. the message is not arrived yet) the next operation will not be available
+- passive tests: All the operation are executed over all the messages passed trough the proxy
 
 ### Operation and session in active tests
 
 There is the possibility to handle different sessions in an active test, for example to replay messages.
-A session has to be defined in the `sessions` tag in a `Test`, then it can be started with an operation with:
+The sessions have to be defined in the `sessions` tag inside a `Test`, then, each session can be started or stopped with an operation having:
 
 - tag `session` associated with the name of which session is reffering to,
 - tag `action` the action to do on that session, like _start_, _stop_, _clear cookies_, _pause_, _resume_
 
-#### Note with sessions in Burp
+#### Note on using sessions in Burp
 
-Burp has to be manually configured to open more proxy ports, based on the number of contemporary sessions to be executed. To do so, go to the proxy tab in burp, options, and then add enough port for your sessions.
+Each session uses a different port on the proxy, this is done to differentiate the messages inside the proxy. Burp has to be manually configured to open more proxy ports based on the number of contemporary sessions to be executed. To do so, go to the proxy tab in burp, options, and then add enough port for your sessions.
 You have also to link each of your sessions to a port, to do so, go to the plugin, after you read your JSON input test suite, in the session config tab write the ports you have previously defined. Note that the port has to be _different for each contemporary session_, otherwise the tests will not work.
 
 ## Message section
@@ -107,15 +86,14 @@ You have also to link each of your sessions to a port, to do so, go to the plugi
 A message is divided in three parts
 
 - `url` only for requests, is the message whithout head and without body
-- `head` is the message without body and without url
-- `body` is the message without head and without url
+- `head` contains all the message except the body
+- `body` is the message without head
 
 ## Message Operations
 
 The message operations are operations to be done on the intercepted message in an operation.
 The syntax contains always the `from` tag, which specifies the message section where to search to do the given action (url, body, head). Then we have the possible actions:
 
-- `decode parameter` where you can decode and do things on a parameter, see dedicated section
 - `remove match word` it removes the matched string, can be fed with a regex
 - `remove parameter` with value the name of the parameter to be removed. A variant of the previous, it removes the parameter searched with its value
 - `edit` edits the given parameter's value, the tag `in` specifies in what has to be edited
@@ -125,6 +103,8 @@ The syntax contains always the `from` tag, which specifies the message section w
 - `add` add a header with the name specified, and with value specified with `this`.
 
 An example could be:
+
+Edit the parameter state inside the url of a message with the new value "newstatecode"
 
 ```json
 "message operations": [
@@ -157,43 +137,215 @@ If you choose the body section, the meaning of the tags is different, infact:
 - `save` is associated with a regex, it saves what is matched by that regex, saving it in a variable with name specified in `as` tag
 - `add`is associated with an empty string, teh value will be appended to the body, the value do add is specified with the tag `this` (or `use` in case of a value from a variable)
 
-Note that the content lenght of the body section is automatically updated or removed
+Note that the content lenght of the body section is automatically updated or removed if the content of the body is edited.
 
-### Encoding/Decoding in message operations
+## Decode operation
 
-In message operations there is the possibility of specifing a parameter to be decoded and to be processed. The HTTP parameter containing the encoded text has to be specified with the `decode param`, if the section of the message is the body the `decode param` takes a regex (for more info see below section). Then, a list of encodings has to be specified with the tag `encoding`, the order of these encodings will be followed while decoding. Note that when the message is encoded, the order will be reversed.
+A list of decode operations can be added to each Operation (passive or active). These operations are used to decode encoded content taken from inside an intercepted message. A decode operation can have its own list of decode operations; these are called recursive decode ops. and they take as input the previously decoded content.
 
-An example, where we take the parameter `SAMLRequest` from a message's url, and then specifing the encodings (url, base64 and deflate).
+The HTTP parameter containing the content to be decoded has to be specified with the `decode param` If the section of the message is 'body,' the `decode param` takes a regex (for more information, see the section below).
 
-```json
-"message operations": [
-    {
-        "from": "url",
-        "decode param": "SAMLRequest",
-        "encoding": [
-            "url",
-            "base64",
-            "deflate"
-        ],
-        "type": "xml",
-        "xml tag": "samlp:AuthnRequest",
-        "edit attribute": "ID",
-        "value": "newIDValue"
-    }
-]
-```
+Next, a list of encodings (or the `type`) has to be specified. You can specify an encodings list with the tag `encodings` the order of these encodings will be followed while decoding, and when the message is re-encoded, the order will be reversed. With the tag `type` the content is decoded following a fixed set of rules (e.g., jwts or XML). If you specify the `type` tag, the `encodings` tag will be ignored. If you use the `type` tag when using Edit Operations, you may be allowed to use more tags (e.g., with jwts or XML) to edit easily; otherwise, the decoded content will be used as plain text.
+
+In decode operations is possible to use check operations to check the decoded content, depending on the specified type, the allowed check operations differ.
+
+- JWT type -> See 'Checks on JSON content' section
+- No type (encodings used) -> See check section
+
+Needed tags:
+
+- `type` and/or `encodings`
+- `decode param`
+- `from` select from where decode the content (HTTP message section or previous decode output)
+
+optional tags:
+
+- `decode operations`
+- `checks`
+- `edits`
 
 #### Body section
 
 An important note about the body (from) section is that the input of `decode param` has to be a regex, and whatever is matched with that regex is decoded.
 An useful regex to match a parameter's value could be `(?<=SAMLResponse=)[^$\n& ]*` which searches the SAMLResponse= string in the body, and matches everything that is not $ or \n or & or whitespace
 
-### Specific actions for decoded parameters
+#### Decoding JWTs
 
-There is the possibility of manipulating the decoded parameter, various types of languages-types are available, like xml.
-The type of the decoded param has to be specified with tag `type`.
+When decoding a jwt (by using tag type=jwt) it is possible to check the signature of that jwt by providing a public key. To do this, use the `jwt check sig` tag with value the PEM-encoded public key to be used to check.
 
-> Note that for decoded parameters standard message operation actions will not work.
+Note: The supported algorithms for signing are:
+
+- RS256
+- RS512
+
+#### Decoding JWE
+
+Note that when decrypting a JWE, a JWS is expected in the payload. Other payloads are not supproted.
+
+To decrypt a JWE to access the JWT in its payload use these tags
+
+- `jwe decrypt` with the private key in PEM string format
+- `jwe encrypt` with the public key in PEM string format
+
+Note: You can decrypt without specifying encrypt, this will prevent the JWE from being edited (as no encryption key is passed)
+Note: You can't encrypt, without decrypt
+
+Note: Supported algorithms are:
+
+- RSA_OAEP
+- RSA_OAEP_256
+- ECDH_ES_A128KW
+- ECDH_ES_A256KW
+
+## Tag table
+
+In this table you can find a description of all the tags available for this Operation based on the input Module.
+
+| input module (container)    | Available tags    | Required | value type             | allowed values                         |
+| --------------------------- | ----------------- | -------- | ---------------------- | -------------------------------------- |
+| standard Operation          | from              | yes      | str                    | head, body, url                        |
+|                             | decode param      | yes      | str                    | \*                                     |
+| decode Operation (type=jwt) | from              | yes      | str                    | jwt header, jwt payload, jwt signature |
+|                             | decode param      | yes      | str(JSON path)         | \*                                     |
+| \*                          | type              |          | str                    | xml, jwt                               |
+|                             | encodings         |          | list[str]              | base64, url, ..                        |
+|                             | decode operations |          | list[decode Operation] | \*                                     |
+|                             | checks            |          | list[check Operation]  | \*                                     |
+|                             | edits             |          | list[edit Operation]   | \*                                     |
+|                             | jwt check sig     |          | str(PEM)               | PEM-encoded public key                 |
+|                             | jwe decrypt       |          | str(PEM)               | PEM-encoded private key                |
+|                             | jwe encrypt       |          | str(PEM)               | PEM-encoded public key                 |
+
+### Recursive Decode operations
+
+When using the `from` tag in a recursive decode (one that is inside another), you can use - depending on the previous decode type - other sections, such as "jwt header" "jwt payload" ..
+
+Source: standard Operation (HTTP intercepted message)
+
+- `from`: (url, head, body)
+
+Source: decode Operation JWT
+
+- `from`: (jwt header, jwt payload, jwt signature)
+
+in recurdsive decode op, the decode param accepts different inputs, e.g. if previous decoded content is a jwt, decoded content will accept a JSON path
+
+Syntax example of a recursive decode operation:
+
+```json
+"decode operations": [
+  {
+    ...,
+    "decode operations": [
+      {
+        "from": "somwhere in the previous decode",
+        "encodings": "asdasd",
+      }
+    ]
+  }
+]
+```
+
+Example of decoding a jwt from the url of a message in the asd parameter, and then decode the jwt found inside of the jwt.
+
+```json
+"decode operations": [
+  {
+    "from": "url",
+    "type": "jwt",
+    "decode param": "asd",
+    "decode operations": [
+      {
+        "from": "jwt header",
+        "type": "jwt",
+        "decode param": "$.something"
+      }
+    ]
+  }
+]
+```
+
+### Using Edit Operation in Decode Operations
+
+It is possible to edit the decoded content of decode Ops by using edit Operations. A list of edit Operations has to be specified. When using Edit Op. inside Decode Operations, depending on the `type` specified in Decode Operations, you can use different keys.
+
+- `type`: JWT
+  - `jwt from` specifies the section of the jwt to edit (header, payload, signature)
+  - `jwt edit` JSON path of the key to edit
+  - `jwt remove` JSON path of the key to remove
+  - `jwt add` JSON path to the key to add + `value` with name
+  - `jwt save` JSON path to the key to save
+  - `value` used with edit or add, to specify the value of the key
+- `type`: XML
+  - see next XML section
+- no `type` specified, (treated as plain text):
+  - Using `txt remove` the matched text will be removed from the text
+  - Using `txt edit` the matched text will be edited with the text specified in `value` tag
+  - Using `txt add` the text specified in `value` will be inserted at the end of the matched text
+  - Using `txt save` the matched text will be saved in a variable having the name specified in tag `as`
+
+#### JWT type
+
+This type is used to edit decoded JWT tokens. This way is possible to edit, add, save or resign them. The possible actions are:
+
+- `jwt from` Used to specify the section of the token to execute the given action, choose btween:
+  - `header`
+  - `payload`
+  - `signature`
+- `jwt remove` If used on signature removes the entire signature
+- `jwt edit` `value` If used on signature edits the entire signature.
+- `jwt add` `value`
+- `jwt save` `as` if used on sinature saves the entire signature
+- `jwt sign` Specifying a PEM-encoded private key that will be used to sign the jwt
+
+##### Note on signing
+
+When signing a jwt, the supported algorithms are:
+
+- RS256
+- RS512
+
+##### Example
+
+Edit the scope claim inside an OAuth request jwt
+
+```json
+"decode operations": [
+  {
+    "from": "url",
+    "type": "jwt",
+    "encodings": [],
+    "decode param": "(?<=authz_request_object=)[^$\n& ]*",
+    "edits": [
+      {
+        "jwt from": "payload",
+        "jwt edit": "$.scope",
+        "value": "wrong_scope"
+      }
+    ]
+  }
+]
+```
+
+Check the scope claim inside an OAuth request jwt
+
+```json
+"decode operations": [
+  {
+    "from": "body",
+    "decode param": "(?<=authz_request_object=)[^$\n& ]*",
+    "encodings": [],
+    "type": "jwt",
+    "checks": [
+      {
+        "in": "payload",
+        "check": "$.scope",
+        "is": "openid"
+      }
+    ]
+  }
+]
+```
 
 #### XML type
 
@@ -230,18 +382,22 @@ An example:
 
 ```json
 "message operations": [
-    {
-        "from": "url",
-        "decode param": "SAMLRequest",
-        "encoding": [
-            "url",
-            "base64",
-            "deflate"
-        ],
-        "type": "xml",
+  {
+    "from": "url",
+    "decode param": "SAMLRequest",
+    "encoding": [
+        "url",
+        "base64",
+        "deflate"
+    ],
+    "type": "xml",
+    "edits": [
+      {
         "edit tag": "samlp:AuthnRequest",
         "value": "new tag value"
-    }
+      }
+    ]
+  }
 ]
 ```
 
@@ -255,30 +411,13 @@ in the tag name you have to specify "Something:apple"
 
 #### TXT type
 
-It is a type used to edit, remove, add, or save pieces of a decoded param that is treated as a text.
-You hae to specify a regex using the parameter "txt ..." with the associated action, the possible usages are:
+It is a type used to edit, remove, add, or save pieces of a decoded content that is treated as a text.
+You have to specify a regex using one of the following tags with the associated action, the possible usages are:
 
 - Using `txt remove` the matched text will be removed from the text
 - Using `txt edit` the matched text will be edited with the text specified in `value` tag
 - Using `txt add` the text specified in `value` will be inserted at the end of the matched text
 - Using `txt save` the matched text will be saved in a variable having the name specified in tag `as`
-
-#### JWT type
-
-Thi type is used to edit decoded JWT tokens. This way is possible to edit, add, save or resign them. The possible actions are:
-
-- `jwt from` Used to specify the section of the token to execute the given action, choose btween:
-  - `header`
-  - `payload`
-  - `signature`
-  - `raw header`
-  - `raw payload`
-  - `raw signature`
-- `jwt remove` If used on signature removes the entire signature
-- `jwt edit` `value` If used on signature edits the entire signature.
-- `jwt add` `value`
-- `jwt save` `as` if used on sinature saves the entire signature
-- `jwt sign` Used to sign the jwt with another invalid key.
 
 #### Note for using saved variables
 
@@ -286,9 +425,9 @@ It is possible to use the tag `use` instead of the tag `value` to use the text s
 
 #### SAML signature
 
-There's the possibility of remove the signature from a saml request or response and resign it with a test private key, just specify `self-sign`: true in the message operation.
+There's the possibility to remove the signature from a saml request or response and resign it with a test private key, just specify `self-sign`: true in the message operation.
 Another possibility is just to remove the signature, using `remove signature` set to true in the message operation.
-Note that this keys are avaiable and applied only on decoded parameters, also if `decode param` is defined.
+Note that these keys are avaiable and applied only on decoded parameters, also if `decode param` is defined.
 
 ## Session Operation
 
@@ -323,8 +462,6 @@ Note that during insertion, the element inserted is always positioned after the 
   ]
 }
 ```
-
-Not sure about this ^^^ , not yet implemented ^^^^
 
 ```json
 "session operation": [
@@ -365,48 +502,106 @@ Not sure about this ^^^ , not yet implemented ^^^^
 
 ## Checks and Check
 
-The Checks tag is a list of Check elements, which can be defined with:
+The Checks tag inside an operation has a list of Check elements, which can be defined with:
 
 - `in` says were to check the given parameter, can be _head_, _body_, _url_
-- `check` checks if the given string is present in the specified message section
+- `check` checks if the given string is present in the specified message section.
 - `check param` specifies the name of the parameter to be checked, depending on the section choosed, the tool will search for the parameter using a pattern. (for the url, it will search for a query parameter, for the head, it will search for a head parameter)
-- The actual check on the value, which are self explanatory. (if none of these are specified, the check will only check if the given parameter is present)
+- `check regex` specify a regex that checks the selected content by matching it.
+  . `use variable` (true or false) set to true if you want to specify a variable name on the following tags, to check wrt to that variable value.
+- `url decode` if you want to disable url decoding in http messages, see the note below for details.
+- The actual check on the value. (if none of these are specified, the check will only check if the given parameter is present)
   - `is`
   - `not is`
   - `contains`
   - `not contains`
   - `is present` specifying true or false, to check whether is present or not
+  - `is in` the value is between a list of values
+  - `is not in` the value is not between a list of values
+  - `is subset of` used to check that a matched JSON array is a subset of the given array. Is subset means that all the values in the matched array are present in the given array.
+  - `matches regex` when using `check param` or `check` in json, you can use this tag to execute a regex to the matched value of the parameter or the value of the json key specified with the jsonpath
+  - `not matches regex` as `match regex` but the result is true when the regex doesn't match
 
-you can use `check` OR `check param` tag. If you use the `check` tag, you can use all the other tags to verify the value, otherwise, if you use `check param` you can just use `is present`.
+> Note that you can use `check regex` OR `check` OR `check param`.
+
+> Note that `check` accepts only the `is present` tag.
+
+> Note that by default, all the values read from a message (only message, not json) are URL-decoded before the checks are executed. You can disable this behaviour by using `url decode` = false
 
 In passive tests the checks's result are intended as the entire test result, so all the checks has to pass to have a successfull test.
 
+### Checks on JSON content
+
+In case a check operation is executed inside an operation that gives a JSON as an output (e.g. decode operations with type=jwt), the check operation is enabled to use JSON paths to identify keys and values specified with `check` tag. The `in` tag specifies the section of the JWT (header, payload, signature). Note that signature is treated as plain text.
+
+Note: when using `check regex` with json content, the specified content will be treated as plain text. e.g the header of a jwt will be treated as plain text, and the regex will be executed over the entire header.
+
+>Note: matched array contents will always be converted to string for simplicity. This means that if you want to check an integer or float, you should write it as a string (e.g. 12.3 -> "12.3")
+
+```json
+"decode operations": [
+  {
+    "tagsofadecode": "decodejwt",
+    "checks": [
+      {
+        "in": "header",
+        "check": "jsonpath",
+        "is": "something"
+      }
+    ]
+  }
+]
+```
+
+#### Note on JSON values types
+
+When checking the value of json keys, you have to consider the type of the value.
+
+- mig-t will convert each int or float type as string, this means that when using the check operators, you should always use a string, not an int or a double.
+- checking a value that is a JSON Array is only allowed when using the `contains` or `not contains` or `is subset of` operators
+- When matching a JSON Array, the values of the array are all converted to string
+
 ### Note for the active tests
 
-If you need to do a check on an active test, you have to do a `validate` operation, which is basically an operation when you can do checks and regex
+If you need to do a check on an active test, you have to do a `validate` operation, which is basically an operation where you can do checks
+
+### Examples
+
+Check using a variable value: check that the value of the header "Host" is equal to the value of the variable "var1"
+
+```json
+"checks" : [
+  {
+    "in": "head",
+    "check param": "Host",
+    "use variable": true,
+    "is": "var1"
+  }
+]
+```
 
 ## Preconditions
 
-Preconditions are used in an operation of an active test to check something in the intercepted message before the execution of the message operations. If the checks in the preconditions are evaluated to false, the test is considered unsupported, not failed. Basically preconditions are a list of checks.
+Preconditions are used in an operation of an active test to check something in the intercepted message before the execution of the rest of the operation. If the preconditions are evaluated to false, the test is considered unsupported, not failed. The preconditions are basically a list of checks.
 To use a precondition just write
 
 ```json
 "preconditions" : []
 ```
 
-filling the list wit the checks or regex you need.
-Over the list of check or regex a AND operation is made, so all of the checks (or regex) in the list has to be successful to continue the test.
+filling the list wit the checks you need.
+> Note: Over the list of check or regex a AND operation is made, so all of the checks (or regex) in the list has to be successful to continue the test.
 
 ## Save
 
-A message or a string can be saved with this tag. It can be used both in an operation, to save a message, and in a _Message Operation_ to save the value of a found parameter.
+A message or a string can be saved with this tag. It can be used both in an operation, to save a message, in a _Message Operation_ to save the value of a found parameter and also inside Edit operations.
 
 - `Save` associated with the name of the variable
 
 There are two ways of using the value of a variable, depending of its type:
 
 - Using a message-type variable: it can be used in an operation with the tag `action` set to intercept there is the possibility of use `replace request` (or `replace response`) with the name of the variable. This way the intercepted message's request (or response) is replaced with the specified variable value. Note that when a message is replaced, all the message operations in that operation will be ignored.
-- Using a string-type variable: can be used in Message Operations, where you have to add or edit a parameter's value, writing `use` and the name of the variable
+- Using a string-type variable: can be used in Message Operations or Edit Operations, where you have to add or edit a parameter's value, writing `use` and the name of the variable
   <br>When saving and using variables, take care to assign a variable before its use
 
 Note that when saving a variable, if the value is empty (no match or no parameter found), the MessageOperation (edit, add, ..) where the variable is used will not be executed, the execution will continue without errors.
@@ -421,8 +616,8 @@ it can be set to:
 - `incorrect flow \[sessionname\]` opposite of `correct flow`, the test succedes only if there is an error
 - `assert_only` the test result ignores the validation of the session flow but gives a result depending on the assertions defined in the track. This means, that if the execution of the session fails, the result will not take it into account.
 
-The result can be combined with the result of the checks or regex in an operation with action set to `validate`.
-The succes is evaluated with the Boolean operator AND between the result and all the validates
+The result can be combined with the result of the checks in an operation.
+The succes is evaluated with the Boolean operator AND between the result and all the results of the operations
 
 Note that if correct (or incorrect) flow is used without specifying a session name, all the sessions are checked.
 
@@ -434,7 +629,7 @@ Note that if you are filling a field where a regex is expected, you have to back
 
 ## Test examples
 
-### Example of with active tests
+### Example of active tests
 
 ```json
 {
@@ -449,7 +644,7 @@ Note that if you are filling a field where a regex is expected, you have to back
         "name": "PKCE plain method",
         "description": "Finds an authRequest and remove the parameter code_challenge_method",
         "type": "active", // active test type
-        "sessions": ["main"],
+        "sessions": ["s1"],
         "operations": [
           // List of operations to do
           {
@@ -474,8 +669,8 @@ Note that if you are filling a field where a regex is expected, you have to back
         "result": "correct flow" // it has to be a correct flow for a successful attack
       },
       "test": {
-        "name": "PKCE plain method",
-        "description": "Finds an authRequest and remove the parameter code_challenge_method",
+        "name": "replay message parameter to other message",
+        "description": "Find the parameter state in the auth. request in s1 and replace it in the authorization request in s2",
         "type": "active",
         "sessions": ["s1", "s2"],
         "operations": [
@@ -541,7 +736,7 @@ Note that if you are filling a field where a regex is expected, you have to back
 
 ### Example of with passive tests
 
-#### Example 1: PKCE is used
+#### Example 1: PKCE is used (TO BE CHANGED TO NEW LANGUAGE)
 
 This passive test checks whether PKCE is used in an OAuth flow, checking if the authorization grant message contains the parameters "code_challenge" or "code_challenge_method", which are necessary to use PKCE. More precisely, the test:
 
@@ -555,8 +750,7 @@ This passive test checks whether PKCE is used in an OAuth flow, checking if the 
 {
   "test suite": {
     "name": "Test Suite 01",
-    "description": "Only Passive Test",
-    "metadata": true
+    "description": "Only Passive Test"
   },
   "tests": [
     {
@@ -579,7 +773,7 @@ This passive test checks whether PKCE is used in an OAuth flow, checking if the 
 }
 ```
 
-#### Other passive tests
+#### Other passive tests (TO BE CHANGED TO NEW LANGUAGE)
 
 ```json
 {
@@ -711,10 +905,25 @@ Examples: <br>
 `assert element content is | xpath=/body/div/label | text to match`<br>
 `assert element class has | xpath=/body/... | class_to_match`<br>
 
-### snapshot
+# Changelog
 
-// TODO
+## v1.4.0
 
-### Setvar
-
-// TODO
+- Added decode operations
+- Removed "decode parameter" from Message Operation
+- Added checks in decode operations
+- Added support for Checks to work with JSON content
+- Changed tag `encoding` in `encodings`
+- Added edit Operation
+- Moved tags used to modify decoded content in Message Operations to Edit Operation inside Decode Operation
+- Removed `raw header` `raw payload` `raw signature` from `jwt from` tag in Decode Operation
+- Added supprot of regex in checks (in future they will substitute existing regex)
+- Remove support for hardcoded standard message types such as oauth request and oauth response
+- Removed support for hardcoded identification of OAuth flow
+- removed `request`, `response`, `oauth request` `oauth response` from Message type
+- removed `regex` and `message section` tag from Message Type, now only checks are available (that contains also regex)
+- removed `regex` from Operation in passive tests
+- Removed validate Operation, now just use checks inside an intercept Operation
+- Removed OAuth metadata tag in test
+- Added signing of decoded jwt with private key inside Edit Operation
+- Added check of signature of jwt inside the decode operation

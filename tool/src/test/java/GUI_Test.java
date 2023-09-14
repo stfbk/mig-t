@@ -1,4 +1,6 @@
-import burp.*;
+import migt.ParsingException;
+import migt.Session;
+import migt.Tools;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -6,17 +8,17 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class GUI_Test {
 
     @Test
     @DisplayName("ParsingRawSessionAction test")
     void test_batchPassivesFromSession() throws ParsingException {
-        List<burp.Test> tests = new ArrayList<>();
+        List<migt.Test> tests = new ArrayList<>();
 
-        for (int i=0; i< 8; i++) {
-            burp.Test t1 = new burp.Test();
+        for (int i = 0; i < 8; i++) {
+            migt.Test t1 = new migt.Test();
             t1.sessions.add(new Session());
             tests.add(t1);
         }
@@ -30,7 +32,7 @@ public class GUI_Test {
         tests.get(6).sessions.get(0).name = "4";
         tests.get(7).sessions.get(0).name = "1";
 
-        HashMap<String, List<burp.Test>> hm = Utils.batchPassivesFromSession(tests);
+        HashMap<String, List<migt.Test>> hm = Tools.batchPassivesFromSession(tests);
 
         assertEquals(3, hm.get("1").size());
         assertEquals(2, hm.get("2").size());

@@ -1,6 +1,5 @@
-import burp.*;
+import migt.*;
 import org.json.JSONObject;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -31,7 +30,7 @@ public class Utils_Test {
         String s = "test da aggiungere $questo$ e poi $qualcosaltro$";
         String res = "";
         try {
-            res = Utils.buildStringWithVars(vars, s);
+            res = Tools.buildStringWithVars(vars, s);
         } catch (ParsingException e) {
             e.printStackTrace();
         }
@@ -50,7 +49,7 @@ public class Utils_Test {
         v4.value = "/link/a/caso";
         vars.add(v4);
 
-        res = Utils.buildStringWithVars(vars, s);
+        res = Tools.buildStringWithVars(vars, s);
         assertEquals("open | https://www.youtube.com/link/a/caso |", res);
     }
 
@@ -58,23 +57,23 @@ public class Utils_Test {
     @DisplayName("Test find parent div")
     void testFindParentDiv() throws ParsingException {
         String in = "xpath=/html/body/div[3]/div[2]/div/div/div/div/div[3]/*[2]";
-        String res = Utils.findParentDiv(in);
+        String res = Tools.findParentDiv(in);
         assertEquals("xpath=/html/body/div[3]/div[2]/div/div/div/div/div", res);
 
         assertThrows(ParsingException.class, () -> {
-            Utils.findParentDiv("https://www.facebook.com/");
+            Tools.findParentDiv("https://www.facebook.com/");
         });
 
         assertThrows(ParsingException.class, () -> {
-            Utils.findParentDiv("https://www.ted.com/settings/account");
+            Tools.findParentDiv("https://www.ted.com/settings/account");
         });
 
         in = "xpath=/html/body/div[2]/div/div[2]/form/div/span/span/button";
-        res = Utils.findParentDiv(in);
+        res = Tools.findParentDiv(in);
         assertEquals("xpath=/html/body/div[2]/div/div[2]/form/div", res);
 
         in = "id=email";
-        res = Utils.findParentDiv(in);
+        res = Tools.findParentDiv(in);
         assertEquals("id=email", res);
     }
 
@@ -82,7 +81,7 @@ public class Utils_Test {
     @Test
     @DisplayName("Test execute session ops")
     void testExecuteSessionOps() throws ParsingException {
-        burp.Test t = new burp.Test();
+        migt.Test t = new migt.Test();
         Operation op = new Operation();
         List<Var> vars = new ArrayList<>();
 
@@ -107,8 +106,8 @@ public class Utils_Test {
 
     @Test
     @DisplayName("Test execute session Ops")
-    void executeSessioOps_test() {
-        burp.Test t = new burp.Test();
+    void executeSessioOps_test() throws ParsingException {
+        migt.Test t = new migt.Test();
         Session s = new Session("s1");
 
         try {
@@ -135,7 +134,7 @@ public class Utils_Test {
                     "open | https://auth.fandom.com/auth/settings |\n" +
                     "click | xpath=/html/body/div[1]/main/div/div[2]/form/section[2]/div[2]/button[1] |");
         } catch (ParsingException e) {
-            assertEquals(1,0);
+            assertEquals(1, 0);
         }
         t.sessions.add(s);
         Operation op = new Operation();
@@ -154,14 +153,14 @@ public class Utils_Test {
         try {
             op.session_operations = SessionOperation.parseFromJson(sop_json);
         } catch (ParsingException e) {
-            assertEquals(1,0);
+            assertEquals(1, 0);
         }
 
         List<Var> vars = new ArrayList<>();
         try {
-            Utils.executeSessionOps(t, op, vars);
+            op.executeSessionOps(t, vars);
         } catch (ParsingException e) {
-            assertEquals(1,0);
+            assertEquals(1, 0);
         }
 
         Session right_output = new Session("s1");
@@ -185,13 +184,13 @@ public class Utils_Test {
                     "click | id=loginbutton |\n" +
                     "click | xpath=/html/body/div[1]/div/div/div/div/div/div/div/div[1]/div/div/div[2]/div[2]/div[1]/div/div |\n");
         } catch (ParsingException e) {
-            assertEquals(1,0);
+            assertEquals(1, 0);
         }
 
         try {
             assertEquals(t.getSession("s1").getTrack().toString(), right_output.getTrack().toString());
         } catch (ParsingException e) {
-            assertEquals(1,0);
+            assertEquals(1, 0);
         }
     }
 }
