@@ -29,35 +29,25 @@ A test is defined by:
 
 ## Operation
 
-An operation could be a message interception or a session operation, it could also be a validate operation (more info down here).
-The most basic and useful type of operation is the one that makes you able to intercept message that you can then edit, just specify message type and the required tags and you are ready to go.
-The use of the operation tag differ based on the type of test is defined into:
+An operation can be either a message interception or a session operation. The most basic and useful type of operation is message interception, which allows you to intercept messages and then edit them. To do this, you simply need to specify the message type and the required tags
 
 ### Message type
 
-With the tag `message type` it has to be specified to which message execute the given operation. Message types can be defined in the file _"msg_def.json"_ which will be created at the first execution of the plugin in the Burp folder. By default, some oauth message types are present, feel free to add or modify them.
-The way a message type is defined is by the use of checks (like in passive tests), the checks are then evaluated over a message, and if the evaluation is successful, the message is then processed.
+The message type tag specifies the message to which the given operation should be applied. Message types can be defined in the msg_def.json file, which is created in the Burp folder at the first execution of the plugin. By default, some OAuth message types are present, but you can add or modify them as needed.
+
+A message type is defined by a set of checks. These checks are evaluated against a message, and if all of the checks pass, then the message is processed by the operation.
 
 To define a message type you have to tell:
 
 - The `name`
 - `is request` if the message is a request or not (true, false)
-- `response name` (optional) if you want to also associate a name to the response of that message (often useful when you know the request but not the response)
-- `request name` (optional) if you need to intercept a message by its response, but you want do access the request, just put the name of the request to use it in the language. Note that if you intercept the response, you can not edit the request anymore, because it has already been sent.
+- `response name` (optional) if you want to also associate a name to the response of that message (often useful when you know how a request is, but not the response)
+- `request name` (optional) if you need to intercept a message by its response, but you want to access the request, just put the name of the request to use it in the language. Note that if you intercept the response, you can not edit the request anymore, because it has already been sent.
 - `checks` list (see check section for details)
 
-### Operation in passive tests
+### Operation tags
 
-When an operation in a passive test is defined with the `message type` tag, the other possible tags are (in an exclusive way):
-
-- `checks`: which is a list of `check`
-
-To consider a test successful all the checks has to be evaluated to true.
-Note that where you are using a regex you have to backslash (\) all the regex operators such as (?{}.\*) if you need them to be searched instead of executed.
-
-### Operation in active tests
-
-An operation in an active test can be used with these tags:
+An operation can be used with these tags:
 
 - `message type` which specifies a message type
 - `action` The action to be done on this operation, can be `intercept` or `clear cookies`
@@ -69,20 +59,26 @@ An operation in an active test can be used with these tags:
 - `message operations` List of `message operation` to do on the message. See the proper section for details
 - `replace request` used with the name of a variable containing a message. It replaces the request of the intercepted message with a saved message.
 - `replace response` used with the name of a variable containing a message. It replaces the response of the intercepted message with a saved message.
+- `checks`: which is a list of `check`. To consider an operation successful all the checks has to be evaluated to true.
 
-Note that in active tests the operations are evaluated sequencially, this means that until an operation has not been finished (i.e. the message is not arrived yet) the next operation will not be available. This eventually means that if you have more message filtering operations, only one at the time is executed.
+### Differences between operations inside active and passives tests
+
+The execution of the operations differs depending on the type of test:
+
+- active tests: The operations are executed sequentially one after the other. This means that until an operation has not been finished (i.e. the message is not arrived yet) the next operation will not be available
+- passive tests: All the operation are executed over all the messages passed trough the proxy
 
 ### Operation and session in active tests
 
 There is the possibility to handle different sessions in an active test, for example to replay messages.
-A session has to be defined in the `sessions` tag in a `Test`, then it can be started with an operation with:
+The sessions have to be defined in the `sessions` tag inside a `Test`, then, each session can be started or stopped with an operation having:
 
 - tag `session` associated with the name of which session is reffering to,
 - tag `action` the action to do on that session, like _start_, _stop_, _clear cookies_, _pause_, _resume_
 
-#### Note with sessions in Burp
+#### Note on using sessions in Burp
 
-Burp has to be manually configured to open more proxy ports, based on the number of contemporary sessions to be executed. To do so, go to the proxy tab in burp, options, and then add enough port for your sessions.
+Each session uses a different port on the proxy, this is done to differentiate the messages inside the proxy. Burp has to be manually configured to open more proxy ports based on the number of contemporary sessions to be executed. To do so, go to the proxy tab in burp, options, and then add enough port for your sessions.
 You have also to link each of your sessions to a port, to do so, go to the plugin, after you read your JSON input test suite, in the session config tab write the ports you have previously defined. Note that the port has to be _different for each contemporary session_, otherwise the tests will not work.
 
 ## Message section
@@ -90,8 +86,8 @@ You have also to link each of your sessions to a port, to do so, go to the plugi
 A message is divided in three parts
 
 - `url` only for requests, is the message whithout head and without body
-- `head` is the message without body and without url
-- `body` is the message without head and without url
+- `head` contains all the message except the body
+- `body` is the message without head
 
 ## Message Operations
 
@@ -107,6 +103,8 @@ The syntax contains always the `from` tag, which specifies the message section w
 - `add` add a header with the name specified, and with value specified with `this`.
 
 An example could be:
+
+Edit the parameter state inside the url of a message with the new value "newstatecode"
 
 ```json
 "message operations": [
@@ -139,7 +137,7 @@ If you choose the body section, the meaning of the tags is different, infact:
 - `save` is associated with a regex, it saves what is matched by that regex, saving it in a variable with name specified in `as` tag
 - `add`is associated with an empty string, teh value will be appended to the body, the value do add is specified with the tag `this` (or `use` in case of a value from a variable)
 
-Note that the content lenght of the body section is automatically updated or removed
+Note that the content lenght of the body section is automatically updated or removed if the content of the body is edited.
 
 ## Decode operation
 
@@ -230,7 +228,7 @@ Source: decode Operation JWT
 
 - `from`: (jwt header, jwt payload, jwt signature)
 
-in recurdsive decode ops, the decode param accepts different inputs, e.g. if previous decoded content is a jwt, decoded content will accept a JSON path
+in recurdsive decode op, the decode param accepts different inputs, e.g. if previous decoded content is a jwt, decoded content will accept a JSON path
 
 Syntax example of a recursive decode operation:
 
@@ -413,8 +411,8 @@ in the tag name you have to specify "Something:apple"
 
 #### TXT type
 
-It is a type used to edit, remove, add, or save pieces of a decoded param that is treated as a text.
-You have to specify a regex using the parameter "txt ..." with the associated action, the possible usages are:
+It is a type used to edit, remove, add, or save pieces of a decoded content that is treated as a text.
+You have to specify a regex using one of the following tags with the associated action, the possible usages are:
 
 - Using `txt remove` the matched text will be removed from the text
 - Using `txt edit` the matched text will be edited with the text specified in `value` tag
@@ -427,9 +425,9 @@ It is possible to use the tag `use` instead of the tag `value` to use the text s
 
 #### SAML signature
 
-There's the possibility of remove the signature from a saml request or response and resign it with a test private key, just specify `self-sign`: true in the message operation.
+There's the possibility to remove the signature from a saml request or response and resign it with a test private key, just specify `self-sign`: true in the message operation.
 Another possibility is just to remove the signature, using `remove signature` set to true in the message operation.
-Note that this keys are avaiable and applied only on decoded parameters, also if `decode param` is defined.
+Note that these keys are avaiable and applied only on decoded parameters, also if `decode param` is defined.
 
 ## Session Operation
 
@@ -464,8 +462,6 @@ Note that during insertion, the element inserted is always positioned after the 
   ]
 }
 ```
-
-Not sure about this ^^^ , not yet implemented ^^^^
 
 ```json
 "session operation": [
@@ -506,7 +502,7 @@ Not sure about this ^^^ , not yet implemented ^^^^
 
 ## Checks and Check
 
-The Checks tag is a list of Check elements, which can be defined with:
+The Checks tag inside an operation has a list of Check elements, which can be defined with:
 
 - `in` says were to check the given parameter, can be _head_, _body_, _url_
 - `check` checks if the given string is present in the specified message section.
@@ -526,11 +522,11 @@ The Checks tag is a list of Check elements, which can be defined with:
   - `matches regex` when using `check param` or `check` in json, you can use this tag to execute a regex to the matched value of the parameter or the value of the json key specified with the jsonpath
   - `not matches regex` as `match regex` but the result is true when the regex doesn't match
 
-Note that you can use `check regex` OR `check` OR `check param`.
+> Note that you can use `check regex` OR `check` OR `check param`.
 
-Note that `check` accepts only the `is present` tag.
+> Note that `check` accepts only the `is present` tag.
 
-Note: by default, all the values read from a message (only message, not json) are URL-decoded before the checks are executed. You can disable this behaviour by using `url decode` = false
+> Note that by default, all the values read from a message (only message, not json) are URL-decoded before the checks are executed. You can disable this behaviour by using `url decode` = false
 
 In passive tests the checks's result are intended as the entire test result, so all the checks has to pass to have a successfull test.
 
@@ -540,7 +536,7 @@ In case a check operation is executed inside an operation that gives a JSON as a
 
 Note: when using `check regex` with json content, the specified content will be treated as plain text. e.g the header of a jwt will be treated as plain text, and the regex will be executed over the entire header.
 
-Note: matched array contents will always be converted to string for simplicity. This means that if you want to check an integer or float, you should write it as a string (e.g. 12.3 -> "12.3")
+>Note: matched array contents will always be converted to string for simplicity. This means that if you want to check an integer or float, you should write it as a string (e.g. 12.3 -> "12.3")
 
 ```json
 "decode operations": [
@@ -558,10 +554,12 @@ Note: matched array contents will always be converted to string for simplicity. 
 ```
 
 #### Note on JSON values types
-When checking the value of json keys, you have to consider the type of the value. 
-  - mig-t will convert each int or float type as string, this means that when using the check operators, you should always use a string, not an int or a double.
-  - checking a value that is a JSON Array is only allowed when using the `contains` or `not contains` or `is subset of` operators
-  - When matching a JSON Array, the values of the array are all converted to string
+
+When checking the value of json keys, you have to consider the type of the value.
+
+- mig-t will convert each int or float type as string, this means that when using the check operators, you should always use a string, not an int or a double.
+- checking a value that is a JSON Array is only allowed when using the `contains` or `not contains` or `is subset of` operators
+- When matching a JSON Array, the values of the array are all converted to string
 
 ### Note for the active tests
 
@@ -584,26 +582,26 @@ Check using a variable value: check that the value of the header "Host" is equal
 
 ## Preconditions
 
-Preconditions are used in an operation of an active test to check something in the intercepted message before the execution of the message operations. If the checks in the preconditions are evaluated to false, the test is considered unsupported, not failed. Basically preconditions are a list of checks.
+Preconditions are used in an operation of an active test to check something in the intercepted message before the execution of the rest of the operation. If the preconditions are evaluated to false, the test is considered unsupported, not failed. The preconditions are basically a list of checks.
 To use a precondition just write
 
 ```json
 "preconditions" : []
 ```
 
-filling the list wit the checks or regex you need.
-Over the list of check or regex a AND operation is made, so all of the checks (or regex) in the list has to be successful to continue the test.
+filling the list wit the checks you need.
+> Note: Over the list of check or regex a AND operation is made, so all of the checks (or regex) in the list has to be successful to continue the test.
 
 ## Save
 
-A message or a string can be saved with this tag. It can be used both in an operation, to save a message, and in a _Message Operation_ to save the value of a found parameter.
+A message or a string can be saved with this tag. It can be used both in an operation, to save a message, in a _Message Operation_ to save the value of a found parameter and also inside Edit operations.
 
 - `Save` associated with the name of the variable
 
 There are two ways of using the value of a variable, depending of its type:
 
 - Using a message-type variable: it can be used in an operation with the tag `action` set to intercept there is the possibility of use `replace request` (or `replace response`) with the name of the variable. This way the intercepted message's request (or response) is replaced with the specified variable value. Note that when a message is replaced, all the message operations in that operation will be ignored.
-- Using a string-type variable: can be used in Message Operations, where you have to add or edit a parameter's value, writing `use` and the name of the variable
+- Using a string-type variable: can be used in Message Operations or Edit Operations, where you have to add or edit a parameter's value, writing `use` and the name of the variable
   <br>When saving and using variables, take care to assign a variable before its use
 
 Note that when saving a variable, if the value is empty (no match or no parameter found), the MessageOperation (edit, add, ..) where the variable is used will not be executed, the execution will continue without errors.
@@ -631,7 +629,7 @@ Note that if you are filling a field where a regex is expected, you have to back
 
 ## Test examples
 
-### Example of with active tests
+### Example of active tests
 
 ```json
 {
@@ -646,7 +644,7 @@ Note that if you are filling a field where a regex is expected, you have to back
         "name": "PKCE plain method",
         "description": "Finds an authRequest and remove the parameter code_challenge_method",
         "type": "active", // active test type
-        "sessions": ["main"],
+        "sessions": ["s1"],
         "operations": [
           // List of operations to do
           {
@@ -671,8 +669,8 @@ Note that if you are filling a field where a regex is expected, you have to back
         "result": "correct flow" // it has to be a correct flow for a successful attack
       },
       "test": {
-        "name": "PKCE plain method",
-        "description": "Finds an authRequest and remove the parameter code_challenge_method",
+        "name": "replay message parameter to other message",
+        "description": "Find the parameter state in the auth. request in s1 and replace it in the authorization request in s2",
         "type": "active",
         "sessions": ["s1", "s2"],
         "operations": [

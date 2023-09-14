@@ -1,7 +1,9 @@
 # MIG-T Pentesting Tool
+
 MIG-T Pentesting Tool is a plugin for BurpSuite that helps security testers automate their testing activities. It allows the tester to define automations to edit or check correctnees of HTTP messages. It integrates an automated browser used to simulate user actions on a webpage, to trigger specific messages. It uses MIG-L language to define tests to be executed by MIG-T<br>
 
 ## Quickstart
+
 <details>
   <summary>Details</summary>
 We suggest you to download the lastest release of the tool from the release page, otherwise you can compile the last version from the source code by following the steps described in the "how to compile the plugin" section.
@@ -10,15 +12,17 @@ We suggest you to download the lastest release of the tool from the release page
 
 1. download from the release page the last version of the tool select the one which ends with `with-dependencies`, or compile the source code.
 2. Download the last version of [Burp Suite Community Edition](https://portswigger.net/burp/releases/community/latest)
-3. Start Burp and go in the *Exstensions* tab
-4. Press *Add* button
-5. In the *Extension file (.jar)* select the tool jar you downloaded before
+3. Start Burp and go in the _Exstensions_ tab
+4. Press _Add_ button
+5. In the _Extension file (.jar)_ select the tool jar you downloaded before
 6. Now the plugin should be loaded, go to the "MIG-T" tab
 
 ## Download and add browser driver
+
 Depending on the browser you want to use (firefox or chrome), you will need to specify the corresponding driver. Note that you have to download the driver for the corresponding browser version
 
 To download the driver go to:
+
 - [Driver for chrome](https://chromedriver.chromium.org/home)
 - [Driver for firefox](https://github.com/mozilla/geckodriver/releases)
 
@@ -43,6 +47,7 @@ If you want to see the entire history of the messages go to "proxy" tab in Burp,
 </details><br>
 
 ## How to compile the plugin
+
 The project is based on maven, you have two ways of compiling it
 
 ### With IntelliJ IDEA
@@ -53,6 +58,7 @@ The folder tool is an intelliJ project, if you open it with intelliJ IDEA it sho
 </details><br>
 
 ### Without IntelliJ IDEA
+
 <details>
   <summary>Details</summary>
 You don't need to use IDEA to compile the project, you can install maven, go to the project direcotry `tool` mentioned before and type
@@ -72,20 +78,23 @@ Two jar will be generated:
 ```
 
 You have to use the jar that has "-with-dependencies" in its name, the other will not work in burp.
+
 </details><br>
 
 ## Documentation
+
 You can find the documentation about the language used by the tool in the `doc/` folder. The documentation about the code is not yet finished, but all the functions are documented in the code.
 
 ## Known Bugs
 
--   Sometimes when re-executing a suite of active tests, the messages are not edited. Restart the plugin
--   On windows, the re-signing of the SAML messages sometimes will fail
+- On windows, the re-signing of the SAML messages sometimes will fail
 
 # External / Related projects
+
 Extended in the context of the industrial collaboration with IPZS and Futuro&Conoscenza
 
 # License
+
 ```
 Copyright 2023, Fondazione Bruno Kessler
 
@@ -105,8 +114,11 @@ limitations under the License.
 Developed within [Security & Trust](https://st.fbk.eu/) Research Unit at [Fondazione Bruno Kessler](https://www.fbk.eu/en/) (Italy)
 
 ## Other software
+
 ### SAMLRaider
+
 Some parts of the tool that manages SAML certificates has been built by using portions of SAMLRaider code (https://github.com/CompassSecurity/SAMLRaider).
 
 ### nimbus-jose-jwt
+
 https://connect2id.com/products/nimbus-jose-jwt
