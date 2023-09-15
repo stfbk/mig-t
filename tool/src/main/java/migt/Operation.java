@@ -366,8 +366,24 @@ public class Operation extends Module {
         // TODO: the api should be updated i.e. if the message is edited before making it available
     }
 
+    /**
+     * Sets the api of this Operation with the given api. Note that the variables are added, not substituted
+     * @param api the new api to be set
+     */
     public void setAPI(Operation_API api) {
-        this.api = api;
+        if (this.api == null) {
+            this.api = api;
+        } else {
+            this.api.message = api.message;
+            this.api.is_request = api.is_request;
+
+            // update all variables
+            for (Var v : api.vars) {
+                if (!this.api.vars.contains(v)) {
+                    this.api.vars.add(v);
+                }
+            }
+        }
 
         // add the intercepted message to the matched messages to be displayed
         if (!matchedMessages.contains(api.message)) {
