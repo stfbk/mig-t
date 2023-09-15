@@ -178,7 +178,7 @@ public class MessageOperation extends Module {
                                             throw new ParsingException("Searching URL in response");
                                         }
                                         String url_header = op.api.message.getUrlHeader();
-                                        pattern = Pattern.compile("&?" + mop.what + "=[^& ]*((?=&)|(?= ))");
+                                        pattern = Pattern.compile("&?" + Pattern.quote(mop.what) + "=[^& ]*((?=&)|(?= ))");
                                         matcher = pattern.matcher(url_header);
                                         String new_url = matcher.replaceFirst("");
                                         op.api.message.setUrlHeader(new_url);
@@ -192,7 +192,7 @@ public class MessageOperation extends Module {
 
                                     case BODY:
                                         String body = new String(op.api.message.getBody(op.api.is_request));
-                                        pattern = Pattern.compile(mop.what);
+                                        pattern = Pattern.compile(Pattern.quote(mop.what));
                                         matcher = pattern.matcher(body);
                                         op.api.message.setBody(op.api.is_request, matcher.replaceAll(""));
                                         //Automatically update content-lenght
@@ -226,7 +226,7 @@ public class MessageOperation extends Module {
                                         }
                                         String header_0 = op.api.message.getUrlHeader();
 
-                                        pattern = Pattern.compile("&?" + mop.what + "=[^& ]*((?=&)|(?= ))");
+                                        pattern = Pattern.compile("&?" + Pattern.quote(mop.what) + "=[^& ]*((?=&)|(?= ))");
                                         matcher = pattern.matcher(header_0);
 
                                         String newHeader_0 = "";
@@ -268,7 +268,7 @@ public class MessageOperation extends Module {
                                 switch (mop.from) {
                                     case HEAD: {
                                         List<String> headers = op.api.message.getHeaders(op.api.is_request);
-                                        pattern = Pattern.compile(mop.what);
+                                        pattern = Pattern.compile(Pattern.quote(mop.what));
                                         List<String> new_headers = new ArrayList<>();
 
                                         for (String header : headers) {
@@ -281,7 +281,7 @@ public class MessageOperation extends Module {
                                         break;
                                     }
                                     case BODY: {
-                                        pattern = Pattern.compile(mop.what);
+                                        pattern = Pattern.compile(Pattern.quote(mop.what));
                                         matcher = pattern.matcher(new String(op.api.message.getBody(op.api.is_request)));
                                         op.api.message.setBody(op.api.is_request, matcher.replaceAll(""));
 
@@ -356,8 +356,8 @@ public class MessageOperation extends Module {
                                         String header_0 = op.api.message.getUrlHeader();
 
                                         pattern = mop.action == MessageOperation.MessageOperationActions.SAVE ?
-                                                Pattern.compile(mop.what + "=[^& ]*(?=(&| ))") :
-                                                Pattern.compile(mop.what);
+                                                Pattern.compile(Pattern.quote(mop.what) + "=[^& ]*(?=(&| ))") :
+                                                Pattern.compile(Pattern.quote(mop.what));
 
                                         matcher = pattern.matcher(header_0);
                                         String value = "";

@@ -253,8 +253,8 @@ public class Check extends Module {
         }
 
         // URL-decode matched content
-        if (url_decode)
-            msg_str = URLDecoder.decode(msg_str, StandardCharsets.UTF_8);
+        //if (url_decode)
+        //    msg_str = URLDecoder.decode(msg_str, StandardCharsets.UTF_8);
 
         // if a regex is present, execute it
         if (!regex.equals("")) {
@@ -269,8 +269,8 @@ public class Check extends Module {
             }
 
             Pattern p = this.in == CheckIn.URL ?
-                    Pattern.compile("(?<=[?&]" + this.what + "=)[^\\r\\n&]*") :
-                    Pattern.compile("(?<=" + this.what + ":\\s?)[^\\r\\n]*");
+                    Pattern.compile("(?<=[?&]" + Pattern.quote(this.what) + "=)[^\\r\\n&]*") :
+                    Pattern.compile("(?<=" + Pattern.quote(this.what) + ":\\s?)[^\\r\\n]*");
             // TODO: this could be done better by using message methods
             Matcher m = p.matcher(msg_str);
 

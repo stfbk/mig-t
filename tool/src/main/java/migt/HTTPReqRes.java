@@ -369,7 +369,7 @@ public class HTTPReqRes implements Cloneable {
             throw new RuntimeException("Trying to access the url of a response message");
         }
 
-        Pattern pattern = Pattern.compile("(?<=" + param + "=)[^$\\n&\\s]*");
+        Pattern pattern = Pattern.compile("(?<=" + Pattern.quote(param) + "=)[^$\\n&\\s]*");
         Matcher matcher = pattern.matcher(this.request_url);
         String res = "";
         while (matcher.find()) {

@@ -723,9 +723,9 @@ public class Tools {
 
             case BODY:
                 if (!isBodyRegex) {
-                    pattern = Pattern.compile("(?<=" + param_name + "=)[^$\\n& ]*");
+                    pattern = Pattern.compile("(?<=" + Pattern.quote(param_name) + "=)[^$\\n& ]*");
                 } else {
-                    pattern = Pattern.compile(param_name);
+                    pattern = Pattern.compile(Pattern.quote(param_name));
                 }
 
                 matcher = pattern.matcher(new String(messageInfo.getBody(isRequest)));
@@ -740,7 +740,7 @@ public class Tools {
                 }
                 String url_header = messageInfo.getUrlHeader();
 
-                pattern = Pattern.compile(param_name + "=[^& ]*((?=&)|(?= ))");
+                pattern = Pattern.compile(Pattern.quote(param_name) + "=[^& ]*((?=&)|(?= ))");
                 matcher = pattern.matcher(url_header);
 
                 messageInfo.setUrlHeader(matcher.replaceAll(param_name + "=" + new_value)); // problema

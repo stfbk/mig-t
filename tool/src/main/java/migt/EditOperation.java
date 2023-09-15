@@ -318,7 +318,7 @@ public class EditOperation extends Module {
                     break;
 
                 case NONE:
-                    Pattern p = Pattern.compile(txt_action_name);
+                    Pattern p = Pattern.compile(Pattern.quote(txt_action_name));
                     Matcher m = p.matcher(tmp_imported_api.txt);
 
                     if (txt_action == null) {
