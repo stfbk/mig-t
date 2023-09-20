@@ -172,6 +172,9 @@ public class BurpExtender implements IBurpExtender, ITab, IProxyListener {
         try {
             if (mainPane.act_active_op.processed_message != null) {
                 if (msg_type.msg_to_process_is_request) {
+                    // TODO: fix randomly replaced messages
+                    // sometimes the bytes of the processed message is different from the original one, but the string
+                    // of both messages is equal
                     messageInfo.setRequest(mainPane.act_active_op.processed_message);
                 } else {
                     messageInfo.setResponse(mainPane.act_active_op.processed_message);

@@ -725,7 +725,7 @@ public class Tools {
                 if (!isBodyRegex) {
                     pattern = Pattern.compile("(?<=" + Pattern.quote(param_name) + "=)[^$\\n& ]*");
                 } else {
-                    pattern = Pattern.compile(Pattern.quote(param_name));
+                    pattern = Pattern.compile(param_name);
                 }
 
                 matcher = pattern.matcher(new String(messageInfo.getBody(isRequest)));
