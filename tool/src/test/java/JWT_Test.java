@@ -410,4 +410,34 @@ public class JWT_Test {
      out);
      }
      */
+
+    @Test
+    @DisplayName("Testing jwt decode and encode")
+    void test_jwt_parse_change_order() {
+        JWT j = new JWT();
+        boolean errors = false;
+        try {
+            j.parse(raw_jwt);
+
+            j.header = "{\"alg\":\"RS256\", \"typ\":\"JWT\"}"; // invert header keys
+
+            String out = j.build();
+            assertEquals(raw_jwt, out);
+            String[] splitted = out.split("\\.");
+
+            assertEquals(3, splitted.length);
+
+            assertEquals(raw_header, splitted[0]);
+            assertEquals(raw_payload, splitted[1]);
+            assertEquals(raw_signature, splitted[2]);
+
+            //assertEquals(raw_header, j.header);
+            //assertEquals(raw_payload, j.payload);
+            //assertEquals(raw_signature, j.signature);
+        } catch (ParsingException e) {
+            errors = true;
+        }
+        assertFalse(errors);
+    }
+
 }

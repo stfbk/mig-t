@@ -1,5 +1,6 @@
 import migt.*;
 import org.json.JSONObject;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -192,5 +193,15 @@ public class Utils_Test {
         } catch (ParsingException e) {
             assertEquals(1, 0);
         }
+    }
+
+    @Test
+    void test_check_json_strings_equals() {
+        boolean res = Tools.check_json_strings_equals(
+                "{a : {a : 2}, b : 2}",
+                "{b : 2, a : {a : 2}}"
+        );
+
+        assertEquals(true, res);
     }
 }

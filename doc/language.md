@@ -526,7 +526,7 @@ The Checks tag inside an operation has a list of Check elements, which can be de
 
 > Note that `check` accepts only the `is present` tag.
 
-> Note that by default, all the values read from a message (only message, not json) are URL-decoded before the checks are executed. You can disable this behaviour by using `url decode` = false
+> Note that by default, all the values read from a message that contains url-encoded values (only message, not json) are URL-decoded before the checks are executed. You can disable this behaviour by using `url decode` = false
 
 In passive tests the checks's result are intended as the entire test result, so all the checks has to pass to have a successfull test.
 

@@ -1,11 +1,14 @@
 package migt;
 
 import burp.IExtensionHelpers;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonParser;
 import com.jayway.jsonpath.Configuration;
 import com.jayway.jsonpath.JsonPath;
 import com.jayway.jsonpath.PathNotFoundException;
 import org.json.JSONArray;
 import org.json.JSONObject;
+
 
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -865,5 +868,19 @@ public class Tools {
                 break;
         }
         return Configuration.defaultConfiguration().jsonProvider().toJson(document); //basically converts to string
+    }
+
+    /**
+     * Checks that the json resulting by parsing the two strings is equals. Equals in this case means that the same keys
+     * and values are present, but the order is ignored
+     * @param s1 the string 1
+     * @param s2 the string 2
+     * @return true or false depending if the json parsing of the two strings is the same or not
+     */
+    public static boolean check_json_strings_equals(String s1, String s2) {
+        JsonElement o1 = JsonParser.parseString(s1);
+        JsonElement o2 = JsonParser.parseString(s2);
+
+        return o1.equals(o2);
     }
 }

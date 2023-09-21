@@ -9,6 +9,8 @@ import org.json.JSONException;
 import java.text.ParseException;
 import java.util.Base64;
 
+import static migt.Tools.check_json_strings_equals;
+
 
 /**
  * Class to manage JWT tokens
@@ -17,6 +19,7 @@ import java.util.Base64;
  */
 public class JWT {
     public String header;
+    public String header_original;
     public String payload;
     public String signature;
     public String raw;
@@ -99,6 +102,7 @@ public class JWT {
 
         try {
             header = parsed_jwt.getHeader().toString();
+            header_original = parsed_jwt.getParsedParts()[0].toString();
             payload = parsed_jwt.getPayload().toString();
             signature = parsed_jwt instanceof JWSObject ?
                     ((JWSObject) parsed_jwt).getSignature().toString() : null;
@@ -163,7 +167,11 @@ public class JWT {
         if (this.header.equals("") || this.payload.equals(""))
             throw new ParsingException("error in building jwt, empty values");
 
-        res += Base64.getEncoder().encodeToString(header.getBytes());
+        if (check_json_strings_equals(header, new String(Base64.getDecoder().decode(header_original)))) {
+            res += header_original;
+        } else {
+            res += Base64.getEncoder().encodeToString(header.getBytes());
+        }
         res += "." + Base64.getEncoder().encodeToString(payload.getBytes());
 
         if (sign) {

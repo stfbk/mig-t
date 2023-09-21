@@ -253,8 +253,15 @@ public class Check extends Module {
         }
 
         // URL-decode matched content
-        //if (url_decode)
-        //    msg_str = URLDecoder.decode(msg_str, StandardCharsets.UTF_8);
+        // when a string contains a "+" character then, it is replaced with a space.
+        if (url_decode) {
+            Pattern p = Pattern.compile("%[0-9a-fA-F]{2}");
+            Matcher m = p.matcher(op_val);
+            if (m.find()) {
+                // if the content contains url-encoded characters then, url-decode the content
+                op_val = URLDecoder.decode(op_val, StandardCharsets.UTF_8);
+            }
+        }
 
         // if a regex is present, execute it
         if (!regex.equals("")) {
