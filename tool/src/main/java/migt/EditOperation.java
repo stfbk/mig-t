@@ -307,12 +307,12 @@ public class EditOperation extends Module {
                             this.result = false;
                             return;
                         }
-                    }
-                    applicable = true;
-
-                    if (sign) {
+                    } else if (sign) {
+                        applicable = true;
                         tmp_imported_api.jwt.sign = true;
                         tmp_imported_api.jwt.private_key_pem = jwt_private_key_pem;
+                    } else {
+                        throw new ParsingException("missing jwt section in Edit operation");
                     }
 
                     break;
