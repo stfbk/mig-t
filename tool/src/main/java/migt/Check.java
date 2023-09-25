@@ -557,12 +557,20 @@ public class Check extends Module {
         // URL-decode matched content
         // when a string contains a "+" character then, it is replaced with a space.
         if (url_decode) {
+            /*
             Pattern p = Pattern.compile("%[0-9a-fA-F]{2}");
             Matcher m = p.matcher(op_val);
             if (m.find()) {
                 // if the content contains url-encoded characters then, url-decode the content
                 op_val = URLDecoder.decode(op_val, StandardCharsets.UTF_8);
             }
+            */
+            if (op_val.contains("+")) {
+                System.err.println("Warning! During a check on the value\"" + op_val + "\" a '+' symbol has been" +
+                        "converted to a space, as it has been interpreted as url-encoded character. If you want to avoid" +
+                        "this behaviour use 'url decode' tag set to false inside the check to disable url-decoding " );
+            }
+            op_val = URLDecoder.decode(op_val, StandardCharsets.UTF_8);
         }
 
         if (imported_api instanceof Operation_API) {

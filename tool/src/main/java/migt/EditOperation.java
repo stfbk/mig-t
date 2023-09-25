@@ -307,6 +307,7 @@ public class EditOperation extends Module {
                             this.result = false;
                             return;
                         }
+                        applicable = true;
                     } else if (sign) {
                         applicable = true;
                         tmp_imported_api.jwt.sign = true;
