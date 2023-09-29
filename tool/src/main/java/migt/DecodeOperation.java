@@ -420,21 +420,26 @@ public class DecodeOperation extends Module {
      * @throws ParsingException
      */
     @Override
-    public Operation_API exporter() throws ParsingException {
+    public API exporter() throws ParsingException {
         Collections.reverse(encodings); // Set the right order for encoding
         String encoded = encode(encodings, decoded_content, helpers);
 
-        Tools.editMessageParam(
-                helpers,
-                decode_target,
-                from,
-                ((Operation_API) imported_api).message,
-                ((Operation_API) imported_api).is_request,
-                encoded,
-                true);
+        if (imported_api instanceof Operation_API) {
+            Tools.editMessageParam(
+                    helpers,
+                    decode_target,
+                    from,
+                    ((Operation_API) imported_api).message,
+                    ((Operation_API) imported_api).is_request,
+                    encoded,
+                    true);
 
-        // the previous function should already have updated the message inside api
-        return ((Operation_API) imported_api);
+            // the previous function should already have updated the message inside api
+            return ((Operation_API) imported_api);
+        } else if (imported_api instanceof DecodeOperation_API) {
+            return imported_api;
+        }
+        throw new ParsingException("invalid API in decode operation");
     }
 
     /**
@@ -463,7 +468,7 @@ public class DecodeOperation extends Module {
                     String found = "";
                     // https://github.com/json-path/JsonPath
                     try {
-                        found = JsonPath.read(j, what); // select what to decode
+                        found = JsonPath.read(j, decode_target); // select what to decode
                     } catch (com.jayway.jsonpath.PathNotFoundException e) {
                         applicable = false;
                         result = false;

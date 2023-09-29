@@ -145,7 +145,7 @@ public class Tools {
             dop.execute(vars);
             if (!op.setResult(dop))
                 break;
-            op.setAPI(dop.exporter());
+            op.setAPI((Operation_API) dop.exporter());
         }
 
         return op;
@@ -168,7 +168,7 @@ public class Tools {
             dop.execute(vars);
             if (!op.setResult(dop))
                 break;
-            op.setAPI(dop.exporter());
+            op.setAPI((DecodeOperation_API) dop.exporter());
         }
 
         return op;
