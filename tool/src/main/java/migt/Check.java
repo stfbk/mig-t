@@ -249,6 +249,10 @@ public class Check extends Module {
         }
 
         if (msg_str.length() == 0) {
+            applicable = true;
+            if (this.op != null && op == IS_NOT_PRESENT) {
+                return true;
+            }
             return false;
         }
 
