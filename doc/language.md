@@ -608,20 +608,33 @@ Note that when saving a variable, if the value is empty (no match or no paramete
 
 ## Result and oracle
 
-The result tag is used in active tests to specify the oracle to be used, which are the criterias to which the test is evaluated.
+The result tag is used in active tests to specify the oracle to be used to verify the execution of the session. 
 
 it can be set to:
 
-- `correct flow \[sessionname\]` the test succedes only if all the user actions specified in a session's track are executed without errors
-- `incorrect flow \[sessionname\]` opposite of `correct flow`, the test succedes only if there is an error
-- `assert_only` the test result ignores the validation of the session flow but gives a result depending on the assertions defined in the track. This means, that if the execution of the session fails, the result will not take it into account.
+- `correct flow [sessionname]` the test succedes only if all the user actions specified in the session "sessionname" track are executed correctly.
+- `incorrect flow [sessionname]` opposite of `correct flow`, the test succedes only if there is an error in the execution of the session. This can be due to:
+  - the session was not executed entirely, i.e. an unexpected page is displayed and mig-t tries to click a button that is not present
+  - asserts in the track definition fails
+- `assert_only` the test result ignores the validation of the session flow but gives a result depending on the assertions defined in the track. This means, that if the execution of the session fails, this will not change the result of the test.
 
 The result can be combined with the result of the checks in an operation.
-The succes is evaluated with the Boolean operator AND between the result and all the results of the operations
+The succes is evaluated witmh the Boolean operator AND between the result and all the results of the operations
 
 Note that if correct (or incorrect) flow is used without specifying a session name, all the sessions are checked.
 
 Note for the definition of the track: to have a successfull oracle we suggest to define a track that not only does the login of the user, but also performs some actions on the final page, this way the result of the track is more complete. (i.e. if we just tell to login, the track will not try to act on the logged page, this way the plugin has no clue on if the final page contains an error or not)
+
+### Understanding test results
+A test can have one of three different results, that are:
+- passed: based on the test description and objectives, the test execution was successful and the verified content met the pre-defined conditions.
+- failed: based on the test description and objectives, the test execution was successful but the verified content didn't met the pre-defined conditions.
+- not applicable: it was not possible to execute the test, the result cannot be determined with ceirtainty. In this case, it is not possible to know if the test failed because of external causes or due to the test itself, possible causes are:
+  - wrong test definition (i.e. tried to sign a jwt but provided an invalid key)
+  - unexpected error in mig-t during execution (check debug tab in mig-t)
+  - a message that the test needed to intercept was not found
+
+> Note that "successful execution" in failed test, doesn't mean that the test was executed entirely, it means that what was executed upon the point that made the test fail, was executed successfully.
 
 ## Note on regex
 
