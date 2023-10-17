@@ -9,7 +9,6 @@ import com.jayway.jsonpath.PathNotFoundException;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
-
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -873,6 +872,7 @@ public class Tools {
     /**
      * Checks that the json resulting by parsing the two strings is equals. Equals in this case means that the same keys
      * and values are present, but the order is ignored
+     *
      * @param s1 the string 1
      * @param s2 the string 2
      * @return true or false depending if the json parsing of the two strings is the same or not

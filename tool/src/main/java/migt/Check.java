@@ -250,10 +250,7 @@ public class Check extends Module {
 
         if (msg_str.length() == 0) {
             applicable = true;
-            if (this.op != null && op == IS_NOT_PRESENT) {
-                return true;
-            }
-            return false;
+            return this.op != null && op == IS_NOT_PRESENT;
         }
 
         // if a regex is present, execute it
@@ -572,7 +569,7 @@ public class Check extends Module {
             if (op_val.contains("+")) {
                 System.err.println("Warning! During a check on the value\"" + op_val + "\" a '+' symbol has been" +
                         "converted to a space, as it has been interpreted as url-encoded character. If you want to avoid" +
-                        "this behaviour use 'url decode' tag set to false inside the check to disable url-decoding " );
+                        "this behaviour use 'url decode' tag set to false inside the check to disable url-decoding ");
             }
             op_val = URLDecoder.decode(op_val, StandardCharsets.UTF_8);
         }

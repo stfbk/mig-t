@@ -175,8 +175,8 @@ public class EditOperation extends Module {
         this.imported_api = dop_api;
     }
 
-    public DecodeOperation_API exporter() {
-        return (DecodeOperation_API) imported_api;
+    public API exporter() {
+        return imported_api;
     }
 
     public void execute(List<Var> vars) throws ParsingException {
@@ -362,6 +362,76 @@ public class EditOperation extends Module {
                     break;
             }
             imported_api = tmp_imported_api;
+        } else if (imported_api instanceof Operation_API) {
+            HTTPReqRes message = ((Operation_API) imported_api).message;
+            boolean is_request = ((Operation_API) imported_api).is_request; // if the message to edit is the request
+            HTTPReqRes.MessageSection from = HTTPReqRes.MessageSection.HEAD;
+            MessageOperation.MessageOperationActions action = MessageOperation.MessageOperationActions.EDIT;
+
+            switch (from) {
+                case URL: {
+                    switch (action) {
+                        case REMOVE_PARAMETER:
+                            message.removeUrlParam(what);
+                            break;
+                        case REMOVE_MATCH_WORD:
+                            // TODO
+                            break;
+                        case EDIT:
+                            message.editUrlParam(what, value);
+                            break;
+                        case EDIT_REGEX:
+                            // TODO
+                            break;
+                        case ADD:
+                            message.addUrlParam(what, value);
+                            break;
+                        case ENCODE:
+                            String old_value = message.getUrlParam(what);
+                            String new_value = ""; //TODO
+                            message.editUrlParam(what, new_value);
+                            break;
+                    }
+                    break;
+                }
+
+                case HEAD: {
+                    switch (action) {
+                        case REMOVE_PARAMETER:
+                            message.removeHeadParameter(is_request, what);
+                            break;
+                        case REMOVE_MATCH_WORD:
+                            // TODO
+                            break;
+                        case EDIT:
+                            message.editHeadParam(is_request, what, value);
+                            break;
+                        case EDIT_REGEX:
+                            // TODO
+                            break;
+                        case ADD:
+                            message.addHeadParameter(is_request, what, value);
+                            break;
+                    }
+                    break;
+                }
+
+                case BODY: {
+                    switch (action) {
+                        //TODO
+                    }
+                    break;
+                }
+
+                case RAW: {
+                    switch (action) {
+                        //TODO
+                    }
+                    break;
+                }
+            }
+
+            ((Operation_API) imported_api).message = message;
         }
     }
 

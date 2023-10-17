@@ -435,7 +435,7 @@ public class DecodeOperation extends Module {
                     true);
 
             // the previous function should already have updated the message inside api
-            return ((Operation_API) imported_api);
+            return imported_api;
         } else if (imported_api instanceof DecodeOperation_API) {
             return imported_api;
         }

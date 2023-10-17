@@ -4,7 +4,14 @@ import burp.IExtensionHelpers;
 import burp.IHttpRequestResponse;
 import burp.IHttpRequestResponsePersisted;
 import burp.IHttpService;
+import org.apache.http.NameValuePair;
+import org.apache.http.client.utils.URLEncodedUtils;
+import org.apache.http.message.BasicNameValuePair;
 
+import java.net.MalformedURLException;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -369,14 +376,165 @@ public class HTTPReqRes implements Cloneable {
             throw new RuntimeException("Trying to access the url of a response message");
         }
 
-        Pattern pattern = Pattern.compile("(?<=" + Pattern.quote(param) + "=)[^$\\n&\\s]*");
-        Matcher matcher = pattern.matcher(this.request_url);
-        String res = "";
-        while (matcher.find()) {
-            res = matcher.group();
-            break;
+        List<NameValuePair> params = new ArrayList<>();
+
+        try {
+            params = URLEncodedUtils.parse(
+                    new URI(request_url), StandardCharsets.UTF_8
+            );
+        } catch (URISyntaxException e) {
+            throw new RuntimeException(e);
         }
-        return res;
+
+        for (NameValuePair p : params) {
+            if (p.getName().equals(param)) {
+                return p.getValue();
+            }
+        }
+
+        return "";
+    }
+
+    /**
+     * Edits the given parameter value with the new given value
+     *
+     * @param param the parameter name
+     * @param value the new value of the parameter
+     */
+    public void editUrlParam(String param, String value) throws ParsingException {
+        if (!isRequest || request_url == null) {
+            throw new RuntimeException("Trying to access the url of a response message");
+        }
+
+        List<NameValuePair> params = new ArrayList<>();
+
+        try {
+            params = URLEncodedUtils.parse(
+                    new URI(request_url), StandardCharsets.UTF_8
+            );
+        } catch (URISyntaxException e) {
+            throw new RuntimeException(e);
+        }
+
+        int indx = -1;
+        int c = 0;
+        for (NameValuePair p : params) {
+            if (p.getName().equals(param)) {
+                indx = c;
+            }
+            c++;
+        }
+
+        if (indx == -1) {
+            throw new ParsingException("Could not find parameter " + param + " in url");
+        }
+
+        params.set(indx, new BasicNameValuePair(param, value));
+
+        String new_query = URLEncodedUtils.format(params, "utf-8");
+
+        URL url = null;
+        try {
+            url = new URL(request_url);
+        } catch (MalformedURLException e) {
+            throw new RuntimeException(e);
+        }
+
+        request_url = request_url.replaceAll(
+                java.util.regex.Matcher.quoteReplacement(url.getQuery()),
+                new_query);
+
+        updateHeadersWHurl();
+    }
+
+    /**
+     * Removes the given param from the request url query parameters
+     *
+     * @param name param name
+     */
+    public void removeUrlParam(String name) throws ParsingException {
+        if (!isRequest || request_url == null) {
+            throw new RuntimeException("Trying to access the url of a response message");
+        }
+
+        List<NameValuePair> params = new ArrayList<>();
+
+        try {
+            params = URLEncodedUtils.parse(
+                    new URI(request_url), StandardCharsets.UTF_8
+            );
+        } catch (URISyntaxException e) {
+            throw new RuntimeException(e);
+        }
+
+        int indx = -1;
+        int c = 0;
+        for (NameValuePair p : params) {
+            if (p.getName().equals(name)) {
+                indx = c;
+            }
+            c++;
+        }
+
+        if (indx == -1) {
+            throw new ParsingException("Could not find parameter " + name + " in url");
+        }
+
+        params.remove(indx);
+
+        String new_query = URLEncodedUtils.format(params, "utf-8");
+
+        URL url = null;
+        try {
+            url = new URL(request_url);
+        } catch (MalformedURLException e) {
+            throw new RuntimeException(e);
+        }
+
+        request_url = request_url.replaceAll(
+                java.util.regex.Matcher.quoteReplacement(url.getQuery()),
+                new_query);
+
+        updateHeadersWHurl();
+    }
+
+    /**
+     * Adds an url query parameter to the request url
+     *
+     * @param name  the name of the new parameter
+     * @param value the value of the new parameter
+     */
+    public void addUrlParam(String name, String value) {
+        if (!isRequest || request_url == null) {
+            throw new RuntimeException("Trying to access the url of a response message");
+        }
+
+        List<NameValuePair> params = new ArrayList<>();
+
+        try {
+            params = URLEncodedUtils.parse(
+                    new URI(request_url), StandardCharsets.UTF_8
+            );
+        } catch (URISyntaxException e) {
+            throw new RuntimeException(e);
+        }
+
+        params.add(new BasicNameValuePair(name, value));
+
+        String new_query = URLEncodedUtils.format(params, "utf-8");
+
+        URL url = null;
+        try {
+            url = new URL(request_url);
+        } catch (MalformedURLException e) {
+            throw new RuntimeException(e);
+        }
+
+        request_url = request_url.replaceAll(
+                java.util.regex.Matcher.quoteReplacement(url.getQuery()),
+                new_query);
+
+        updateHeadersWHurl();
     }
 
     /**
@@ -399,6 +557,13 @@ public class HTTPReqRes implements Cloneable {
     }
 
 
+    /**
+     * Edits the Header of the given message
+     *
+     * @param isRequest select the request or teh response
+     * @param param     the name of the header
+     * @param new_value the new value
+     */
     public void editHeadParam(Boolean isRequest, String param, String new_value) {
         List<String> headers = isRequest ? this.headers_req : this.headers_resp;
 
@@ -418,10 +583,23 @@ public class HTTPReqRes implements Cloneable {
         }
     }
 
+    /**
+     * Adds a Header to the given message
+     *
+     * @param isRequest if the message to edit is the request or the response
+     * @param name      the name of the new header
+     * @param value     the value of the new header
+     */
     public void addHeadParameter(boolean isRequest, String name, String value) {
         (isRequest ? this.headers_req : this.headers_resp).add(name + ": " + value);
     }
 
+    /**
+     * Removes the header from the given message
+     *
+     * @param isRequest select the request or the response
+     * @param name      the name of the header
+     */
     public void removeHeadParameter(boolean isRequest, String name) {
         List<String> headers = isRequest ? this.headers_req : this.headers_resp;
 
@@ -457,6 +635,45 @@ public class HTTPReqRes implements Cloneable {
             break;
         }
         return res;
+    }
+
+    /**
+     * Updates the headers in this request message with the acctual url value
+     */
+    public void updateHeadersWHurl() throws RuntimeException {
+        if (!isRequest || request_url == null) {
+            throw new RuntimeException("Trying to access the url of a response message");
+        }
+
+        URL url = null;
+        try {
+            url = new URL(request_url);
+        } catch (MalformedURLException e) {
+            throw new RuntimeException(e);
+        }
+
+        String[] header_0 = headers_req.get(0).split(" ");
+
+        String new_header_0 = header_0[0] + " " + url.getPath();
+        if (url.getQuery() != null) {
+            new_header_0 += "?" + url.getQuery();
+        }
+
+        //if (url.getRef() != null) {
+        //    new_header_0 += "#" + url.getRef();
+        //}
+
+        new_header_0 += " " + url.getProtocol().toUpperCase();
+        new_header_0 += "/" + header_0[2].split("/")[1];
+
+        String new_header_1 = "Host: " + url.getHost();
+
+        if (!headers_req.get(1).contains("Host")) {
+            throw new RuntimeException("could not find Host header in header");
+        }
+
+        headers_req.set(0, new_header_0);
+        headers_req.set(1, new_header_1);
     }
 
     /**

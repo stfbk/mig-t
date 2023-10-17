@@ -368,6 +368,7 @@ public class Operation extends Module {
 
     /**
      * Sets the api of this Operation with the given api. Note that the variables are added, not substituted
+     *
      * @param api the new api to be set
      */
     public void setAPI(Operation_API api) {
