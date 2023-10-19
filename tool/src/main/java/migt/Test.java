@@ -38,6 +38,7 @@ public class Test {
     // Infos
     String name;
     String description;
+    List<String> mandatory_keys = new ArrayList<>();
 
     /**
      * Empty constructor for tests
@@ -58,6 +59,13 @@ public class Test {
         setType(test_json.getString("type"));
 
         Iterator<String> keys = test_json.keys();
+
+        for (String k : mandatory_keys) {
+            if (!test_json.keySet().contains(k)) {
+                throw new ParsingException("Test is missing required \"" + k + "\" key");
+            }
+        }
+
         while (keys.hasNext()) {
             String key = keys.next();
 
@@ -144,6 +152,11 @@ public class Test {
         references = "";
         violated_properties = "";
         mitigations = "";
+
+        mandatory_keys.add("result");
+        mandatory_keys.add("name");
+        mandatory_keys.add("type");
+        mandatory_keys.add("sessions");
     }
 
     public String getName() {
