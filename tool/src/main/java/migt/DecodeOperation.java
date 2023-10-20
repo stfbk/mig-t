@@ -30,6 +30,7 @@ public class DecodeOperation extends Module {
     public List<DecodeOperation> decodeOperations; // a list of decode operations to execute them recursevly
     public List<EditOperation> editOperations; // a list of edit operations
     public boolean check_jwt = false;
+    boolean force_regex = false; // true if you want to decode by using a regex instead of a path in "decode param"
     JWT jwt;
     String what;
 
@@ -98,6 +99,11 @@ public class DecodeOperation extends Module {
                     jwt.decrypt = true;
                     jwt.private_key_pem_enc = decode_op_json.getString("jwe encrypt");
                     jwt.public_key_pem_enc = decode_op_json.getString("jwe decrypt");
+                case "force regex":
+                    force_regex = decode_op_json.getBoolean("force regex");
+                    break;
+                default:
+                    throw new ParsingException("Unsupported key \"" + key + "\" in decode operation");
             }
         }
     }
@@ -466,13 +472,17 @@ public class DecodeOperation extends Module {
                     String j = ((DecodeOperation_API) imported_api).getDecodedContent(from);
 
                     String found = "";
-                    // https://github.com/json-path/JsonPath
-                    try {
-                        found = JsonPath.read(j, decode_target); // select what to decode
-                    } catch (com.jayway.jsonpath.PathNotFoundException e) {
-                        applicable = false;
-                        result = false;
-                        return;
+                    if (!force_regex) {
+                        // https://github.com/json-path/JsonPath
+                        try {
+                            found = JsonPath.read(j, decode_target); // select what to decode
+                        } catch (com.jayway.jsonpath.PathNotFoundException e) {
+                            applicable = false;
+                            result = false;
+                            return;
+                        }
+                    } else {
+                        found = j;
                     }
                     decoded_content = decode(encodings, found, helpers);
                     break;

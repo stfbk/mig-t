@@ -163,6 +163,7 @@ optional tags:
 - `decode operations`
 - `checks`
 - `edits`
+- `force regex` set it to true to enable using regex inside decode param in a recursive decode operation. This is useful when you are decoding the body a JWE when it contains a raw JWT not inside a json element.
 
 #### Body section
 
