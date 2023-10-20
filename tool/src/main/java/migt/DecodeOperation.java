@@ -10,6 +10,8 @@ import java.io.IOException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.zip.DataFormatException;
 import java.util.zip.Deflater;
 import java.util.zip.Inflater;
@@ -482,7 +484,12 @@ public class DecodeOperation extends Module {
                             return;
                         }
                     } else {
-                        found = j;
+                        Pattern pattern = Pattern.compile(decode_target);
+                        Matcher matcher = pattern.matcher(j);
+                        while (matcher.find()) {
+                            found = matcher.group();
+                            break;
+                        }
                     }
                     decoded_content = decode(encodings, found, helpers);
                     break;
