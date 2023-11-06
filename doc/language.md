@@ -609,7 +609,7 @@ Note that when saving a variable, if the value is empty (no match or no paramete
 
 ## Result and oracle
 
-The result tag is used in active tests to specify the oracle to be used to verify the execution of the session. 
+The result tag is used in active tests to specify the oracle to be used to verify the execution of the session.
 
 it can be set to:
 
@@ -627,7 +627,9 @@ Note that if correct (or incorrect) flow is used without specifying a session na
 Note for the definition of the track: to have a successfull oracle we suggest to define a track that not only does the login of the user, but also performs some actions on the final page, this way the result of the track is more complete. (i.e. if we just tell to login, the track will not try to act on the logged page, this way the plugin has no clue on if the final page contains an error or not)
 
 ### Understanding test results
+
 A test can have one of three different results, that are:
+
 - passed: based on the test description and objectives, the test execution was successful and the verified content met the pre-defined conditions.
 - failed: based on the test description and objectives, the test execution was successful but the verified content didn't met the pre-defined conditions.
 - not applicable: it was not possible to execute the test, the result cannot be determined with ceirtainty. In this case, it is not possible to know if the test failed because of external causes or due to the test itself, possible causes are:
@@ -861,17 +863,31 @@ This passive test checks whether PKCE is used in an OAuth flow, checking if the 
 
 # Session Track (User actions)
 
-The session track is a list of user actions, it tells the browser what actions to do. The session track is defined in a custom language that extends the one defined by [Katalon-Recorder sample plugin](https://github.com/katalon-studio/katalon-recorder-sample-plugin) they call it "sample for new formatters".
+The session track is a list of actions that the browser will do to simulate an user. The session track is defined in a custom language that extends the one defined by [Katalon-Recorder sample plugin](https://github.com/katalon-studio/katalon-recorder-sample-plugin) they call it "sample for new formatters".
 
-Basically, each User Action is an action to be done on the browser that simulates an user. The standard possible actions are:
+Basically, each User Action in the session track is an action to be done on the browser such as a click, type a string, or open an url. The available actions are:
 
 - `open` Opens the given url
 - `click` Clicks on the specified HTML element
 - `type` Type on the specified HTML element the specified text
 
 The syntax is as follows <br>
-`<action> | <elem> | <content>` <br>
-Note that the `< >` should not be included
+
+```
+<action> | <elem> | <content>
+```
+
+Note that the `< >` should not be included, and the spaces are not mandatory.
+
+> Note: the correct execution of the track can influence the result of the test. More details in the [result section](#result-and-oracle)
+
+### Element
+
+An html element can be identified by:
+
+- A link: searches in all hrefs the given link, i.e. `link=/go/somewhere`
+- Its ID: searches in the page an element that has the given ID, i.e. `id=someid`
+- Its xpath: searches in the page an element by its [xpath](https://developer.mozilla.org/en-US/docs/Web/XPath)
 
 ### Example
 
@@ -888,15 +904,24 @@ click | xpath=/html/body/div/button/ |
 
 ### Wait action
 
-`wait` command, that is used to tell the browser to wait n millisecond before executing the next action. usage: `wait | 3000 "
+`wait` command, that is used to tell the browser to wait n millisecond before executing the next action. Example usage as follows:
+
+```
+wait | 3000
+```
 
 ### Clear cookies action
 
-`clear cookies` command, which will clear all the cookies in the current session, usage: "clear cookies |"
+`clear cookies` command, which will clear all the cookies in the current session, usage:
+
+```
+clear cookies |
+```
 
 ### Asserts on session
 
-The session can include the asserts, the asserts are a way to validate that the session flow is going how it is supposed to.
+The session can include the asserts, the asserts are a way to validate that the session flow is going how it is supposed to go. If the asserts fail, the result of the test becomes failed.
+
 The possible asserts to be used are:
 
 - `assert clickable` Make sure that an html object is clickable
