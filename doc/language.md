@@ -539,6 +539,8 @@ Note: when using `check regex` with json content, the specified content will be 
 
 >Note: matched array contents will always be converted to string for simplicity. This means that if you want to check an integer or float, you should write it as a string (e.g. 12.3 -> "12.3")
 
+>Note: Json paths have a lot of operands to select elements, for more info check [this guide](https://support.smartbear.com/alertsite/docs/monitors/api/endpoint/jsonpath.html)
+
 ```json
 "decode operations": [
   {
