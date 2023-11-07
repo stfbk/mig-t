@@ -93,6 +93,17 @@ You can find the documentation about the language used by the tool in the `doc/`
 
 Extended in the context of the industrial collaboration with IPZS and Futuro&Conoscenza
 
+# Contributors
+Following is the list of students that contributed to the evolution of the tool, and their corresponding thesis.
+
+- Matteo Bitussi (Bachelor's Thesis, University of Trento, 2022) Declarative Specification of Pentesting Strategies for Browser-based Security Protocols: the Case Studies of SAML and OAuth/OIDC
+- Wendy Barreto (Bachelor's Thesis, University of Trento, 2021) Design and implementation of an attack pattern language for the automated pentesting of OAuth/OIDC deployments
+- Stefano Facchini (Bachelor's Thesis, University of Trento, 2020) Design and implementation of an automated tool for checking SAML SSO vulnerabilities and SPID compliance
+- Claudio Grisenti (Bachelor's Thesis, University of Trento, 2020) A pentesting tool for OAuth and OIDC deployments
+- Ivan Martini (Bachelor's Thesis, University of Trento, 2018) An automated security testing framework for SAML SSO deployments
+- Valentina Odorizzi (Bachelor's Thesis, University of Trento, 2018) Progettazione e sviluppo di uno strumento per l'analisi automatica di vulnerabilità "Missing XML Validation" in SAML SSO
+- Giulio Pellizzari (Bachelor's Thesis, University of Trento, 2018) Design and implementation of a tool to detect Login Cross-Site Request Forgery in SAML SSO: G Suite case study
+
 # License
 
 ```
@@ -111,14 +122,14 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ```
 
-Developed within [Security & Trust](https://st.fbk.eu/) Research Unit at [Fondazione Bruno Kessler](https://www.fbk.eu/en/) (Italy)
+Developed within [Security & Trust](https://st.fbk.eu/) Research Unit at [Fondazione Bruno Kessler](https://www.fbk.eu/en/) (Italy) in collaboration with [Istituto Poligrafico e Zecca dello Stato](https://www.ipzs.it/) (Italy) and Futuro & Conoscenza.
 
 ## Other software
 
 ### SAMLRaider
 
-Some parts of the tool that manages SAML certificates has been built by using portions of SAMLRaider code (https://github.com/CompassSecurity/SAMLRaider).
+Some parts of the tool that manages SAML certificates has been built by using portions of SAMLRaider code (<https://github.com/CompassSecurity/SAMLRaider>).
 
 ### nimbus-jose-jwt
 
-https://connect2id.com/products/nimbus-jose-jwt
+<https://connect2id.com/products/nimbus-jose-jwt>
