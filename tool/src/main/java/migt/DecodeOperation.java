@@ -1,6 +1,5 @@
 package migt;
 
-import burp.IExtensionHelpers;
 import com.jayway.jsonpath.JsonPath;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -106,7 +105,6 @@ public class DecodeOperation extends Module {
      * Decodes a parameter from a message, given the message section and the list of encodings to be applied during
      * decoding
      *
-     * @param helpers      IExtensionHelpers helpers object from Burp
      * @param ms           The message section that contains the parameter to be decoded
      * @param encodings    The list of encodings to be applied to decode the parameter
      * @param messageInfo  The message to be decoded
@@ -115,25 +113,25 @@ public class DecodeOperation extends Module {
      * @return The decoded parameter as a string
      * @throws ParsingException If problems are encountered during decoding
      */
-    public static String decodeParam(IExtensionHelpers helpers,
-                                     DecodeOperationFrom ms,
+    public static String decodeParam(DecodeOperationFrom ms,
                                      List<Encoding> encodings,
                                      HTTPReqRes messageInfo,
                                      Boolean isRequest,
                                      String decode_param) throws ParsingException {
         String decoded_param = "";
+        // TODO add regex selection
         switch (ms) {
             case HEAD:
                 decoded_param = decode(
-                        encodings, messageInfo.getHeadParam(isRequest, decode_param), helpers);
+                        encodings, messageInfo.getHeadParam(isRequest, decode_param));
                 break;
             case BODY:
                 decoded_param = decode(
-                        encodings, messageInfo.getBodyRegex(isRequest, decode_param), helpers);
+                        encodings, messageInfo.getBodyRegex(isRequest, decode_param));
                 break;
             case URL:
                 decoded_param = decode(
-                        encodings, messageInfo.getUrlParam(decode_param), helpers);
+                        encodings, messageInfo.getUrlParam(decode_param));
                 break;
         }
 
@@ -152,13 +150,12 @@ public class DecodeOperation extends Module {
      * @return the decoded string
      * @throws ParsingException if the decoding fails
      */
-    public static String decode(List<Encoding> encodings, String encoded, IExtensionHelpers helpers) throws ParsingException {
-        // TODO: remove dependency from helpers
+    public static String decode(List<Encoding> encodings, String encoded) throws ParsingException {
         String actual = encoded;
         byte[] actual_b = null;
         boolean isActualString = true;
 
-        if (encoded.length() == 0) {
+        if (encoded.isEmpty()) {
             return "";
         }
 
@@ -166,18 +163,17 @@ public class DecodeOperation extends Module {
             switch (e) {
                 case BASE64:
                     if (isActualString) {
-                        actual_b = helpers.base64Decode(actual);
+                        actual_b = Base64.getDecoder().decode(actual);
                         isActualString = false;
                     } else {
-                        actual_b = helpers.base64Decode(actual_b);
+                        actual_b = Base64.getDecoder().decode(actual_b);
                     }
                     break;
                 case URL:
-
                     if (isActualString) {
-                        actual = helpers.urlDecode(actual);
+                        actual = java.net.URLDecoder.decode(actual, StandardCharsets.UTF_8);
                     } else {
-                        actual = helpers.urlDecode(new String(actual_b));
+                        actual = java.net.URLDecoder.decode(new String(actual_b), StandardCharsets.UTF_8);
                         isActualString = true;
                     }
                     break;
@@ -393,12 +389,10 @@ public class DecodeOperation extends Module {
      * Loads an Operation API
      *
      * @param api
-     * @param helpers
      * @throws ParsingException
      */
-    public void loader(Operation_API api, IExtensionHelpers helpers) {
+    public void loader(Operation_API api) {
         // load api, extract needed things
-        this.helpers = helpers;
         this.imported_api = api;
     }
 
@@ -407,10 +401,8 @@ public class DecodeOperation extends Module {
      *
      * @param api
      */
-    public void loader(DecodeOperation_API api, IExtensionHelpers helpers) {
+    public void loader(DecodeOperation_API api) {
         this.imported_api = api;
-        this.helpers = helpers;
-
     }
 
     /**
@@ -426,7 +418,6 @@ public class DecodeOperation extends Module {
 
         if (imported_api instanceof Operation_API) {
             Tools.editMessageParam(
-                    helpers,
                     decode_target,
                     from,
                     ((Operation_API) imported_api).message,
@@ -450,7 +441,6 @@ public class DecodeOperation extends Module {
     public void execute(List<Var> vars) throws ParsingException {
         if (imported_api instanceof Operation_API) {
             decoded_content = decodeParam(
-                    helpers,
                     from,
                     encodings,
                     ((Operation_API) imported_api).message,
@@ -474,7 +464,7 @@ public class DecodeOperation extends Module {
                         result = false;
                         return;
                     }
-                    decoded_content = decode(encodings, found, helpers);
+                    decoded_content = decode(encodings, found);
                     break;
 
                 default:
@@ -503,7 +493,7 @@ public class DecodeOperation extends Module {
 
         // executes recursive decode operations
         if (decodeOperations.size() != 0) {
-            executeDecodeOps(this, helpers, vars);
+            executeDecodeOps(this, vars);
         }
 
         // execute checks

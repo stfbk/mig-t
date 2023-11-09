@@ -1,6 +1,5 @@
 package migt;
 
-import burp.IExtensionHelpers;
 import org.json.JSONObject;
 
 /**
@@ -11,7 +10,6 @@ public class Module {
     // These variables should be present in each module
     boolean result = true;
     boolean applicable = false;
-    IExtensionHelpers helpers;
     API api; // the api of this module
     API imported_api; // the api imported from a previous module
 
@@ -26,10 +24,6 @@ public class Module {
      */
     public Module(JSONObject json_module) {
         // Parse
-    }
-
-    public Module(IExtensionHelpers helpers) {
-        this.helpers = helpers;
     }
 
     /**

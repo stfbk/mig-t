@@ -56,7 +56,6 @@ public class BurpExtender implements IBurpExtender, ITab, IProxyListener {
             errorStream = new PrintStream(stdErr);
 
             mainPane = new GUI();
-            mainPane.helpers = callbacks.getHelpers();
             mainPane.callbacks = callbacks;
             mainPane.messageViewer = callbacks.createMessageEditor(mainPane.controller, false);
             mainPane.splitPane.setRightComponent(mainPane.messageViewer.getComponent());
@@ -163,7 +162,6 @@ public class BurpExtender implements IBurpExtender, ITab, IProxyListener {
                                    HTTPReqRes message) {
         messageInfo.setHighlight("red");
 
-        mainPane.act_active_op.helpers = helpers;
         mainPane.act_active_op.setAPI(new Operation_API(message, msg_type.msg_to_process_is_request));
         mainPane.act_active_op.execute();
 

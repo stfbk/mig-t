@@ -1,6 +1,5 @@
 package migt;
 
-import burp.IHttpService;
 import burp.IInterceptedProxyMessage;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -27,7 +26,6 @@ public class Operation extends Module {
     public boolean isSessionOp = false;
     public List<HTTPReqRes> matchedMessages;
     public byte[] processed_message;
-    public IHttpService processed_message_service;  // null if it is not changed
     public List<IInterceptedProxyMessage> log_messages;
     public List<SessionOperation> session_operations;
     // Decode operations
@@ -164,7 +162,6 @@ public class Operation extends Module {
         this.replace_request_name = "";
         this.messageType = "";
         this.session = "";
-        this.processed_message_service = null;
         this.processed_message = null;
     }
 
@@ -425,7 +422,6 @@ public class Operation extends Module {
                 try {
                     applicable = true;
                     processed_message = getVariableByName(replace_request_name, api.vars).message;
-                    processed_message_service = getVariableByName(replace_request_name, api.vars).service_info;
                     //return op;
                 } catch (ParsingException e) {
                     e.printStackTrace();
@@ -438,7 +434,6 @@ public class Operation extends Module {
                 try {
                     applicable = true;
                     processed_message = getVariableByName(replace_response_name, api.vars).message;
-                    processed_message_service = getVariableByName(replace_response_name, api.vars).service_info;
                     //return op;
                 } catch (ParsingException e) {
                     e.printStackTrace();
@@ -451,13 +446,13 @@ public class Operation extends Module {
         // execute the message operations and the decode ops
         try {
             applicable = true;
-            executeMessageOperations(this, helpers);
+            executeMessageOperations(this);
             if (!applicable | !result)
                 return;
             executeEditOps(this, api.vars);
             if (!applicable | !result)
                 return;
-            executeDecodeOps(this, helpers, api.vars);
+            executeDecodeOps(this, api.vars);
             if (!applicable | !result)
                 return;
             executeChecks(this, api.vars);
@@ -475,7 +470,6 @@ public class Operation extends Module {
             v.name = save_name;
             v.isMessage = true;
             v.message = api.is_request ? api.message.getRequest() : api.message.getResponse();
-            v.service_info = api.message.getHttpService(helpers);
             api.vars.add(v);
         }
     }

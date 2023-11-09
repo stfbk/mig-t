@@ -104,6 +104,19 @@ public class EditOperation_test {
     }
 
     @Test
+    public void test_add_url_param_already_present() throws ParsingException {
+        String input = "{\"from\": \"url\", \"add\": \"authuser\"," + "\"value\": \"1\"}";
+        EditOperation eop = new EditOperation(new JSONObject(input));
+        Operation_API api =  new Operation_API(message, true);
+
+        eop.setAPI(api);
+        eop.execute(null);
+        assertTrue(eop.getResult());
+        Operation_API res = (Operation_API) eop.exporter();
+        assertEquals("01", res.message.getUrlParam("authuser"));
+    }
+
+    @Test
     public void test_add_head_param() throws ParsingException {
         String input = "{\"from\": \"head\", \"add\": \"Magicheader\"," + "\"value\": \"123123\"}";
         EditOperation eop = new EditOperation(new JSONObject(input));
@@ -114,6 +127,19 @@ public class EditOperation_test {
         assertTrue(eop.getResult());
         Operation_API res = (Operation_API) eop.exporter();
         assertEquals("123123", res.message.getHeadParam(true,"Magicheader"));
+    }
+
+    @Test
+    public void test_add_head_param_already_present() throws ParsingException {
+        String input = "{\"from\": \"head\", \"add\": \"Accept\"," + "\"value\": \"1\"}";
+        EditOperation eop = new EditOperation(new JSONObject(input));
+        Operation_API api =  new Operation_API(message, true);
+
+        eop.setAPI(api);
+        eop.execute(null);
+        assertTrue(eop.getResult());
+        Operation_API res = (Operation_API) eop.exporter();
+        assertEquals("*/*1", res.message.getHeadParam(true,"Accept"));
     }
 
     @Test

@@ -1,6 +1,5 @@
 package migt;
 
-import burp.IExtensionHelpers;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonParser;
 import com.jayway.jsonpath.Configuration;
@@ -26,13 +25,12 @@ public class Tools {
      *
      * @param test        a <Code>Test</Code> element, it has to be a passive test
      * @param messageList a list of <code>HTTPReqRes</code> messages
-     * @param helpers     an istance of <code>IExtensionHelpers</code>
      * @param msg_types   the message types used by the test
+     * @param helpers
      * @return true if a test is passed, false otherwise
      */
     public static boolean executePassiveTest(Test test,
                                              List<HTTPReqRes> messageList,
-                                             IExtensionHelpers helpers,
                                              List<MessageType> msg_types) throws ParsingException {
         int i, j;
         boolean res = true;
@@ -50,8 +48,6 @@ public class Tools {
                 }
 
                 if (messageList.get(i).matches_msg_type(msg_type)) {
-                    currentOP.helpers = helpers;
-
                     currentOP.setAPI(new Operation_API(messageList.get(i), msg_type.msg_to_process_is_request));
                     currentOP.execute();
                     res = currentOP.getResult();
@@ -128,17 +124,15 @@ public class Tools {
     /**
      * Executes the decode operations in an operation. Uses APIs. Sets the result to the operation
      *
-     * @param op      the operation to execute the decode operations from
-     * @param helpers the Burp helpers
+     * @param op the operation to execute the decode operations from
      * @return The operation (edited)
      * @throws ParsingException if something goes wrong
      */
     public static Operation executeDecodeOps(Operation op,
-                                             IExtensionHelpers helpers,
                                              List<Var> vars) throws ParsingException {
         Operation_API api = op.getAPI();
         for (DecodeOperation dop : op.getDecodeOperations()) {
-            dop.loader(api, helpers);
+            dop.loader(api);
             dop.execute(vars);
             if (!op.setResult(dop))
                 break;
@@ -151,17 +145,15 @@ public class Tools {
     /**
      * Executes the decode operations in a decode operation. This is the recursive step.
      *
-     * @param op      the decode operation executing its child decode operations
-     * @param helpers the burp helpers
+     * @param op the decode operation executing its child decode operations
      * @return The operation (edited)
      * @throws ParsingException if something goes wrong
      */
     public static DecodeOperation executeDecodeOps(DecodeOperation op,
-                                                   IExtensionHelpers helpers,
                                                    List<Var> vars) throws ParsingException {
         DecodeOperation_API api = op.getAPI();
         for (DecodeOperation dop : op.decodeOperations) {
-            dop.loader(api, helpers);
+            dop.loader(api);
             dop.execute(vars);
             if (!op.setResult(dop))
                 break;
@@ -212,10 +204,10 @@ public class Tools {
         return op;
     }
 
-    public static Operation executeMessageOperations(Operation op, IExtensionHelpers helpers) throws ParsingException {
+    public static Operation executeMessageOperations(Operation op) throws ParsingException {
         for (MessageOperation mop : op.messageOperations) {
             mop.loader(op.api);
-            mop.execute(op, helpers);
+            mop.execute(op);
             op.setAPI(mop.exporter());
             if (op.setResult(op))
                 break;
@@ -657,7 +649,6 @@ public class Tools {
     /**
      * Edit a message treating it as a string using a regex
      *
-     * @param helpers     an instance of Burp's IExtensionHelper
      * @param regex       the regex used to match the things to change
      * @param mop         the message operation containing information about the section to match the regex
      * @param messageInfo the message as IHttpRequestResponse object
@@ -666,13 +657,11 @@ public class Tools {
      * @return the edited message as byte array
      * @throws ParsingException if problems are encountered in editing the message
      */
-    public static byte[] editMessage(IExtensionHelpers helpers,
-                                     String regex,
+    public static byte[] editMessage(String regex,
                                      MessageOperation mop,
                                      HTTPReqRes messageInfo,
                                      boolean isRequest,
                                      String new_value) throws ParsingException {
-        // TODO: remove dependency from Helpers
         Pattern pattern = null;
         Matcher matcher = null;
         switch (mop.from) {
@@ -714,7 +703,6 @@ public class Tools {
     /**
      * Edit a message parameter
      *
-     * @param helpers         an instance of Burp's IExtensionHelper
      * @param param_name      the name of the parameter to edit
      * @param message_section the message section to edit
      * @param messageInfo     the message as IHttpRequestResponse object
@@ -725,8 +713,7 @@ public class Tools {
      * @return the edited message as byte array
      * @throws ParsingException if problems are encountered in editing the message
      */
-    public static byte[] editMessageParam(IExtensionHelpers helpers,
-                                          String param_name,
+    public static byte[] editMessageParam(String param_name,
                                           HTTPReqRes.MessageSection message_section,
                                           HTTPReqRes messageInfo,
                                           boolean isRequest,
@@ -770,8 +757,7 @@ public class Tools {
         return null;
     }
 
-    public static byte[] editMessageParam(IExtensionHelpers helpers,
-                                          String param_name,
+    public static byte[] editMessageParam(String param_name,
                                           DecodeOperation.DecodeOperationFrom decodeOperationFrom,
                                           HTTPReqRes messageInfo,
                                           boolean isRequest,
@@ -797,7 +783,6 @@ public class Tools {
         }
 
         return editMessageParam(
-                helpers,
                 param_name,
                 ms,
                 messageInfo,

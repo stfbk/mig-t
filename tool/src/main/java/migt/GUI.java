@@ -1,6 +1,9 @@
 package migt;
 
-import burp.*;
+import burp.IBurpExtenderCallbacks;
+import burp.IHttpService;
+import burp.IMessageEditor;
+import burp.IMessageEditorController;
 import com.google.gson.Gson;
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -94,7 +97,6 @@ public class GUI extends JSplitPane {
     JTabbedPane bot_tabbed;
     Map<String, Integer> bot_tabs_index;
     HTTPReqRes viewedMessage;
-    IExtensionHelpers helpers;
     IBurpExtenderCallbacks callbacks;
     List<String> sessions_names;
     Map<String, String> session_port;
@@ -681,7 +683,7 @@ public class GUI extends JSplitPane {
                 }
             };
 
-            ExecutePassives expa = new ExecutePassives(helpers,
+            ExecutePassives expa = new ExecutePassives(
                     passives,
                     listener,
                     messageTypes);

@@ -489,7 +489,7 @@ public class HTTPReqRes implements Cloneable {
     }
 
     /**
-     * Adds an url query parameter to the request url
+     * Adds an url query parameter to the request url. If parameter already present, concatenate new value to old.
      *
      * @param name  the name of the new parameter
      * @param value the value of the new parameter
@@ -509,7 +509,23 @@ public class HTTPReqRes implements Cloneable {
             throw new RuntimeException(e);
         }
 
-        params.add(new BasicNameValuePair(name, value));
+        int c = 0;
+        boolean found = false;
+        for (NameValuePair p : params) {
+            if (p.getName().equals(name)) {
+                found = true;
+                break;
+            }
+            c += 1;
+        }
+
+        if (found) {
+            String old_value = params.get(c).getValue();
+            old_value += value;
+            params.set(c, new BasicNameValuePair(name, old_value));
+        } else {
+            params.add(new BasicNameValuePair(name, value));
+        }
 
         String new_query = URLEncodedUtils.format(params, "utf-8");
 
@@ -581,7 +597,26 @@ public class HTTPReqRes implements Cloneable {
      * @param value     the value of the new header
      */
     public void addHeadParameter(boolean isRequest, String name, String value) {
-        (isRequest ? this.headers_req : this.headers_resp).add(name + ": " + value);
+        List<String> headers = isRequest ? this.headers_req : this.headers_resp;
+
+        int c = 0;
+        boolean found = false;
+
+        for (String h : headers) {
+            if (h.startsWith(name + ":")) {
+                found = true;
+                break;
+            }
+            c += 1;
+        }
+
+        if (found) {
+            String old_header = headers.get(c);
+            old_header += value;
+            headers_req.set(c, old_header);
+        } else {
+            headers.add(name + ": " + value);
+        }
     }
 
     /**

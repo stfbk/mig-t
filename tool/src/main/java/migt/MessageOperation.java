@@ -1,6 +1,5 @@
 package migt;
 
-import burp.IExtensionHelpers;
 import org.json.JSONObject;
 
 import java.io.File;
@@ -133,8 +132,7 @@ public class MessageOperation extends Module {
      * @return the updated Operation with the result
      * @throws ParsingException if parsing of names is not successfull
      */
-    public Operation execute(Operation op,
-                             IExtensionHelpers helpers) throws ParsingException {
+    public Operation execute(Operation op) throws ParsingException {
         for (MessageOperation mop : op.getMessageOperations()) {
             Pattern pattern;
             Matcher matcher;
@@ -243,7 +241,6 @@ public class MessageOperation extends Module {
 
                             case EDIT:
                                 op.processed_message = Tools.editMessageParam(
-                                        helpers,
                                         mop.what,
                                         mop.from,
                                         op.api.message,
@@ -254,7 +251,6 @@ public class MessageOperation extends Module {
 
                             case EDIT_REGEX:
                                 op.processed_message = Tools.editMessage(
-                                        helpers,
                                         mop.what,
                                         mop,
                                         op.api.message,
@@ -387,10 +383,6 @@ public class MessageOperation extends Module {
                         op.api.message.setRequest(op.processed_message);
                     } else {
                         op.api.message.setResponse(op.processed_message);
-                    }
-                    if (op.processed_message_service != null) {
-                        // TODO: check if ok to remove
-                        //op.api.message.setHttpService(op.processed_message_service);
                     }
                 }
             } catch (StackOverflowError e) {

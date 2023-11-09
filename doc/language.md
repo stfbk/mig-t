@@ -150,7 +150,7 @@ By using an Edit Operation inside an Operation, you are able to edit the interce
 - `from` to select the section of the message you need
 - `edit` to edit the value of the given parameter. (only for url and head sections) use `value` to specify the new value.
 - `edit regex` to edit with a regex the section of the message you selected. use `value` to specify the new value
-- `add` to add some content to the given section. in case of url and head, you need to specify the name of the parameter in this tag, and the value with `value`. For the body section, the content will be always appended to the end of the body, so you can leave this tag value empty and put the content to append in the `value` tag.
+- `add` to add some content to the given section. in case of url and head, you need to specify the name of the parameter in this tag, and the value with `value`. If the parameter is not found, a new parameter is added, if the parameter is already present, the new value will be appended to the old one. For the body section, the content will be always appended to the end of the body, so you can leave this tag value empty and put the content to append in the `value` tag.
 - `remove` used to specify the name of a parameter to remove in url and head. Not available on body.
 - `value` used to specify the new value for the edit operations
 - `use` used in place of `value` to use the given variable value as new value. You should give a variable name to this tag.

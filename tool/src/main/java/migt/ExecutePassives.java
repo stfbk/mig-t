@@ -1,7 +1,5 @@
 package migt;
 
-import burp.IExtensionHelpers;
-
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -13,7 +11,6 @@ import java.util.List;
 public class ExecutePassives implements Runnable {
     final Object lock = new Object();
     public List<Test> passives;
-    IExtensionHelpers helpers;
     ExecutePassiveListener listener;
     List<MessageType> messageTypes;
     boolean finished;
@@ -22,17 +19,14 @@ public class ExecutePassives implements Runnable {
     /**
      * Used to instantiate an ExecutePassives object
      *
-     * @param helpers      IExtensionHelpers instance of Burp
      * @param passiveTests The list of passive tests to execute
      * @param listener     the listener for this ExecutePassives Object, used to communicate with the thread
      * @param msg_types    the list of message types needed by the tests
      */
-    public ExecutePassives(IExtensionHelpers helpers,
-                           List<Test> passiveTests,
+    public ExecutePassives(List<Test> passiveTests,
                            ExecutePassiveListener listener,
                            List<MessageType> msg_types) {
         this.passives = passiveTests;
-        this.helpers = helpers;
         this.listener = listener;
         this.messageTypes = msg_types;
         this.finished = false;
@@ -104,7 +98,6 @@ public class ExecutePassives implements Runnable {
                     res = Tools.executePassiveTest(
                             actual_test,
                             executedSession.messages,
-                            helpers,
                             messageTypes);
                 } catch (ParsingException e) {
                     actual_test.applicable = false;
