@@ -341,7 +341,7 @@ In decode operations is possible to use check operations to check the decoded co
 Needed tags:
 
 - `type` and/or `encodings`
-- `decode param`
+- `decode param` or `decode regex`
 - `from` select from where decode the content (HTTP message section or previous decode output)
 
 optional tags:
@@ -390,7 +390,7 @@ In this table you can find a description of all the tags available for this Oper
 | input module (container)    | Available tags    | Required | value type             | allowed values                         |
 | --------------------------- | ----------------- | -------- | ---------------------- | -------------------------------------- |
 | standard Operation          | from              | yes      | str                    | head, body, url                        |
-|                             | decode param      | yes      | str                    | \*                                     |
+|                             | decode param or decode regex     | yes      | str or str(regex)                    | \*                                     |
 | decode Operation (type=jwt) | from              | yes      | str                    | jwt header, jwt payload, jwt signature |
 |                             | decode param      | yes      | str(JSON path)         | \*                                     |
 | \*                          | type              |          | str                    | xml, jwt                               |
@@ -449,6 +449,23 @@ Example of decoding a jwt from the url of a message in the asd parameter, and th
     ]
   }
 ]
+```
+
+Example of decoding a value in the url with a regex
+
+```json
+{
+  "from": "url",
+  "decode regex": "(?<=request=)([^&]+)",
+  "type": "jwt",
+  "edits": [
+    {
+      "jwt from": "payload",
+      "jwt edit": "iss",
+      "value": "https://www.example.com/"
+    }
+  ]
+}
 ```
 
 ## Session Operation

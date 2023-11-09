@@ -757,41 +757,6 @@ public class Tools {
         return null;
     }
 
-    public static byte[] editMessageParam(String param_name,
-                                          DecodeOperation.DecodeOperationFrom decodeOperationFrom,
-                                          HTTPReqRes messageInfo,
-                                          boolean isRequest,
-                                          String new_value,
-                                          boolean isBodyRegex) throws ParsingException {
-
-        HTTPReqRes.MessageSection ms = null;
-
-        switch (decodeOperationFrom) {
-            case HEAD:
-                ms = HTTPReqRes.MessageSection.HEAD;
-                break;
-            case BODY:
-                ms = HTTPReqRes.MessageSection.BODY;
-                break;
-            case URL:
-                ms = HTTPReqRes.MessageSection.URL;
-                break;
-            case JWT_HEADER:
-            case JWT_PAYLOAD:
-            case JWT_SIGNATURE:
-                throw new ParsingException("invalid from section in decode operation should be a message section");
-        }
-
-        return editMessageParam(
-                param_name,
-                ms,
-                messageInfo,
-                isRequest,
-                new_value,
-                isBodyRegex
-        );
-    }
-
     /**
      * Finds the parent div of an http element
      *

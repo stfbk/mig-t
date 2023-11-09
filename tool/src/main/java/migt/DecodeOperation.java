@@ -22,6 +22,7 @@ import static migt.Tools.executeEditOps;
 public class DecodeOperation extends Module {
     public String decoded_content; // the decoded content
     public String decode_target; // aka decode_param how to decode the raw content
+    public boolean is_regex;
     public DecodeOperationFrom from; // where the raw content is. Depending on the containing module, can be other things
     public List<Encoding> encodings; // the list of encoding to decode and rencode
     public DecodeOpType type; // the type of the decoded param (used only to edit its content)
@@ -54,6 +55,10 @@ public class DecodeOperation extends Module {
                     break;
                 case "decode param":
                     decode_target = decode_op_json.getString("decode param");
+                    break;
+                case "decode regex":
+                    decode_target = decode_op_json.getString("decode regex");
+                    is_regex = true;
                     break;
                 case "encodings":
                     JSONArray encodings = decode_op_json.getJSONArray("encodings");
@@ -99,45 +104,6 @@ public class DecodeOperation extends Module {
                     jwt.public_key_pem_enc = decode_op_json.getString("jwe decrypt");
             }
         }
-    }
-
-    /**
-     * Decodes a parameter from a message, given the message section and the list of encodings to be applied during
-     * decoding
-     *
-     * @param ms           The message section that contains the parameter to be decoded
-     * @param encodings    The list of encodings to be applied to decode the parameter
-     * @param messageInfo  The message to be decoded
-     * @param isRequest    True if the message containing the parameter is a request
-     * @param decode_param The name of the parameter to be decoded
-     * @return The decoded parameter as a string
-     * @throws ParsingException If problems are encountered during decoding
-     */
-    public static String decodeParam(DecodeOperationFrom ms,
-                                     List<Encoding> encodings,
-                                     HTTPReqRes messageInfo,
-                                     Boolean isRequest,
-                                     String decode_param) throws ParsingException {
-        String decoded_param = "";
-        // TODO add regex selection
-        switch (ms) {
-            case HEAD:
-                decoded_param = decode(
-                        encodings, messageInfo.getHeadParam(isRequest, decode_param));
-                break;
-            case BODY:
-                decoded_param = decode(
-                        encodings, messageInfo.getBodyRegex(isRequest, decode_param));
-                break;
-            case URL:
-                decoded_param = decode(
-                        encodings, messageInfo.getUrlParam(decode_param));
-                break;
-        }
-
-        decoded_param = Tools.removeNewline(decoded_param);
-
-        return decoded_param;
     }
 
     /**
@@ -351,6 +317,61 @@ public class DecodeOperation extends Module {
         return output;
     }
 
+    /**
+     * Decodes a parameter from a message, given the message section and the list of encodings to be applied during
+     * decoding
+     *
+     * @param ms           The message section that contains the parameter to be decoded
+     * @param encodings    The list of encodings to be applied to decode the parameter
+     * @param messageInfo  The message to be decoded
+     * @param isRequest    True if the message containing the parameter is a request
+     * @param decode_param The name of the parameter to be decoded
+     * @return The decoded parameter as a string
+     * @throws ParsingException If problems are encountered during decoding
+     */
+    public String decodeParam(DecodeOperationFrom ms,
+                              List<Encoding> encodings,
+                              HTTPReqRes messageInfo,
+                              Boolean isRequest,
+                              String decode_param) throws ParsingException {
+        String decoded_param = "";
+        if (is_regex) {
+            switch (ms) {
+                case HEAD:
+                    decoded_param = decode(
+                            encodings, messageInfo.getHeadRegex(isRequest, decode_param));
+                    break;
+                case BODY:
+                    decoded_param = decode(
+                            encodings, messageInfo.getBodyRegex(isRequest, decode_param));
+                    break;
+                case URL:
+                    decoded_param = decode(
+                            encodings, messageInfo.getUrlRegex(decode_param));
+                    break;
+            }
+        } else {
+            switch (ms) {
+                case HEAD:
+                    decoded_param = decode(
+                            encodings, messageInfo.getHeadParam(isRequest, decode_param));
+                    break;
+                case BODY:
+                    decoded_param = decode(
+                            encodings, messageInfo.getBodyRegex(isRequest, decode_param));
+                    break;
+                case URL:
+                    decoded_param = decode(
+                            encodings, messageInfo.getUrlParam(decode_param));
+                    break;
+            }
+        }
+
+        decoded_param = Tools.removeNewline(decoded_param);
+
+        return decoded_param;
+    }
+
     public void init() {
         decoded_content = "";
         decode_target = "";
@@ -361,6 +382,7 @@ public class DecodeOperation extends Module {
         type = DecodeOpType.NONE;
         editOperations = new ArrayList<>();
         jwt = new JWT();
+        is_regex = false;
     }
 
     @Override
@@ -417,13 +439,38 @@ public class DecodeOperation extends Module {
         String encoded = encode(encodings, decoded_content);
 
         if (imported_api instanceof Operation_API) {
-            Tools.editMessageParam(
-                    decode_target,
-                    from,
-                    ((Operation_API) imported_api).message,
-                    ((Operation_API) imported_api).is_request,
-                    encoded,
-                    true);
+            switch (from) {
+                case HEAD:
+                    if (is_regex) {
+                        ((Operation_API) imported_api).message.editHeadRegex(
+                                ((Operation_API) imported_api).is_request, decode_target, encoded);
+                    } else {
+                        ((Operation_API) imported_api).message.editHeadParam(
+                                ((Operation_API) imported_api).is_request, decode_target, encoded
+                        ); // TODO test
+                    }
+                    break;
+                case BODY:
+                    ((Operation_API) imported_api).message.editBodyRegex(
+                            ((Operation_API) imported_api).is_request, decode_target, encoded
+                    ); // TODO test
+                    break;
+                case URL:
+                    if (is_regex) {
+                        ((Operation_API) imported_api).message.editUrlRegex(
+                                decode_target, encoded
+                        );
+                    } else {
+                        ((Operation_API) imported_api).message.editUrlParam(
+                                decode_target, encoded
+                        ); //TODO test
+                    }
+                    break;
+                case JWT_HEADER:
+                case JWT_PAYLOAD:
+                case JWT_SIGNATURE:
+                    throw new ParsingException("invalid from section in decode operation should be a message section");
+            }
 
             // the previous function should already have updated the message inside api
             return imported_api;

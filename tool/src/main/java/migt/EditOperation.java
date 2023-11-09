@@ -431,11 +431,7 @@ public class EditOperation extends Module {
                         message.editUrlParam(what, value);
                         break;
                     case EDIT_REGEX:
-                        String old_url = message.getUrl();
-                        Pattern p = Pattern.compile(what);
-                        Matcher m = p.matcher(old_url);
-                        String new_url = m.replaceAll(value);
-                        message.setRequest_url(new_url);
+                        message.editUrlRegex(what, value);
                         break;
                     case ADD:
                         message.addUrlParam(what, value);
@@ -465,12 +461,7 @@ public class EditOperation extends Module {
                         break;
                     case EDIT_REGEX:
                         // For each header applies regex
-                        message.getHeaders(is_request).replaceAll(header -> {
-                            Pattern p = Pattern.compile(what);
-                            Matcher m = p.matcher(header);
-                            header = m.replaceAll(value);
-                            return header;
-                        });
+                        message.editHeadRegex(is_request, what, value);
                         break;
                     case ADD:
                         message.addHeadParameter(is_request, what, value);

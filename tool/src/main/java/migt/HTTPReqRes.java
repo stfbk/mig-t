@@ -87,7 +87,7 @@ public class HTTPReqRes implements Cloneable {
      * @param helpers   an istance of the IExtensionHelpers
      * @param isRequest true if the message is a request, false otherwise
      */
-    public HTTPReqRes(IHttpRequestResponse message, IExtensionHelpers helpers, Boolean isRequest, int index) {
+    public HTTPReqRes(IHttpRequestResponse message, IExtensionHelpers helpers, boolean isRequest, int index) {
         if (!isRequest) {
             this.isResponse = true;
             this.setResponse(message.getResponse());
@@ -386,6 +386,40 @@ public class HTTPReqRes implements Cloneable {
     }
 
     /**
+     * Execute a regex over the complete url and return the value matched
+     *
+     * @param regex the regex to execute
+     * @return the matched value
+     */
+    public String getUrlRegex(String regex) {
+        if (!isRequest || request_url == null) {
+            throw new RuntimeException("Trying to access the url of a response message");
+        }
+
+        String res = "";
+        Pattern p = Pattern.compile(regex);
+        Matcher m = p.matcher(request_url);
+        if (m.find()) {
+            res = m.group();
+        }
+        return res;
+    }
+
+    /**
+     * Edit this message's URL with a regex, everything matched will be replaced by new_value
+     *
+     * @param regex     the regex to execute
+     * @param new_value the value to substitute to matched content
+     */
+    public void editUrlRegex(String regex, String new_value) {
+        String old_url = getUrl();
+        Pattern p = Pattern.compile(regex);
+        Matcher m = p.matcher(old_url);
+        String new_url = m.replaceAll(new_value);
+        setRequest_url(new_url);
+    }
+
+    /**
      * Edits the given parameter value with the new given value
      *
      * @param param the parameter name
@@ -550,7 +584,7 @@ public class HTTPReqRes implements Cloneable {
      * @param param     the parameter name to be searched
      * @return the value of the parameter
      */
-    public String getHeadParam(Boolean isRequest, String param) {
+    public String getHeadParam(boolean isRequest, String param) {
         List<String> headers = isRequest ? this.headers_req : this.headers_resp;
 
         for (String s : headers) {
@@ -562,6 +596,26 @@ public class HTTPReqRes implements Cloneable {
         return "";
     }
 
+    /**
+     * Execute a regex over the headers and return the first value matched
+     *
+     * @param regex the regex to execute
+     * @return the matched value
+     */
+    public String getHeadRegex(boolean isRequest, String regex) {
+        List<String> headers = isRequest ? this.headers_req : this.headers_resp;
+
+        String res = "";
+        Pattern p = Pattern.compile(regex);
+        for (String s : headers) {
+            Matcher m = p.matcher(s);
+            if (m.find()) {
+                res = m.group();
+            }
+        }
+        return res;
+    }
+
 
     /**
      * Edits the Header of the given message
@@ -570,7 +624,7 @@ public class HTTPReqRes implements Cloneable {
      * @param param     the name of the header
      * @param new_value the new value
      */
-    public void editHeadParam(Boolean isRequest, String param, String new_value) {
+    public void editHeadParam(boolean isRequest, String param, String new_value) {
         List<String> headers = isRequest ? this.headers_req : this.headers_resp;
 
         int indx = -1;
@@ -587,6 +641,26 @@ public class HTTPReqRes implements Cloneable {
         } else {
             headers_resp.set(indx, param + ": " + new_value);
         }
+    }
+
+    /**
+     * Edit the header of the message with a regex
+     *
+     * @param isRequest select the request or response message
+     * @param regex     the regex to execute
+     * @param new_value the new value to substitute
+     */
+    public void editHeadRegex(boolean isRequest, String regex, String new_value) {
+        if (!isResponse) {
+            throw new RuntimeException("tried to edit headers of response not yet received");
+        }
+
+        getHeaders(isRequest).replaceAll(header -> {
+            Pattern p = Pattern.compile(regex);
+            Matcher m = p.matcher(header);
+            header = m.replaceAll(new_value);
+            return header;
+        });
     }
 
     /**
@@ -650,7 +724,7 @@ public class HTTPReqRes implements Cloneable {
      * @param regex     the parameter to be searched as a regex, everything matched by this will be returned as a value
      * @return the value of the parameter
      */
-    public String getBodyRegex(Boolean isRequest, String regex) {
+    public String getBodyRegex(boolean isRequest, String regex) {
         Pattern pattern = Pattern.compile(regex);
         Matcher matcher = pattern.matcher(new String(getBody(isRequest), StandardCharsets.UTF_8));
 
