@@ -10,8 +10,6 @@ import java.util.regex.Pattern;
 
 /**
  * Class to manage Sessions
- *
- * @author Matteo Bitussi
  */
 public class Session {
     // Session actions

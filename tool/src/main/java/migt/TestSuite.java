@@ -5,8 +5,6 @@ import java.util.List;
 
 /**
  * Class to store a TestSuite
- *
- * @author Matteo Bitussi
  */
 public class TestSuite {
     String name;

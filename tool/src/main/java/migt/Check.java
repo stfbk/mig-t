@@ -17,8 +17,6 @@ import static migt.Check.CheckOps.*;
 
 /**
  * Check Object class. This object is used in Operations to check that a parameter or some text is in as specified.
- *
- * @author Matteo Bitussi
  */
 public class Check extends Module {
     String what; // what to search

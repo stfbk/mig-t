@@ -9,8 +9,6 @@ import java.util.List;
 /**
  * Class used to execute passive tests, it implements Runnable, it should be executed as a Thread. To communicate with
  * the tread you can use the ExecutePassivesListener listener class.
- *
- * @author Matteo Bitussi
  */
 public class ExecutePassives implements Runnable {
     final Object lock = new Object();

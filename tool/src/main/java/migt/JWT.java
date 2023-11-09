@@ -15,7 +15,6 @@ import static migt.Tools.check_json_strings_equals;
 /**
  * Class to manage JWT tokens
  * Uses https://connect2id.com/products/nimbus-jose-jwt
- * {@code @Author} Matteo Bitussi
  */
 public class JWT {
     public String header;

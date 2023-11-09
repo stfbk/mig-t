@@ -11,8 +11,6 @@ import java.util.regex.Pattern;
 
 /**
  * Class containing a session Operation
- *
- * @author Matteo Bitussi
  */
 public class SessionOperation {
     public String from_session;

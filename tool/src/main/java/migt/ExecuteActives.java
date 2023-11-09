@@ -8,8 +8,6 @@ import java.util.regex.PatternSyntaxException;
 
 /**
  * Class which executes actives tests, has to be run as a thread
- *
- * @author Matteo Bitussi
  */
 public class ExecuteActives implements Runnable {
     final Object waiting; // the lock on which the thread will wait

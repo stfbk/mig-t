@@ -13,8 +13,6 @@ import static migt.Tools.*;
 
 /**
  * Class storing an Operation in a Test
- *
- * @author Matteo Bitussi
  */
 public class Operation extends Module {
     public List<MessageOperation> messageOperations;
@@ -34,6 +32,7 @@ public class Operation extends Module {
     public List<SessionOperation> session_operations;
     // Decode operations
     public List<DecodeOperation> decodeOperations;
+    public List<EditOperation> editOperations;
     // Session operation
     // API
     Operation_API api;
@@ -140,6 +139,11 @@ public class Operation extends Module {
                 decodeOperations.add(decode_op);
             }
         }
+
+        // Edit operations
+        if (operation_json.has("edits")) {
+            editOperations = Tools.parseEditsFromJSON(operation_json.getJSONArray("edits"));
+        }
     }
 
     private void init() {
@@ -151,6 +155,7 @@ public class Operation extends Module {
         this.session_operations = new ArrayList<>();
         this.log_messages = new ArrayList<>();
         this.decodeOperations = new ArrayList<>();
+        editOperations = new ArrayList<>();
         this.from_session = "";
         this.to_session = "";
         this.save_name = "";
@@ -446,7 +451,10 @@ public class Operation extends Module {
         // execute the message operations and the decode ops
         try {
             applicable = true;
-            executeMessageOperations(this, helpers); // TOOD: change to edits
+            executeMessageOperations(this, helpers);
+            if (!applicable | !result)
+                return;
+            executeEditOps(this, api.vars);
             if (!applicable | !result)
                 return;
             executeDecodeOps(this, helpers, api.vars);

@@ -17,8 +17,6 @@ import java.util.List;
 
 /**
  * Class to store a test
- *
- * @author Matteo Bitussi
  */
 public class Test {
     public ResultType result;

@@ -6,8 +6,6 @@ import java.util.Objects;
 
 /**
  * This class represents an user action in a session
- *
- * @author Matteo Bitussi
  */
 public class SessionTrackAction {
     public SessionOperation.SessAction action;

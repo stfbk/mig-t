@@ -19,8 +19,6 @@ import java.util.regex.Pattern;
 
 /**
  * Class with methods to process messages and execute tests
- *
- * @author Matteo Bitussi
  */
 public class Tools {
     /**
@@ -189,6 +187,26 @@ public class Tools {
             if (!op.setResult(eop))
                 break;
             op.setAPI(eop.exporter());
+        }
+
+        return op;
+    }
+
+    /**
+     * Executes the edit operations inside a standard Operation
+     *
+     * @param op the Operation to run the edit operations from
+     * @return the Operation (edited)
+     * @throws ParsingException if something goes wrong
+     */
+    public static Operation executeEditOps(Operation op, List<Var> vars) throws ParsingException {
+        Operation_API api = op.getAPI();
+        for (EditOperation eop : op.editOperations) {
+            eop.loader(api);
+            eop.execute(vars);
+            if (!op.setResult(eop))
+                break;
+            op.setAPI((Operation_API) eop.exporter());
         }
 
         return op;
@@ -668,7 +686,7 @@ public class Tools {
                     new_head.add(matcher.replaceAll(new_value));
                 }
                 messageInfo.setHeaders(isRequest, new_head);
-                return messageInfo.getMessage(isRequest, helpers);
+                return messageInfo.getMessage(isRequest);
 
             case BODY:
                 pattern = Pattern.compile(regex);
@@ -676,7 +694,7 @@ public class Tools {
                 matcher = pattern.matcher(new String(messageInfo.getBody(isRequest)));
                 messageInfo.setBody(isRequest, matcher.replaceAll(new_value));
                 //Automatically update content-lenght
-                return messageInfo.getMessage(isRequest, helpers);
+                return messageInfo.getMessage(isRequest);
 
             case URL:
                 if (!isRequest) {
@@ -688,7 +706,7 @@ public class Tools {
                 String replaced = matcher.replaceAll(new_value);
                 messageInfo.setUrlHeader(replaced);
 
-                return messageInfo.getMessage(isRequest, helpers);
+                return messageInfo.getMessage(isRequest);
         }
         return null;
     }
@@ -719,7 +737,7 @@ public class Tools {
         switch (message_section) {
             case HEAD:
                 messageInfo.editHeadParam(isRequest, param_name, new_value);
-                byte[] message = messageInfo.getMessage(isRequest, helpers);
+                byte[] message = messageInfo.getMessage(isRequest);
                 messageInfo.setHost(new_value); // this should be set when the message is converted to the burp class
                 return message;
 
@@ -734,7 +752,7 @@ public class Tools {
                 String new_body = matcher.replaceFirst(new_value);
                 messageInfo.setBody(isRequest, new_body);
                 //Automatically update content-lenght
-                return messageInfo.getMessage(isRequest, helpers);
+                return messageInfo.getMessage(isRequest);
 
             case URL:
                 if (!isRequest) {
@@ -747,7 +765,7 @@ public class Tools {
 
                 messageInfo.setUrlHeader(matcher.replaceAll(param_name + "=" + new_value)); // problema
 
-                return messageInfo.getMessage(isRequest, helpers);
+                return messageInfo.getMessage(isRequest);
         }
         return null;
     }

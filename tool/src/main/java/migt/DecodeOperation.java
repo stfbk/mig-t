@@ -242,7 +242,7 @@ public class DecodeOperation extends Module {
      * @param decoded   the string to be encoded
      * @return the encoded string
      */
-    public static String encode(List<Encoding> encodings, String decoded, IExtensionHelpers helpers) {
+    public static String encode(List<Encoding> encodings, String decoded) {
         String actual = decoded;
         byte[] actual_b = null;
         boolean isActualString = true;
@@ -251,9 +251,9 @@ public class DecodeOperation extends Module {
                 case BASE64:
 
                     if (isActualString) {
-                        actual = helpers.base64Encode(actual);
+                        actual = Base64.getEncoder().encodeToString(actual.getBytes());
                     } else {
-                        actual = helpers.base64Encode(actual_b);
+                        Base64.getEncoder().encodeToString(actual_b);
                         isActualString = true;
                     }
                     break;
@@ -422,7 +422,7 @@ public class DecodeOperation extends Module {
     @Override
     public API exporter() throws ParsingException {
         Collections.reverse(encodings); // Set the right order for encoding
-        String encoded = encode(encodings, decoded_content, helpers);
+        String encoded = encode(encodings, decoded_content);
 
         if (imported_api instanceof Operation_API) {
             Tools.editMessageParam(
@@ -476,6 +476,7 @@ public class DecodeOperation extends Module {
                     }
                     decoded_content = decode(encodings, found, helpers);
                     break;
+
                 default:
                     throw new UnsupportedOperationException(
                             "the from you selected in the recursive decode operation is not yet supported");

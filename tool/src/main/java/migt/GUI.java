@@ -43,9 +43,6 @@ class CustomOutputStream extends OutputStream {
 
 /**
  * This class contains the GUI for the plugin, also a lot of functionality methods
- *
- * @author Matteo Bitussi
- * @author Wendy Barreto
  */
 public class GUI extends JSplitPane {
     private static DefaultTableModel resultTableModel;

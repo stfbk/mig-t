@@ -21,8 +21,6 @@ import java.util.regex.Pattern;
 
 /**
  * Class which is intended to substitute the <code>IHTTPRequestResponse</code> one, because of serialization support
- *
- * @author Matteo Bitussi
  */
 public class HTTPReqRes implements Cloneable {
     static public int instances;
@@ -161,11 +159,24 @@ public class HTTPReqRes implements Cloneable {
         this.headers_req.set(0, url_header);
     }
 
+    /**
+     * returns true if the message has the body
+     *
+     * @param isRequest select the request or the response message
+     * @return true if it has body, false otherwise
+     */
+    public boolean hasBody(boolean isRequest) {
+        if (isRequest && this.body_offset_req == 0) {
+            return false;
+        }
+        return isRequest || this.body_offset_resp != 0;
+    }
+
     public byte[] getBody(boolean isRequest) {
-        if (isRequest && (this.body_offset_req == 0 | this.request == null | this.request.length == 0)) {
+        if (isRequest && (!this.hasBody(isRequest) | this.request == null | this.request.length == 0)) {
             throw new RuntimeException("called getBody, but class is not properly initialized");
         }
-        if (!isRequest && (this.body_offset_resp == 0 | this.response == null | this.response.length == 0)) {
+        if (!isRequest && (!this.hasBody(isRequest) | this.response == null | this.response.length == 0)) {
             throw new RuntimeException("called getBody, but class is not properly initialized");
         }
 
@@ -183,21 +194,6 @@ public class HTTPReqRes implements Cloneable {
 
     public List<String> getHeaders(boolean isRequest) {
         return isRequest ? this.headers_req : this.headers_resp;
-    }
-
-    /**
-     * Used to build the message based on the changes made
-     */
-    private byte[] build_message(IExtensionHelpers helpers, boolean isRequest) {
-        // TODO: this could be written avoiding helpers class
-        // TODO: url is not updated
-        if (isRequest) {
-            this.request = helpers.buildHttpMessage(headers_req, getBody(true));
-            return this.request;
-        } else {
-            this.response = helpers.buildHttpMessage(headers_resp, getBody(false));
-            return this.response;
-        }
     }
 
     /**
@@ -238,29 +234,18 @@ public class HTTPReqRes implements Cloneable {
      * @param isRequest to specify the request or the response
      * @return the message
      */
-    public byte[] getMessage(boolean isRequest, IExtensionHelpers helpers) {
+    public byte[] getMessage(boolean isRequest) {
         if (isRequest && this.request == null) {
             throw new RuntimeException("Called getMessage on a message that is not initialized");
         } else if (!isRequest && this.response == null) {
             throw new RuntimeException("Called getMessage on a message that is not initialized");
         }
-        build_message(helpers, isRequest);
+        build_message(isRequest);
 
-        return isRequest ? request : response;
-    }
-
-    /**
-     * Get the message without updating it with the changes
-     *
-     * @param isRequest
-     * @return
-     */
-    public byte[] getMessage(boolean isRequest) {
-        // TODO: this is probably a source of bugs, called without noticing that it doesnt get the updated message
-        if (isRequest && this.request == null) {
-            throw new RuntimeException("Called getMessage on a message that is not initialized");
-        } else if (!isRequest && this.response == null) {
-            throw new RuntimeException("Called getMessage on a message that is not initialized");
+        if (isRequest) {
+            request = build_message(isRequest);
+        } else {
+            response = build_message(isRequest);
         }
 
         return isRequest ? request : response;
@@ -333,7 +318,12 @@ public class HTTPReqRes implements Cloneable {
     }
 
     public void setRequest_url(String request_url) {
-        this.request_url = request_url;
+        if (this.request_url == null) {
+            this.request_url = request_url;
+        } else {
+            this.request_url = request_url;
+            updateHeadersWHurl();
+        }
     }
 
     public String getHost() {
@@ -441,7 +431,7 @@ public class HTTPReqRes implements Cloneable {
         }
 
         request_url = request_url.replaceAll(
-                java.util.regex.Matcher.quoteReplacement(url.getQuery()),
+                "\\Q" + java.util.regex.Matcher.quoteReplacement(url.getQuery()) + "\\E",
                 new_query);
 
         updateHeadersWHurl();
@@ -492,7 +482,7 @@ public class HTTPReqRes implements Cloneable {
         }
 
         request_url = request_url.replaceAll(
-                java.util.regex.Matcher.quoteReplacement(url.getQuery()),
+                "\\Q" + java.util.regex.Matcher.quoteReplacement(url.getQuery()) + "\\E",
                 new_query);
 
         updateHeadersWHurl();
@@ -531,7 +521,7 @@ public class HTTPReqRes implements Cloneable {
         }
 
         request_url = request_url.replaceAll(
-                java.util.regex.Matcher.quoteReplacement(url.getQuery()),
+                "\\Q" + java.util.regex.Matcher.quoteReplacement(url.getQuery()) + "\\E",
                 new_query);
 
         updateHeadersWHurl();
@@ -622,11 +612,11 @@ public class HTTPReqRes implements Cloneable {
      * everything matched will be returned as a value
      *
      * @param isRequest if the message is a request
-     * @param param     the parameter to be searched as a regex, everything matched by this will be returned as a value
+     * @param regex     the parameter to be searched as a regex, everything matched by this will be returned as a value
      * @return the value of the parameter
      */
-    public String getBodyRegex(Boolean isRequest, String param) {
-        Pattern pattern = Pattern.compile(param);
+    public String getBodyRegex(Boolean isRequest, String regex) {
+        Pattern pattern = Pattern.compile(regex);
         Matcher matcher = pattern.matcher(new String(getBody(isRequest), StandardCharsets.UTF_8));
 
         String res = "";
@@ -635,6 +625,43 @@ public class HTTPReqRes implements Cloneable {
             break;
         }
         return res;
+    }
+
+    /**
+     * Edit the body of the message. Replaces the matched content of the regex with the new value.
+     *
+     * @param isRequest select the request or response message
+     * @param regex     the regex to execute
+     * @param new_value the new value to substitute
+     */
+    public void editBodyRegex(boolean isRequest, String regex, String new_value) {
+        Pattern pattern = Pattern.compile(regex);
+        Matcher matcher = pattern.matcher(new String(getBody(isRequest), StandardCharsets.UTF_8));
+
+        String new_body = matcher.replaceFirst(new_value);
+        setBody(isRequest, new_body);
+    }
+
+    /**
+     * Append to the body of the message the given value. If the message doesn't have a body it creates it.
+     *
+     * @param isRequest select the request or response message
+     * @param new_value the value to append
+     */
+    public void addBody(boolean isRequest, String new_value) {
+        if (hasBody(isRequest)) {
+            String body = new String(getBody(isRequest));
+            body += new_value;
+            setBody(isRequest, body);
+        } else {
+            if (isRequest) {
+                body_offset_req = 1; // this is for recognizing body in hasBody method
+                body_req = new_value.getBytes(StandardCharsets.UTF_8);
+            } else {
+                body_offset_resp = 1; // this is for recognizing body in hasBody method
+                body_resp = new_value.getBytes(StandardCharsets.UTF_8);
+            }
+        }
     }
 
     /**
@@ -650,6 +677,10 @@ public class HTTPReqRes implements Cloneable {
             url = new URL(request_url);
         } catch (MalformedURLException e) {
             throw new RuntimeException(e);
+        }
+
+        if (headers_req.isEmpty()) {
+            throw new RuntimeException("Message headers not properly initialized");
         }
 
         String[] header_0 = headers_req.get(0).split(" ");
@@ -717,6 +748,17 @@ public class HTTPReqRes implements Cloneable {
             e.printStackTrace();
         }
         return matchedMessage;
+    }
+
+    /**
+     * Returns a string representation of all the headers of the message
+     *
+     * @param isRequest select the request or the response
+     * @return
+     */
+    public String getHeadersString(boolean isRequest) {
+        List<String> headers_string = getHeaders(isRequest);
+        return String.join("\r\n", headers_string);
     }
 
     /**

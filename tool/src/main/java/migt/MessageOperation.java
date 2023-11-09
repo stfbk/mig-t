@@ -16,8 +16,6 @@ import static migt.Tools.getAdding;
 
 /**
  * The class storing a MessageOperation object
- *
- * @author Matteo Bitussi
  */
 public class MessageOperation extends Module {
     HTTPReqRes.MessageSection from;
@@ -182,12 +180,12 @@ public class MessageOperation extends Module {
                                         matcher = pattern.matcher(url_header);
                                         String new_url = matcher.replaceFirst("");
                                         op.api.message.setUrlHeader(new_url);
-                                        op.processed_message = op.api.message.getMessage(op.api.is_request, helpers);
+                                        op.processed_message = op.api.message.getMessage(op.api.is_request);
                                         break;
 
                                     case HEAD:
                                         op.api.message.removeHeadParameter(op.api.is_request, mop.what);
-                                        op.processed_message = op.api.message.getMessage(op.api.is_request, helpers);
+                                        op.processed_message = op.api.message.getMessage(op.api.is_request);
                                         break;
 
                                     case BODY:
@@ -196,7 +194,7 @@ public class MessageOperation extends Module {
                                         matcher = pattern.matcher(body);
                                         op.api.message.setBody(op.api.is_request, matcher.replaceAll(""));
                                         //Automatically update content-lenght
-                                        op.processed_message = op.api.message.getMessage(op.api.is_request, helpers);
+                                        op.processed_message = op.api.message.getMessage(op.api.is_request);
                                         break;
                                 }
                                 break;
@@ -209,7 +207,7 @@ public class MessageOperation extends Module {
                                 switch (mop.from) {
                                     case HEAD: {
                                         op.api.message.addHeadParameter(op.api.is_request, mop.what, getAdding(mop, op.api.vars));
-                                        op.processed_message = op.api.message.getMessage(op.api.is_request, helpers);
+                                        op.processed_message = op.api.message.getMessage(op.api.is_request);
                                         break;
                                     }
                                     case BODY: {
@@ -217,7 +215,7 @@ public class MessageOperation extends Module {
                                         tmp = tmp + getAdding(mop, op.api.vars);
                                         op.api.message.setBody(op.api.is_request, tmp);
                                         //Automatically update content-lenght
-                                        op.processed_message = op.api.message.getMessage(op.api.is_request, helpers);
+                                        op.processed_message = op.api.message.getMessage(op.api.is_request);
                                         break;
                                     }
                                     case URL:
@@ -238,7 +236,7 @@ public class MessageOperation extends Module {
                                             found = true;
                                         }
                                         op.api.message.setUrlHeader(newHeader_0);
-                                        op.processed_message = op.api.message.getMessage(op.api.is_request, helpers);
+                                        op.processed_message = op.api.message.getMessage(op.api.is_request);
                                         break;
                                 }
                                 break;
@@ -277,7 +275,7 @@ public class MessageOperation extends Module {
                                         }
 
                                         op.api.message.setHeaders(op.api.is_request, new_headers);
-                                        op.processed_message = op.api.message.getMessage(op.api.is_request, helpers);
+                                        op.processed_message = op.api.message.getMessage(op.api.is_request);
                                         break;
                                     }
                                     case BODY: {
@@ -286,7 +284,7 @@ public class MessageOperation extends Module {
                                         op.api.message.setBody(op.api.is_request, matcher.replaceAll(""));
 
                                         //Automatically update content-lenght
-                                        op.processed_message = op.api.message.getMessage(op.api.is_request, helpers);
+                                        op.processed_message = op.api.message.getMessage(op.api.is_request);
                                         break;
                                     }
                                     case URL:
@@ -301,7 +299,7 @@ public class MessageOperation extends Module {
                                         String newHeader_0 = matcher.replaceFirst("");
 
                                         op.api.message.setUrlHeader(newHeader_0);
-                                        op.processed_message = op.api.message.getMessage(op.api.is_request, helpers);
+                                        op.processed_message = op.api.message.getMessage(op.api.is_request);
                                         break;
                                 }
                                 break;
@@ -412,7 +410,8 @@ public class MessageOperation extends Module {
         EDIT_REGEX,
         ADD,
         SAVE,
-        SAVE_MATCH;
+        SAVE_MATCH,
+        ENCODE;
 
         /**
          * From a string get the corresponding enum value
@@ -438,8 +437,10 @@ public class MessageOperation extends Module {
                         return SAVE;
                     case "save match":
                         return SAVE_MATCH;
+                    case "encode":
+                        return ENCODE;
                     default:
-                        throw new ParsingException("invalid check operation");
+                        throw new ParsingException("invalid Message operation action \"" + input + "\"");
                 }
             } else {
                 throw new NullPointerException();

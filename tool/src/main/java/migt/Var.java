@@ -4,8 +4,6 @@ import burp.IHttpService;
 
 /**
  * The class storing the variables used in the test and sessions
- *
- * @author Matteo Bitussi
  */
 public class Var {
     public String name;

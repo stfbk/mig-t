@@ -4,8 +4,6 @@ import java.util.Objects;
 
 /**
  * Class used to mark User Actions to be managed by session actions
- *
- * @author Matteo Bitussi
  */
 public class Marker {
     String name;

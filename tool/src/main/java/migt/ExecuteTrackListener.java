@@ -2,8 +2,6 @@ package migt;
 
 /**
  * Listener for the ExectuteTrack Object
- *
- * @author Matteo Bitussi
  */
 public interface ExecuteTrackListener {
 

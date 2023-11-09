@@ -11,8 +11,6 @@ import java.util.Objects;
 
 /**
  * Main class executed by Burp
- *
- * @author Matteo Bitussi
  */
 public class BurpExtender implements IBurpExtender, ITab, IProxyListener {
 
