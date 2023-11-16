@@ -9,6 +9,8 @@ import java.io.IOException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.zip.DataFormatException;
 import java.util.zip.Deflater;
 import java.util.zip.Inflater;
@@ -501,6 +503,15 @@ public class DecodeOperation extends Module {
                 case JWT_SIGNATURE:
                     // recursevly decode from a jwt
                     String j = ((DecodeOperation_API) imported_api).getDecodedContent(from);
+
+                    if (is_regex) {
+                        Pattern p = Pattern.compile(decode_target);
+                        Matcher m = p.matcher(j);
+
+                        if (m.find()) {
+                            m.group();
+                        }
+                    }
 
                     String found = "";
                     // https://github.com/json-path/JsonPath

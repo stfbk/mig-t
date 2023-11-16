@@ -21,70 +21,6 @@ import java.util.regex.Pattern;
  */
 public class Tools {
     /**
-     * Function that execute the given passive test.
-     *
-     * @param test        a <Code>Test</Code> element, it has to be a passive test
-     * @param messageList a list of <code>HTTPReqRes</code> messages
-     * @param msg_types   the message types used by the test
-     * @param helpers
-     * @return true if a test is passed, false otherwise
-     */
-    public static boolean executePassiveTest(Test test,
-                                             List<HTTPReqRes> messageList,
-                                             List<MessageType> msg_types) throws ParsingException {
-        int i, j;
-        boolean res = true;
-
-        for (i = 0; i < messageList.size(); i++) {
-            j = 0;
-            while (j < test.operations.size() && res) {
-                Operation currentOP = test.operations.get(j);
-                MessageType msg_type = MessageType.getFromList(msg_types, currentOP.getMessageType());
-
-                if (currentOP.api == null) {
-                    currentOP.api = new Operation_API(test.vars);
-                } else {
-                    currentOP.api.vars = test.vars;
-                }
-
-                if (messageList.get(i).matches_msg_type(msg_type)) {
-                    currentOP.setAPI(new Operation_API(messageList.get(i), msg_type.msg_to_process_is_request));
-                    currentOP.execute();
-                    res = currentOP.getResult();
-                }
-
-                test.vars = currentOP.api.vars;
-                j++;
-            }
-        }
-
-        for (Operation op : test.operations) {
-            if (!op.applicable) {
-                res = false;
-                test.applicable = false;
-                break;
-            }
-        }
-
-        return res;
-    }
-
-    /**
-     * Function that given a list of headers, concatenates them in a single string
-     *
-     * @param headers the list of headers
-     * @return the string
-     */
-    public static String getAllHeaders(List<String> headers) {
-        StringBuilder out = new StringBuilder();
-        for (Object o : headers) {
-            out.append(o.toString());
-            out.append("\n");
-        }
-        return out.toString();
-    }
-
-    /**
      * This function execute a list of checks over a message, returning true if all the checks are successful
      *
      * @param checks    a List of checks
@@ -260,7 +196,7 @@ public class Tools {
      * @return a List of messagetype objects
      * @throws ParsingException if the input is malformed
      */
-    public static List<MessageType> readMsgTypeFromJson(String input) throws ParsingException {
+    public static List<MessageType> readMsgTypesFromJson(String input) throws ParsingException {
         List<MessageType> msg_types = new ArrayList<>();
 
         JSONObject obj = new JSONObject(input);
@@ -290,23 +226,6 @@ public class Tools {
         }
 
         return msg_types;
-    }
-
-    /**
-     * Returns the adding of a message operation, decides if the value to be inserted/edited should be a variable or
-     * a typed value and return it
-     *
-     * @param m the message operation which has to be examined
-     * @return the adding to be used in add/edit
-     * @throws ParsingException if the variable name is not valid or the variable has not been initiated
-     */
-    public static String getAdding(MessageOperation m, List<Var> vars) throws ParsingException {
-        if (!m.use.isEmpty()) {
-            return getVariableByName(m.use, vars).value;
-        } else {
-
-            return m.to;
-        }
     }
 
     /**
@@ -431,7 +350,7 @@ public class Tools {
             req_var.put(act_match, getVariableByName(act_match, vars).value);
         }
 
-        if (req_var.size() == 0) {
+        if (req_var.isEmpty()) {
             return s;
         }
 
@@ -613,7 +532,7 @@ public class Tools {
     public static HashMap<String, List<Test>> batchPassivesFromSession(List<Test> testList) throws ParsingException {
         HashMap<String, List<Test>> batch = new HashMap<>();
         for (Test t : testList) {
-            if (t.sessions.size() == 0) {
+            if (t.sessions.isEmpty()) {
                 throw new ParsingException("Undefined session in test " + t.name);
             }
 
@@ -662,6 +581,7 @@ public class Tools {
                                      HTTPReqRes messageInfo,
                                      boolean isRequest,
                                      String new_value) throws ParsingException {
+        //TODO: remove in future versions
         Pattern pattern = null;
         Matcher matcher = null;
         switch (mop.from) {
@@ -719,6 +639,7 @@ public class Tools {
                                           boolean isRequest,
                                           String new_value,
                                           boolean isBodyRegex) throws ParsingException {
+        //TODO: remove in future versions
         Pattern pattern = null;
         Matcher matcher = null;
         switch (message_section) {
@@ -814,6 +735,7 @@ public class Tools {
                                   List<Var> vars,
                                   String save_as,
                                   String newValue) throws PathNotFoundException {
+        //TODO: remove in future versions
         Object document = Configuration.defaultConfiguration().jsonProvider().parse(content);
         JsonPath jsonPath = JsonPath.compile(j_path);
 

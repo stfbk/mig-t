@@ -11,7 +11,7 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import static migt.Tools.getAdding;
+import static migt.Tools.getVariableByName;
 
 /**
  * The class storing a MessageOperation object
@@ -101,6 +101,23 @@ public class MessageOperation extends Module {
                     System.err.println(key);
                     throw new ParsingException("Message operation not valid");
             }
+        }
+    }
+
+    /**
+     * Returns the adding of a message operation, decides if the value to be inserted/edited should be a variable or
+     * a typed value and return it
+     *
+     * @param m the message operation which has to be examined
+     * @return the adding to be used in add/edit
+     * @throws ParsingException if the variable name is not valid or the variable has not been initiated
+     */
+    public static String getAdding(MessageOperation m, List<Var> vars) throws ParsingException {
+        if (!m.use.isEmpty()) {
+            return getVariableByName(m.use, vars).value;
+        } else {
+
+            return m.to;
         }
     }
 

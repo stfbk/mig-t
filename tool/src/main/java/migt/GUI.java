@@ -244,7 +244,7 @@ public class GUI extends JSplitPane {
                         tmp += myReader.nextLine();
                     }
                     myReader.close();
-                    messageTypes = Tools.readMsgTypeFromJson(tmp);
+                    messageTypes = Tools.readMsgTypesFromJson(tmp);
                 } catch (ParsingException e) {
                     lblOutput.setText("Invalid message type in message type definition file");
                     e.printStackTrace();
@@ -255,7 +255,7 @@ public class GUI extends JSplitPane {
                 FileWriter w = new FileWriter(MSG_DEF_PATH);
                 w.write(Tools.getDefaultJSONMsgType());
                 w.close();
-                messageTypes = Tools.readMsgTypeFromJson(Tools.getDefaultJSONMsgType());
+                messageTypes = Tools.readMsgTypesFromJson(Tools.getDefaultJSONMsgType());
             }
         } catch (ParsingException e) {
             e.printStackTrace();

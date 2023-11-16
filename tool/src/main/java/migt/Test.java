@@ -387,6 +387,52 @@ public class Test {
     }
 
     /**
+     * Function that execute the given passive test.
+     *
+     * @param messageList a list of <code>HTTPReqRes</code> messages
+     * @param msg_types   the message types used by the test
+     * @return true if a test is passed, false otherwise
+     */
+    public boolean execute(List<HTTPReqRes> messageList,
+                           List<MessageType> msg_types) throws ParsingException {
+        int i, j;
+        boolean res = true;
+
+        for (i = 0; i < messageList.size(); i++) {
+            j = 0;
+            while (j < operations.size() && res) {
+                Operation currentOP = operations.get(j);
+                MessageType msg_type = MessageType.getFromList(msg_types, currentOP.getMessageType());
+
+                if (currentOP.api == null) {
+                    currentOP.api = new Operation_API(vars);
+                } else {
+                    currentOP.api.vars = vars;
+                }
+
+                if (messageList.get(i).matches_msg_type(msg_type)) {
+                    currentOP.setAPI(new Operation_API(messageList.get(i), msg_type.msg_to_process_is_request));
+                    currentOP.execute();
+                    res = currentOP.getResult();
+                }
+
+                vars = currentOP.api.vars;
+                j++;
+            }
+        }
+
+        for (Operation op : operations) {
+            if (!op.applicable) {
+                res = false;
+                applicable = false;
+                break;
+            }
+        }
+
+        return res;
+    }
+
+    /**
      * The result type of (also the oracle) of an Active test
      */
     public enum ResultType {

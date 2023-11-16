@@ -95,10 +95,7 @@ public class ExecutePassives implements Runnable {
 
                 boolean res = false;
                 try {
-                    res = Tools.executePassiveTest(
-                            actual_test,
-                            executedSession.messages,
-                            messageTypes);
+                    res = actual_test.execute(executedSession.messages, messageTypes);
                 } catch (ParsingException e) {
                     actual_test.applicable = false;
                 }
