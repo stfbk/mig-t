@@ -561,6 +561,7 @@ The Checks tag inside an operation has a list of Check elements, which can be de
   - `is subset of` used to check that a matched JSON array is a subset of the given array. Is subset means that all the values in the matched array are present in the given array.
   - `matches regex` when using `check param` or `check` in json, you can use this tag to execute a regex to the matched value of the parameter or the value of the json key specified with the jsonpath
   - `not matches regex` as `match regex` but the result is true when the regex doesn't match
+  - `json schema compliant` to pass a json schema to be validated against what you match with `check`. Can only be used in jwt checks. Make sure to match the json schema with what you are selecting with the json PATH with `check`.
 
 > Note that you can use `check regex` OR `check` OR `check param`.
 
@@ -986,3 +987,4 @@ Examples: <br>
 - Added encode option to edit operation
 - Removed "remove match word" from edit operation, just use edit regex with empty substitution
 - Added decode regex in Decode Operations
+- Added json schema validation in checks for jwts

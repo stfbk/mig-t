@@ -1,6 +1,13 @@
 package migt;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.jayway.jsonpath.JsonPath;
+import com.networknt.schema.JsonSchema;
+import com.networknt.schema.JsonSchemaFactory;
+import com.networknt.schema.SpecVersion;
+import com.networknt.schema.ValidationMessage;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -10,6 +17,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -135,6 +143,10 @@ public class Check extends Module {
                             String act_enc = (String) it3.next();
                             value_list.add(act_enc);
                         }
+                        break;
+                    case "json schema compliant":
+                        this.op = JSON_SCHEMA_COMPLIANT;
+                        this.op_val = json_check.getString("json schema compliant");
                         break;
                     case "matches regex":
                         this.op = MATCHES_REGEX;
@@ -470,6 +482,21 @@ public class Check extends Module {
                 Matcher m = p.matcher(found);
                 return !m.find();
             }
+            case JSON_SCHEMA_COMPLIANT: {
+                JsonSchema schema = null;
+                JsonNode node = null;
+                try {
+                    // parse the schema
+                    schema = getJsonSchemaFromStringContent(op_val);
+                    ObjectMapper mapper = new ObjectMapper();
+                    node = mapper.readTree(found);
+                } catch (JsonProcessingException e) {
+                    throw new RuntimeException(e);
+                }
+
+                Set<ValidationMessage> errors = schema.validate(node);
+                return errors.isEmpty();
+            }
         }
 
         return false;
@@ -612,6 +639,11 @@ public class Check extends Module {
         return "check: " + what + (op == null ? "" : " " + op + ": " + op_val);
     }
 
+    protected JsonSchema getJsonSchemaFromStringContent(String schemaContent) {
+        JsonSchemaFactory factory = JsonSchemaFactory.getInstance(SpecVersion.VersionFlag.V4);
+        return factory.getSchema(schemaContent);
+    }
+
     /**
      * enum containing all the possible check operations
      */
@@ -626,7 +658,8 @@ public class Check extends Module {
         IS_NOT_IN,
         IS_SUBSET_OF,
         MATCHES_REGEX,
-        NOT_MATCHES_REGEX;
+        NOT_MATCHES_REGEX,
+        JSON_SCHEMA_COMPLIANT;
 
         /**
          * Function that given a String, returns the corresponding CheckOps enum's value
