@@ -253,8 +253,10 @@ public class Check extends Module {
             return this.op != null && op == IS_NOT_PRESENT;
         }
 
+        msg_str = url_decode(msg_str);
+
         // if a regex is present, execute it
-        if (!regex.equals("")) {
+        if (!regex.isEmpty()) {
             return execute_regex(msg_str);
         }
 
@@ -297,6 +299,22 @@ public class Check extends Module {
             }
         }
         return true;
+    }
+
+    private String url_decode(String string) {
+        if (url_decode) {
+            if (string.contains("+")) {
+                System.err.println("Warning! During a check on the value\"" + string + "\" a '+' symbol has been" +
+                        "converted to a space, as it has been interpreted as url-encoded character. If you want to avoid" +
+                        "this behaviour use 'url decode' tag set to false inside the check to disable url-decoding ");
+            }
+            try {
+                string = URLDecoder.decode(string, StandardCharsets.UTF_8);
+            } catch (IllegalArgumentException e) {
+                throw new RuntimeException("Failed URL-decode in check: " + e);
+            }
+        }
+        return string;
     }
 
     /**
@@ -553,25 +571,10 @@ public class Check extends Module {
         if (use_variable) {
             // Substitute to the op_val variable (that contains the name), the value of the variable
             op_val = Tools.getVariableByName(op_val, vars).value;
-        }
 
-        // URL-decode matched content
-        // when a string contains a "+" character then, it is replaced with a space.
-        if (url_decode) {
-            /*
-            Pattern p = Pattern.compile("%[0-9a-fA-F]{2}");
-            Matcher m = p.matcher(op_val);
-            if (m.find()) {
-                // if the content contains url-encoded characters then, url-decode the content
-                op_val = URLDecoder.decode(op_val, StandardCharsets.UTF_8);
-            }
-            */
-            if (op_val.contains("+")) {
-                System.err.println("Warning! During a check on the value\"" + op_val + "\" a '+' symbol has been" +
-                        "converted to a space, as it has been interpreted as url-encoded character. If you want to avoid" +
-                        "this behaviour use 'url decode' tag set to false inside the check to disable url-decoding ");
-            }
-            op_val = URLDecoder.decode(op_val, StandardCharsets.UTF_8);
+            // URL-decode variable value
+            // when a string contains a "+" character then, it is replaced with a space.
+            op_val = url_decode(op_val);
         }
 
         if (imported_api instanceof Operation_API) {
