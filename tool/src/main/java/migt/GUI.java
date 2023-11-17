@@ -523,6 +523,7 @@ public class GUI extends JSplitPane {
                     public void onExecuteDone() {
                         if (passives.size() == 0) {
                             update_gui_test_results();
+                            testSuite.log_test_suite(LOG_FOLDER);
 
                             lblOutput.setText("Done. Executed Passive Tests: "
                                     + (passives.isEmpty() ? 0 : passives.size())

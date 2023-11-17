@@ -1,5 +1,10 @@
 package migt;
 
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -32,6 +37,41 @@ public class TestSuite {
         this.description = description;
         this.tests = tests;
     }
+
+    public void log_test_suite(String log_folder_path) {
+        String timestamp = new SimpleDateFormat("yyyy_MM_dd_HH_mm").format(new java.util.Date());
+        String test_log_folder = log_folder_path + "/" + timestamp + "/suite_" + this.name + "/";
+
+        File directory = new File(test_log_folder);
+        if (!directory.exists()) {
+            if (!directory.mkdirs()) {
+                System.err.println("cannot create log directory at " + test_log_folder);
+            }
+        }
+
+        String log_content = "";
+        log_content += "| test name | description | type | result | applicable |\n";
+        log_content += "|-----------|-------------|------|--------|------------|\n";
+
+        for (Test t : tests) {
+            log_content += "|" + t.name +
+                    "|" + t.description +
+                    "|" + (t.isActive ? "active" : "passive") +
+                    "|" + t.success +
+                    "|" + t.applicable + "|\n";
+        }
+
+        File log_message = new File(test_log_folder + "results.md");
+        try {
+            FileWriter fw = new FileWriter(log_message.getAbsoluteFile());
+            BufferedWriter bw = new BufferedWriter(fw);
+            bw.write(log_content);
+            bw.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
 
     public List<Test> getTests() {
         return tests;
