@@ -104,6 +104,8 @@ public class DecodeOperation extends Module {
                     jwt.decrypt = true;
                     jwt.private_key_pem_enc = decode_op_json.getString("jwe encrypt");
                     jwt.public_key_pem_enc = decode_op_json.getString("jwe decrypt");
+                default:
+                    throw new ParsingException("Invalid key:\"" + key + "\" used in decode operation");
             }
         }
     }
@@ -509,8 +511,11 @@ public class DecodeOperation extends Module {
                         Matcher m = p.matcher(j);
 
                         if (m.find()) {
-                            m.group();
+                            decoded_content = decode(encodings, m.group());
+                        } else {
+                            applicable = false;
                         }
+                        break;
                     }
 
                     String found = "";

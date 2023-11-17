@@ -86,7 +86,7 @@ public class SessionOperation {
                             break;
 
                         default:
-                            throw new ParsingException("Unexpected value: " + key);
+                            throw new ParsingException("Unexpected value: " + key + " in session operation");
                     }
                 }
                 lsop.add(sop);

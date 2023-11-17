@@ -366,15 +366,15 @@ Note: The supported algorithms for signing are:
 
 #### Decoding JWE
 
-Note that when decrypting a JWE, a JWS is expected in the payload. Other payloads are not supproted.
-
 To decrypt a JWE to access the JWT in its payload use these tags
 
 - `jwe decrypt` with the private key in PEM string format
 - `jwe encrypt` with the public key in PEM string format
 
 Note: You can decrypt without specifying encrypt, this will prevent the JWE from being edited (as no encryption key is passed)
-Note: You can't encrypt, without decrypt
+> Note: You can't encrypt, without decrypt
+
+> Note: When decrypting a JWE, if you then access the jwt header, or jwt payload, you are accessing the ones of the JWE. If the JWE contains a JWT in his payload (nested JWT) then you will have to first decrypt the JWE, and then do another decode operation to decode the nested JWT, by selecting the payload of the JWE with a regex.
 
 Note: Supported algorithms are:
 
@@ -393,6 +393,7 @@ In this table you can find a description of all the tags available for this Oper
 |                             | decode param or decode regex     | yes      | str or str(regex)                    | \*                                     |
 | decode Operation (type=jwt) | from              | yes      | str                    | jwt header, jwt payload, jwt signature |
 |                             | decode param      | yes      | str(JSON path)         | \*                                     |
+|                             | decode param or decode regex | yes | str(JSON path) or str(regex)| \*                          |
 | \*                          | type              |          | str                    | xml, jwt                               |
 |                             | encodings         |          | list[str]              | base64, url, ..                        |
 |                             | decode operations |          | list[decode Operation] | \*                                     |
@@ -984,3 +985,4 @@ Examples: <br>
 - Added edit operation also in Operations: message editing
 - Added encode option to edit operation
 - Removed "remove match word" from edit operation, just use edit regex with empty substitution
+- Added decode regex in Decode Operations

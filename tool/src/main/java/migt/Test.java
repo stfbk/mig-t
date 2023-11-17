@@ -88,7 +88,7 @@ public class Test {
                     affected_entity = test_json.getString("affected_entity");
                     break;
                 default:
-                    throw new ParsingException("Invalid key \"" + key + "\"");
+                    throw new ParsingException("Invalid key \"" + key + "\" in test");
             }
         }
 

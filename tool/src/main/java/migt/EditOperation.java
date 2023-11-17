@@ -192,7 +192,7 @@ public class EditOperation extends Module {
                     break;
                 // todo add action of message operation actions
                 default:
-                    throw new ParsingException("Invalid key \"" + key + "\" in Edit operation");
+                    throw new ParsingException("Invalid key \"" + key + "\" in Edit Operation");
             }
         }
 

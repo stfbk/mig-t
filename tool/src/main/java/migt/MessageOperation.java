@@ -98,8 +98,7 @@ public class MessageOperation extends Module {
                     output_path = message_op_json.getString("output_path");
                     break;
                 default:
-                    System.err.println(key);
-                    throw new ParsingException("Message operation not valid");
+                    throw new ParsingException("Message operation key \" " + key + "\" not valid");
             }
         }
     }

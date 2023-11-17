@@ -147,6 +147,8 @@ public class Check extends Module {
                     case "url decode":
                         url_decode = json_check.getBoolean("url decode");
                         break;
+                    default:
+                        throw new ParsingException("Invalid key:\"" + key + "\" used in Check Operation");
                 }
             } catch (JSONException e) {
                 throw new ParsingException("error in parsing check: " + e);
