@@ -1,12 +1,15 @@
 package migt;
 
 import com.jayway.jsonpath.PathNotFoundException;
+import org.json.JSONArray;
 import org.json.JSONObject;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
 import samlraider.application.SamlTabController;
 import samlraider.helpers.XMLHelpers;
 
+import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -40,6 +43,12 @@ public class EditOperation extends Module {
     // TXT
     TxtAction txt_action;
     String txt_action_name;
+    // Encode
+    List<DecodeOperation.Encoding> encodings;
+
+    // Http message
+    MessageOperation.MessageOperationActions action;
+    HTTPReqRes.MessageSection msg_from;
 
     public EditOperation(JSONObject eop_json) throws ParsingException {
         init();
@@ -56,6 +65,7 @@ public class EditOperation extends Module {
                     break;
                 case "value":
                     // value of xml or other edits
+                    // TODO add in doc, used also for messages
                     value = eop_json.getString("value");
                     break;
                 case "add tag":
@@ -147,6 +157,56 @@ public class EditOperation extends Module {
                     txt_action = TxtAction.SAVE;
                     txt_action_name = eop_json.getString("txt save");
                     break;
+                case "encodings":
+                    JSONArray encodings = eop_json.getJSONArray("encodings");
+                    Iterator<Object> it = encodings.iterator();
+
+                    while (it.hasNext()) {
+                        String act_enc = (String) it.next();
+                        this.encodings.add(
+                                DecodeOperation.Encoding.fromString(act_enc));
+                    }
+                    break;
+                case "encode":
+                    action = MessageOperation.MessageOperationActions.ENCODE;
+                    what = eop_json.getString("encode");
+                    break;
+                case "from":
+                    msg_from = HTTPReqRes.MessageSection.fromString(eop_json.getString("from"));
+                    break;
+                case "edit":
+                    action = MessageOperation.MessageOperationActions.EDIT;
+                    what = eop_json.getString("edit");
+                    break;
+                case "edit regex":
+                    action = MessageOperation.MessageOperationActions.EDIT_REGEX;
+                    what = eop_json.getString("edit regex");
+                    break;
+                case "add":
+                    action = MessageOperation.MessageOperationActions.ADD;
+                    what = eop_json.getString("add");
+                    break;
+                case "remove":
+                    action = MessageOperation.MessageOperationActions.REMOVE_PARAMETER;
+                    what = eop_json.getString("remove");
+                    break;
+                // todo add action of message operation actions
+                default:
+                    throw new ParsingException("Invalid key \"" + key + "\" in Edit Operation");
+            }
+        }
+
+        validate();
+    }
+
+    /**
+     * Validate this object's content. Used to check if the parsed tags are valid.
+     */
+    @Override
+    public void validate() throws ParsingException {
+        if (action == MessageOperation.MessageOperationActions.ENCODE) {
+            if (encodings.isEmpty()) {
+                throw new ParsingException("Using encode in Edit Operation, but not providing encodings");
             }
         }
     }
@@ -165,203 +225,332 @@ public class EditOperation extends Module {
         sign = false;
         txt_action_name = "";
         what = "";
+        encodings = new ArrayList<>();
     }
 
-    public void loader(DecodeOperation_API dop_api) {
-        // TODO
-        if (dop_api == null) {
-            throw new RuntimeException("loaded api is null");
+    public void setAPI(Operation_API api) {
+        imported_api = api;
+    }
+
+    public API exporter() {
+        return imported_api;
+    }
+
+    public void execute_decodeOperation_API(List<Var> vars) throws ParsingException {
+        // the edit operation is being executed inside a Decode Operation
+        DecodeOperation_API tmp_imported_api = (DecodeOperation_API) imported_api;
+
+        switch (((DecodeOperation_API) imported_api).type) {
+            case XML:
+                //SAML Remove signatures
+                if (self_sign | remove_signature) {
+                    Document document = null;
+                    try {
+                        XMLHelpers xmlHelpers = new XMLHelpers();
+                        document = xmlHelpers.getXMLDocumentOfSAMLMessage(((DecodeOperation_API) imported_api).xml);
+                        saml_original_cert = xmlHelpers.getCertificate(document.getDocumentElement());
+                        if (saml_original_cert == null) {
+                            System.out.println("SAML Certificate not found in decoded parameter");
+                            applicable = false;
+                        }
+                        edited_xml = SamlTabController.removeSignature_edit(((DecodeOperation_API) imported_api).xml);
+                    } catch (SAXException e) {
+                        e.printStackTrace();
+                    }
+                }
+
+                switch (xml_action) {
+                    case ADD_TAG:
+                        edited_xml = XML.addTag(edited_xml,
+                                xml_tag,
+                                xml_action_name,
+                                value,
+                                xml_occurrency);
+                        break;
+                    case ADD_ATTR:
+                        edited_xml = XML.addTagAttribute(edited_xml,
+                                xml_tag,
+                                xml_action_name,
+                                value,
+                                xml_occurrency);
+                        break;
+                    case EDIT_TAG:
+                        edited_xml = XML.editTagValue(edited_xml,
+                                xml_action_name,
+                                value,
+                                xml_occurrency);
+                        break;
+                    case EDIT_ATTR:
+                        edited_xml = XML.editTagAttributes(edited_xml,
+                                xml_tag,
+                                xml_action_name,
+                                value,
+                                xml_occurrency);
+                        break;
+                    case REMOVE_TAG:
+                        edited_xml = XML.removeTag(edited_xml,
+                                xml_action_name,
+                                xml_occurrency);
+                        break;
+                    case REMOVE_ATTR:
+                        edited_xml = XML.removeTagAttribute(edited_xml,
+                                xml_tag,
+                                xml_action_name,
+                                xml_occurrency);
+                        break;
+                    case SAVE_TAG: {
+                        String to_save = XML.getTagValaue(edited_xml,
+                                xml_action_name,
+                                xml_occurrency);
+                        Var v = new Var();
+                        v.name = save_as;
+                        v.isMessage = false;
+                        v.value = to_save;
+                        vars.add(v);
+                        break;
+                    }
+                    case SAVE_ATTR:
+                        String to_save = XML.getTagAttributeValue(edited_xml,
+                                xml_tag, xml_action_name,
+                                xml_occurrency);
+                        Var v = new Var();
+                        v.name = save_as;
+                        v.isMessage = false;
+                        v.value = to_save;
+                        vars.add(v);
+                        break;
+                }
+
+                if (self_sign && !edited_xml.equals("")) {
+                    // SAML re-sign
+                    edited_xml = SamlTabController.resignAssertion_edit(edited_xml, saml_original_cert);
+                }
+
+                tmp_imported_api.xml = edited_xml;
+                applicable = true;
+                break;
+
+            case JWT:
+                if (jwt_section != null) { // if only sign, there will be no jwt section
+                    try {
+                        switch (jwt_section) {
+                            case HEADER:
+                                tmp_imported_api.jwt.header = Tools.editJson(
+                                        jwt_action, tmp_imported_api.jwt.header, what, vars, save_as, value);
+                                break;
+                            case PAYLOAD:
+                                // TODO: pass newvalue
+                                tmp_imported_api.jwt.payload = Tools.editJson(
+                                        jwt_action, tmp_imported_api.jwt.payload, what, vars, save_as, value);
+                                break;
+                            case SIGNATURE:
+                                tmp_imported_api.jwt.signature = Tools.editJson(
+                                        jwt_action, tmp_imported_api.jwt.signature, what, vars, save_as, value);
+                                break;
+                        }
+                    } catch (PathNotFoundException e) {
+                        this.applicable = false;
+                        this.result = false;
+                        return;
+                    }
+                    applicable = true;
+                } else if (sign) {
+                    applicable = true;
+                    tmp_imported_api.jwt.sign = true;
+                    tmp_imported_api.jwt.private_key_pem = jwt_private_key_pem;
+                } else {
+                    throw new ParsingException("missing jwt section in Edit operation");
+                }
+
+                break;
+
+            case NONE:
+                Pattern p = Pattern.compile(Pattern.quote(txt_action_name));
+                Matcher m = p.matcher(tmp_imported_api.txt);
+
+                if (txt_action == null) {
+                    throw new ParsingException("txt action not specified");
+                }
+
+                switch (txt_action) {
+                    case REMOVE:
+                        tmp_imported_api.txt = m.replaceAll("");
+
+                        break;
+                    case EDIT:
+                        tmp_imported_api.txt = m.replaceAll(value);
+
+                        break;
+                    case ADD:
+                        while (m.find()) {
+                            int index = m.end();
+                            String before = tmp_imported_api.txt.substring(0, index);
+                            String after = tmp_imported_api.txt.substring(index);
+                            tmp_imported_api.txt = before + value + after;
+                            break;
+                        }
+                        break;
+                    case SAVE:
+                        String val = "";
+                        while (m.find()) {
+                            val = m.group();
+                            break;
+                        }
+
+                        Var v = new Var();
+                        v.name = save_as;
+                        v.isMessage = false;
+                        v.value = val;
+                        vars.add(v);
+                        break;
+                }
+                applicable = true;
+                break;
         }
-        this.imported_api = dop_api;
+        imported_api = tmp_imported_api;
     }
 
-    public DecodeOperation_API exporter() {
-        return (DecodeOperation_API) imported_api;
+    public void execute_Operation_API() throws ParsingException {
+        HTTPReqRes message = ((Operation_API) imported_api).message;
+        boolean is_request = ((Operation_API) imported_api).is_request; // if the message to edit is the request
+
+        switch (msg_from) {
+            case URL: {
+                if (!is_request) {
+                    throw new RuntimeException("trying to access the URL of a response message");
+                }
+
+                switch (action) {
+                    case REMOVE_PARAMETER:
+                        message.removeUrlParam(what);
+                        break;
+                    case REMOVE_MATCH_WORD:
+                        // TODO: remove, can be done with edit regex
+                        break;
+                    case EDIT:
+                        message.editUrlParam(what, value);
+                        break;
+                    case EDIT_REGEX:
+                        message.editUrlRegex(what, value);
+                        break;
+                    case ADD:
+                        message.addUrlParam(what, value);
+                        break;
+                    case ENCODE:
+                        String old_value = message.getUrlParam(what);
+                        String new_value = DecodeOperation.encode(
+                                encodings,
+                                old_value
+                        );
+                        message.editUrlParam(what, new_value);
+                        break;
+                }
+                break;
+            }
+
+            case HEAD: {
+                switch (action) {
+                    case REMOVE_PARAMETER:
+                        message.removeHeadParameter(is_request, what);
+                        break;
+                    case REMOVE_MATCH_WORD:
+                        // TODO: remove, can be done with edit regex
+                        break;
+                    case EDIT:
+                        message.editHeadParam(is_request, what, value);
+                        break;
+                    case EDIT_REGEX:
+                        // For each header applies regex
+                        message.editHeadRegex(is_request, what, value);
+                        break;
+                    case ADD:
+                        message.addHeadParameter(is_request, what, value);
+                        break;
+                    case ENCODE:
+                        String old_value = message.getHeadParam(is_request, what);
+                        String new_value = DecodeOperation.encode(
+                                encodings,
+                                old_value
+                        );
+                        message.editHeadParam(is_request, what, new_value);
+                        break;
+                }
+                break;
+            }
+
+            case BODY: {
+                switch (action) {
+                    // TODO add also edits based on Content-Type?
+                    case REMOVE_PARAMETER:
+                        // nothing
+                        break;
+                    case REMOVE_MATCH_WORD:
+                        // nothing
+                        break;
+                    case EDIT:
+                        // nothing
+                        break;
+                    case EDIT_REGEX:
+                        // edit matched value
+                        message.editBodyRegex(is_request, what, value);
+                        break;
+                    case ADD:
+                        // append value
+                        message.addBody(is_request, value);
+                        break;
+                    case ENCODE:
+                        // encode matched value
+                        String old_value = message.getBodyRegex(is_request, what);
+                        String new_value = DecodeOperation.encode(
+                                encodings,
+                                old_value
+                        );
+                        message.editBodyRegex(is_request, what, new_value);
+                        break;
+                }
+                break;
+            }
+
+            case RAW: {
+                switch (action) {
+                    //TODO
+                    case REMOVE_PARAMETER:
+                        break;
+                    case REMOVE_MATCH_WORD:
+                        break;
+                    case EDIT:
+                        break;
+                    case EDIT_REGEX:
+                        // TODO
+                        break;
+                    case ADD:
+                        break;
+                    case ENCODE:
+                        //TODO
+                        break;
+                }
+                break;
+            }
+        }
+        applicable = true; // check if there is a better place for this
+        ((Operation_API) imported_api).message = message;
     }
 
     public void execute(List<Var> vars) throws ParsingException {
+        // If a variable value has to be used, read the value of the variable at execution time
+        if (!use.equals("")) {
+            Var v = getVariableByName(use, vars);
+            if (!v.isMessage) {
+                value = v.value;
+            } else {
+                throw new ParsingException("Error while using variable, expected text var, got message var");
+            }
+        }
+
         if (imported_api instanceof DecodeOperation_API) {
-            // the edit operation is being executed inside a Decode Operation
-            // If a variable value has to be used, read the value of the variable at execution time
-            if (!use.equals("")) {
-                Var v = getVariableByName(use, vars);
-                if (!v.isMessage) {
-                    value = v.value;
-                } else {
-                    throw new ParsingException("Error while using variable, expected text var, got message var");
-                }
-            }
-
-            DecodeOperation_API tmp_imported_api = (DecodeOperation_API) imported_api;
-
-            switch (((DecodeOperation_API) imported_api).type) {
-                case XML:
-                    //SAML Remove signatures
-                    if (self_sign | remove_signature) {
-                        Document document = null;
-                        try {
-                            XMLHelpers xmlHelpers = new XMLHelpers();
-                            document = xmlHelpers.getXMLDocumentOfSAMLMessage(((DecodeOperation_API) imported_api).xml);
-                            saml_original_cert = xmlHelpers.getCertificate(document.getDocumentElement());
-                            if (saml_original_cert == null) {
-                                System.out.println("SAML Certificate not found in decoded parameter");
-                                applicable = false;
-                            }
-                            edited_xml = SamlTabController.removeSignature_edit(((DecodeOperation_API) imported_api).xml);
-                        } catch (SAXException e) {
-                            e.printStackTrace();
-                        }
-                    }
-
-                    switch (xml_action) {
-                        case ADD_TAG:
-                            edited_xml = XML.addTag(edited_xml,
-                                    xml_tag,
-                                    xml_action_name,
-                                    value,
-                                    xml_occurrency);
-                            break;
-                        case ADD_ATTR:
-                            edited_xml = XML.addTagAttribute(edited_xml,
-                                    xml_tag,
-                                    xml_action_name,
-                                    value,
-                                    xml_occurrency);
-                            break;
-                        case EDIT_TAG:
-                            edited_xml = XML.editTagValue(edited_xml,
-                                    xml_action_name,
-                                    value,
-                                    xml_occurrency);
-                            break;
-                        case EDIT_ATTR:
-                            edited_xml = XML.editTagAttributes(edited_xml,
-                                    xml_tag,
-                                    xml_action_name,
-                                    value,
-                                    xml_occurrency);
-                            break;
-                        case REMOVE_TAG:
-                            edited_xml = XML.removeTag(edited_xml,
-                                    xml_action_name,
-                                    xml_occurrency);
-                            break;
-                        case REMOVE_ATTR:
-                            edited_xml = XML.removeTagAttribute(edited_xml,
-                                    xml_tag,
-                                    xml_action_name,
-                                    xml_occurrency);
-                            break;
-                        case SAVE_TAG: {
-                            String to_save = XML.getTagValaue(edited_xml,
-                                    xml_action_name,
-                                    xml_occurrency);
-                            Var v = new Var();
-                            v.name = save_as;
-                            v.isMessage = false;
-                            v.value = to_save;
-                            vars.add(v);
-                            break;
-                        }
-                        case SAVE_ATTR:
-                            String to_save = XML.getTagAttributeValue(edited_xml,
-                                    xml_tag, xml_action_name,
-                                    xml_occurrency);
-                            Var v = new Var();
-                            v.name = save_as;
-                            v.isMessage = false;
-                            v.value = to_save;
-                            vars.add(v);
-                            break;
-                    }
-
-                    if (self_sign && !edited_xml.equals("")) {
-                        // SAML re-sign
-                        edited_xml = SamlTabController.resignAssertion_edit(edited_xml, saml_original_cert);
-                    }
-
-                    tmp_imported_api.xml = edited_xml;
-                    applicable = true;
-                    break;
-
-                case JWT:
-                    if (jwt_section != null) { // if only sign, there will be no jwt section
-                        try {
-                            switch (jwt_section) {
-                                case HEADER:
-                                    tmp_imported_api.jwt.header = Tools.editJson(
-                                            jwt_action, tmp_imported_api.jwt.header, what, vars, save_as, value);
-                                    break;
-                                case PAYLOAD:
-                                    // TODO: pass newvalue
-                                    tmp_imported_api.jwt.payload = Tools.editJson(
-                                            jwt_action, tmp_imported_api.jwt.payload, what, vars, save_as, value);
-                                    break;
-                                case SIGNATURE:
-                                    tmp_imported_api.jwt.signature = Tools.editJson(
-                                            jwt_action, tmp_imported_api.jwt.signature, what, vars, save_as, value);
-                                    break;
-                            }
-                        } catch (PathNotFoundException e) {
-                            this.applicable = false;
-                            this.result = false;
-                            return;
-                        }
-                        applicable = true;
-                    } else if (sign) {
-                        applicable = true;
-                        tmp_imported_api.jwt.sign = true;
-                        tmp_imported_api.jwt.private_key_pem = jwt_private_key_pem;
-                    } else {
-                        throw new ParsingException("missing jwt section in Edit operation");
-                    }
-
-                    break;
-
-                case NONE:
-                    Pattern p = Pattern.compile(Pattern.quote(txt_action_name));
-                    Matcher m = p.matcher(tmp_imported_api.txt);
-
-                    if (txt_action == null) {
-                        throw new ParsingException("txt action not specified");
-                    }
-
-                    switch (txt_action) {
-                        case REMOVE:
-                            tmp_imported_api.txt = m.replaceAll("");
-
-                            break;
-                        case EDIT:
-                            tmp_imported_api.txt = m.replaceAll(value);
-
-                            break;
-                        case ADD:
-                            while (m.find()) {
-                                int index = m.end();
-                                String before = tmp_imported_api.txt.substring(0, index);
-                                String after = tmp_imported_api.txt.substring(index);
-                                tmp_imported_api.txt = before + value + after;
-                                break;
-                            }
-                            break;
-                        case SAVE:
-                            String val = "";
-                            while (m.find()) {
-                                val = m.group();
-                                break;
-                            }
-
-                            Var v = new Var();
-                            v.name = save_as;
-                            v.isMessage = false;
-                            v.value = val;
-                            vars.add(v);
-                            break;
-                    }
-                    applicable = true;
-                    break;
-            }
-            imported_api = tmp_imported_api;
+            execute_decodeOperation_API(vars);
+        } else if (imported_api instanceof Operation_API) {
+            execute_Operation_API();
         }
     }
 

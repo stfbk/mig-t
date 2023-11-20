@@ -20,8 +20,6 @@ import java.io.StringWriter;
 
 /**
  * Class used to parse and edit xml strings
- *
- * @author Matteo Bitussi
  */
 public class XML {
 

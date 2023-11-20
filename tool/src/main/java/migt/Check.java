@@ -1,6 +1,13 @@
 package migt;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.jayway.jsonpath.JsonPath;
+import com.networknt.schema.JsonSchema;
+import com.networknt.schema.JsonSchemaFactory;
+import com.networknt.schema.SpecVersion;
+import com.networknt.schema.ValidationMessage;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -10,6 +17,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -17,8 +25,6 @@ import static migt.Check.CheckOps.*;
 
 /**
  * Check Object class. This object is used in Operations to check that a parameter or some text is in as specified.
- *
- * @author Matteo Bitussi
  */
 public class Check extends Module {
     String what; // what to search
@@ -138,6 +144,10 @@ public class Check extends Module {
                             value_list.add(act_enc);
                         }
                         break;
+                    case "json schema compliant":
+                        this.op = JSON_SCHEMA_COMPLIANT;
+                        this.op_val = json_check.getString("json schema compliant");
+                        break;
                     case "matches regex":
                         this.op = MATCHES_REGEX;
                         this.op_val = json_check.getString("matches regex");
@@ -149,6 +159,8 @@ public class Check extends Module {
                     case "url decode":
                         url_decode = json_check.getBoolean("url decode");
                         break;
+                    default:
+                        throw new ParsingException("Invalid key:\"" + key + "\" used in Check Operation");
                 }
             } catch (JSONException e) {
                 throw new ParsingException("error in parsing check: " + e);
@@ -250,14 +262,13 @@ public class Check extends Module {
 
         if (msg_str.length() == 0) {
             applicable = true;
-            if (this.op != null && op == IS_NOT_PRESENT) {
-                return true;
-            }
-            return false;
+            return this.op != null && op == IS_NOT_PRESENT;
         }
 
+        msg_str = url_decode(msg_str);
+
         // if a regex is present, execute it
-        if (!regex.equals("")) {
+        if (!regex.isEmpty()) {
             return execute_regex(msg_str);
         }
 
@@ -300,6 +311,22 @@ public class Check extends Module {
             }
         }
         return true;
+    }
+
+    private String url_decode(String string) {
+        if (url_decode) {
+            if (string.contains("+")) {
+                System.err.println("Warning! During a check on the value\"" + string + "\" a '+' symbol has been" +
+                        "converted to a space, as it has been interpreted as url-encoded character. If you want to avoid" +
+                        "this behaviour use 'url decode' tag set to false inside the check to disable url-decoding ");
+            }
+            try {
+                string = URLDecoder.decode(string, StandardCharsets.UTF_8);
+            } catch (IllegalArgumentException e) {
+                throw new RuntimeException("Failed URL-decode in check: " + e);
+            }
+        }
+        return string;
     }
 
     /**
@@ -455,6 +482,21 @@ public class Check extends Module {
                 Matcher m = p.matcher(found);
                 return !m.find();
             }
+            case JSON_SCHEMA_COMPLIANT: {
+                JsonSchema schema = null;
+                JsonNode node = null;
+                try {
+                    // parse the schema
+                    schema = getJsonSchemaFromStringContent(op_val);
+                    ObjectMapper mapper = new ObjectMapper();
+                    node = mapper.readTree(found);
+                } catch (JsonProcessingException e) {
+                    throw new RuntimeException(e);
+                }
+
+                Set<ValidationMessage> errors = schema.validate(node);
+                return errors.isEmpty();
+            }
         }
 
         return false;
@@ -556,25 +598,10 @@ public class Check extends Module {
         if (use_variable) {
             // Substitute to the op_val variable (that contains the name), the value of the variable
             op_val = Tools.getVariableByName(op_val, vars).value;
-        }
 
-        // URL-decode matched content
-        // when a string contains a "+" character then, it is replaced with a space.
-        if (url_decode) {
-            /*
-            Pattern p = Pattern.compile("%[0-9a-fA-F]{2}");
-            Matcher m = p.matcher(op_val);
-            if (m.find()) {
-                // if the content contains url-encoded characters then, url-decode the content
-                op_val = URLDecoder.decode(op_val, StandardCharsets.UTF_8);
-            }
-            */
-            if (op_val.contains("+")) {
-                System.err.println("Warning! During a check on the value\"" + op_val + "\" a '+' symbol has been" +
-                        "converted to a space, as it has been interpreted as url-encoded character. If you want to avoid" +
-                        "this behaviour use 'url decode' tag set to false inside the check to disable url-decoding " );
-            }
-            op_val = URLDecoder.decode(op_val, StandardCharsets.UTF_8);
+            // URL-decode variable value
+            // when a string contains a "+" character then, it is replaced with a space.
+            op_val = url_decode(op_val);
         }
 
         if (imported_api instanceof Operation_API) {
@@ -612,6 +639,11 @@ public class Check extends Module {
         return "check: " + what + (op == null ? "" : " " + op + ": " + op_val);
     }
 
+    protected JsonSchema getJsonSchemaFromStringContent(String schemaContent) {
+        JsonSchemaFactory factory = JsonSchemaFactory.getInstance(SpecVersion.VersionFlag.V4);
+        return factory.getSchema(schemaContent);
+    }
+
     /**
      * enum containing all the possible check operations
      */
@@ -626,7 +658,8 @@ public class Check extends Module {
         IS_NOT_IN,
         IS_SUBSET_OF,
         MATCHES_REGEX,
-        NOT_MATCHES_REGEX;
+        NOT_MATCHES_REGEX,
+        JSON_SCHEMA_COMPLIANT;
 
         /**
          * Function that given a String, returns the corresponding CheckOps enum's value

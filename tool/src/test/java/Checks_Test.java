@@ -334,4 +334,50 @@ public class Checks_Test {
         c.execute(new ArrayList<Var>());
         assertFalse(c.getResult());
     }
+
+    @Test
+    void test_check_json_schema_validation_ok() throws ParsingException {
+        String check_str = "{\n" +
+                "        \"in\": \"header\",\n" +
+                "        \"check\": \"$.pageInfo.imaninteger\",\n" +
+                "        \"json schema compliant\": \"{\\\"type\\\":\\\"integer\\\"}\" " +
+                "}";
+
+        Check c = initCheck_json(check_str);
+
+        c.execute(new ArrayList<>());
+        assertTrue(c.getResult());
+    }
+
+    @Test
+    void test_check_json_schema_validation_wrong() throws ParsingException {
+        String check_str = "{\n" +
+                "        \"in\": \"header\",\n" +
+                "        \"check\": \"$.pageInfo.imaninteger\",\n" +
+                "        \"json schema compliant\": \"{\\\"type\\\":\\\"string\\\"}\" " +
+                "}";
+
+        Check c = initCheck_json(check_str);
+
+        c.execute(new ArrayList<>());
+        assertFalse(c.getResult());
+    }
+
+    @Test
+    void test_check_json_schema_validation_wrong_schema() throws ParsingException {
+        String check_str = "{\n" +
+                "        \"in\": \"header\",\n" +
+                "        \"check\": \"$.pageInfo.imaninteger\",\n" +
+                "        \"json schema compliant\": \"wrongschema\" " +
+                "}";
+
+        Check c = initCheck_json(check_str);
+        try {
+            c.execute(new ArrayList<>());
+        } catch (RuntimeException e) {
+            assertEquals(1,1);
+            return;
+        }
+        assertEquals(1,0);
+    }
 }

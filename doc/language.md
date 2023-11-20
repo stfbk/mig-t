@@ -139,132 +139,27 @@ If you choose the body section, the meaning of the tags is different, infact:
 
 Note that the content lenght of the body section is automatically updated or removed if the content of the body is edited.
 
-## Decode operation
+## Edit Operation
 
-A list of decode operations can be added to each Operation (passive or active). These operations are used to decode encoded content taken from inside an intercepted message. A decode operation can have its own list of decode operations; these are called recursive decode ops. and they take as input the previously decoded content.
+The edit operation can be used to modify the content of a message, a jwt, or other sources.
 
-The HTTP parameter containing the content to be decoded has to be specified with the `decode param` If the section of the message is 'body,' the `decode param` takes a regex (for more information, see the section below).
+### Using Edit Operation in a Operation
 
-Next, a list of encodings (or the `type`) has to be specified. You can specify an encodings list with the tag `encodings` the order of these encodings will be followed while decoding, and when the message is re-encoded, the order will be reversed. With the tag `type` the content is decoded following a fixed set of rules (e.g., jwts or XML). If you specify the `type` tag, the `encodings` tag will be ignored. If you use the `type` tag when using Edit Operations, you may be allowed to use more tags (e.g., with jwts or XML) to edit easily; otherwise, the decoded content will be used as plain text.
+By using an Edit Operation inside an Operation, you are able to edit the intercepted message content. There are multiple ways of editing it, in the following section they will be described. You can use the following tags:
 
-In decode operations is possible to use check operations to check the decoded content, depending on the specified type, the allowed check operations differ.
+- `from` to select the section of the message you need
+- `edit` to edit the value of the given parameter. (only for url and head sections) use `value` to specify the new value.
+- `edit regex` to edit with a regex the section of the message you selected. use `value` to specify the new value
+- `add` to add some content to the given section. in case of url and head, you need to specify the name of the parameter in this tag, and the value with `value`. If the parameter is not found, a new parameter is added, if the parameter is already present, the new value will be appended to the old one. For the body section, the content will be always appended to the end of the body, so you can leave this tag value empty and put the content to append in the `value` tag.
+- `remove` used to specify the name of a parameter to remove in url and head. Not available on body.
+- `value` used to specify the new value for the edit operations
+- `use` used in place of `value` to use the given variable value as new value. You should give a variable name to this tag.
 
-- JWT type -> See 'Checks on JSON content' section
-- No type (encodings used) -> See check section
+>Note: the url section is the entire request url such as "<https://domain.com:port/path?query=something>"
 
-Needed tags:
+>Note: if you use edit regex in the head, the regex is executed over all the headers
 
-- `type` and/or `encodings`
-- `decode param`
-- `from` select from where decode the content (HTTP message section or previous decode output)
-
-optional tags:
-
-- `decode operations`
-- `checks`
-- `edits`
-- `force regex` set it to true to enable using regex inside decode param in a recursive decode operation. This is useful when you are decoding the body a JWE when it contains a raw JWT not inside a json element.
-
-#### Body section
-
-An important note about the body (from) section is that the input of `decode param` has to be a regex, and whatever is matched with that regex is decoded.
-An useful regex to match a parameter's value could be `(?<=SAMLResponse=)[^$\n& ]*` which searches the SAMLResponse= string in the body, and matches everything that is not $ or \n or & or whitespace
-
-#### Decoding JWTs
-
-When decoding a jwt (by using tag type=jwt) it is possible to check the signature of that jwt by providing a public key. To do this, use the `jwt check sig` tag with value the PEM-encoded public key to be used to check.
-
-Note: The supported algorithms for signing are:
-
-- RS256
-- RS512
-
-#### Decoding JWE
-
-Note that when decrypting a JWE, a JWS is expected in the payload. Other payloads are not supproted.
-
-To decrypt a JWE to access the JWT in its payload use these tags
-
-- `jwe decrypt` with the private key in PEM string format
-- `jwe encrypt` with the public key in PEM string format
-
-Note: You can decrypt without specifying encrypt, this will prevent the JWE from being edited (as no encryption key is passed)
-Note: You can't encrypt, without decrypt
-
-Note: Supported algorithms are:
-
-- RSA_OAEP
-- RSA_OAEP_256
-- ECDH_ES_A128KW
-- ECDH_ES_A256KW
-
-## Tag table
-
-In this table you can find a description of all the tags available for this Operation based on the input Module.
-
-| input module (container)    | Available tags    | Required | value type             | allowed values                         |
-| --------------------------- | ----------------- | -------- | ---------------------- | -------------------------------------- |
-| standard Operation          | from              | yes      | str                    | head, body, url                        |
-|                             | decode param      | yes      | str                    | \*                                     |
-| decode Operation (type=jwt) | from              | yes      | str                    | jwt header, jwt payload, jwt signature |
-|                             | decode param      | yes      | str(JSON path)         | \*                                     |
-| \*                          | type              |          | str                    | xml, jwt                               |
-|                             | encodings         |          | list[str]              | base64, url, ..                        |
-|                             | decode operations |          | list[decode Operation] | \*                                     |
-|                             | checks            |          | list[check Operation]  | \*                                     |
-|                             | edits             |          | list[edit Operation]   | \*                                     |
-|                             | jwt check sig     |          | str(PEM)               | PEM-encoded public key                 |
-|                             | jwe decrypt       |          | str(PEM)               | PEM-encoded private key                |
-|                             | jwe encrypt       |          | str(PEM)               | PEM-encoded public key                 |
-
-### Recursive Decode operations
-
-When using the `from` tag in a recursive decode (one that is inside another), you can use - depending on the previous decode type - other sections, such as "jwt header" "jwt payload" ..
-
-Source: standard Operation (HTTP intercepted message)
-
-- `from`: (url, head, body)
-
-Source: decode Operation JWT
-
-- `from`: (jwt header, jwt payload, jwt signature)
-
-in recurdsive decode op, the decode param accepts different inputs, e.g. if previous decoded content is a jwt, decoded content will accept a JSON path
-
-Syntax example of a recursive decode operation:
-
-```json
-"decode operations": [
-  {
-    ...,
-    "decode operations": [
-      {
-        "from": "somwhere in the previous decode",
-        "encodings": "asdasd",
-      }
-    ]
-  }
-]
-```
-
-Example of decoding a jwt from the url of a message in the asd parameter, and then decode the jwt found inside of the jwt.
-
-```json
-"decode operations": [
-  {
-    "from": "url",
-    "type": "jwt",
-    "decode param": "asd",
-    "decode operations": [
-      {
-        "from": "jwt header",
-        "type": "jwt",
-        "decode param": "$.something"
-      }
-    ]
-  }
-]
-```
+>Note: Save from message is not possible in edit, is should be done in message operations
 
 ### Using Edit Operation in Decode Operations
 
@@ -426,9 +321,153 @@ It is possible to use the tag `use` instead of the tag `value` to use the text s
 
 #### SAML signature
 
-There's the possibility to remove the signature from a saml request or response and resign it with a test private key, just specify `self-sign`: true in the message operation.
+There's the possibility to remove the signature from a saml request or response and resign it with a test private key, just specify `self-sign`: true in the message operation.## Decode operation
 Another possibility is just to remove the signature, using `remove signature` set to true in the message operation.
 Note that these keys are avaiable and applied only on decoded parameters, also if `decode param` is defined.
+
+## Decode operation
+
+A list of decode operations can be added to each Operation (passive or active). These operations are used to decode encoded content taken from inside an intercepted message. A decode operation can have its own list of decode operations; these are called recursive decode ops. and they take as input the previously decoded content.
+
+The HTTP parameter containing the content to be decoded has to be specified with the `decode param` If the section of the message is 'body,' the `decode param` takes a regex (for more information, see the section below).
+
+Next, a list of encodings (or the `type`) has to be specified. You can specify an encodings list with the tag `encodings` the order of these encodings will be followed while decoding, and when the message is re-encoded, the order will be reversed. With the tag `type` the content is decoded following a fixed set of rules (e.g., jwts or XML). If you specify the `type` tag, the `encodings` tag will be ignored. If you use the `type` tag when using Edit Operations, you may be allowed to use more tags (e.g., with jwts or XML) to edit easily; otherwise, the decoded content will be used as plain text.
+
+In decode operations is possible to use check operations to check the decoded content, depending on the specified type, the allowed check operations differ.
+
+- JWT type -> See 'Checks on JSON content' section
+- No type (encodings used) -> See check section
+
+Needed tags:
+
+- `type` and/or `encodings`
+- `decode param` or `decode regex`
+- `from` select from where decode the content (HTTP message section or previous decode output)
+
+optional tags:
+
+- `decode operations`
+- `checks`
+- `edits`
+
+#### Body section
+
+An important note about the body (from) section is that the input of `decode param` has to be a regex, and whatever is matched with that regex is decoded.
+An useful regex to match a parameter's value could be `(?<=SAMLResponse=)[^$\n& ]*` which searches the SAMLResponse= string in the body, and matches everything that is not $ or \n or & or whitespace
+
+#### Decoding JWTs
+
+When decoding a jwt (by using tag type=jwt) it is possible to check the signature of that jwt by providing a public key. To do this, use the `jwt check sig` tag with value the PEM-encoded public key to be used to check.
+
+Note: The supported algorithms for signing are:
+
+- RS256
+- RS512
+
+#### Decoding JWE
+
+To decrypt a JWE to access the JWT in its payload use these tags
+
+- `jwe decrypt` with the private key in PEM string format
+- `jwe encrypt` with the public key in PEM string format
+
+Note: You can decrypt without specifying encrypt, this will prevent the JWE from being edited (as no encryption key is passed)
+> Note: You can't encrypt, without decrypt
+
+> Note: When decrypting a JWE, if you then access the jwt header, or jwt payload, you are accessing the ones of the JWE. If the JWE contains a JWT in his payload (nested JWT) then you will have to first decrypt the JWE, and then do another decode operation to decode the nested JWT, by selecting the payload of the JWE with a regex.
+
+Note: Supported algorithms are:
+
+- RSA_OAEP
+- RSA_OAEP_256
+- ECDH_ES_A128KW
+- ECDH_ES_A256KW
+
+## Tag table
+
+In this table you can find a description of all the tags available for this Operation based on the input Module.
+
+| input module (container)    | Available tags    | Required | value type             | allowed values                         |
+| --------------------------- | ----------------- | -------- | ---------------------- | -------------------------------------- |
+| standard Operation          | from              | yes      | str                    | head, body, url                        |
+|                             | decode param or decode regex     | yes      | str or str(regex)                    | \*                                     |
+| decode Operation (type=jwt) | from              | yes      | str                    | jwt header, jwt payload, jwt signature |
+|                             | decode param      | yes      | str(JSON path)         | \*                                     |
+|                             | decode param or decode regex | yes | str(JSON path) or str(regex)| \*                          |
+| \*                          | type              |          | str                    | xml, jwt                               |
+|                             | encodings         |          | list[str]              | base64, url, ..                        |
+|                             | decode operations |          | list[decode Operation] | \*                                     |
+|                             | checks            |          | list[check Operation]  | \*                                     |
+|                             | edits             |          | list[edit Operation]   | \*                                     |
+|                             | jwt check sig     |          | str(PEM)               | PEM-encoded public key                 |
+|                             | jwe decrypt       |          | str(PEM)               | PEM-encoded private key                |
+|                             | jwe encrypt       |          | str(PEM)               | PEM-encoded public key                 |
+
+### Recursive Decode operations
+
+When using the `from` tag in a recursive decode (one that is inside another), you can use - depending on the previous decode type - other sections, such as "jwt header" "jwt payload" ..
+
+Source: standard Operation (HTTP intercepted message)
+
+- `from`: (url, head, body)
+
+Source: decode Operation JWT
+
+- `from`: (jwt header, jwt payload, jwt signature)
+
+in recurdsive decode op, the decode param accepts different inputs, e.g. if previous decoded content is a jwt, decoded content will accept a JSON path
+
+Syntax example of a recursive decode operation:
+
+```json
+"decode operations": [
+  {
+    ...,
+    "decode operations": [
+      {
+        "from": "somwhere in the previous decode",
+        "encodings": "asdasd",
+      }
+    ]
+  }
+]
+```
+
+Example of decoding a jwt from the url of a message in the asd parameter, and then decode the jwt found inside of the jwt.
+
+```json
+"decode operations": [
+  {
+    "from": "url",
+    "type": "jwt",
+    "decode param": "asd",
+    "decode operations": [
+      {
+        "from": "jwt header",
+        "type": "jwt",
+        "decode param": "$.something"
+      }
+    ]
+  }
+]
+```
+
+Example of decoding a value in the url with a regex
+
+```json
+{
+  "from": "url",
+  "decode regex": "(?<=request=)([^&]+)",
+  "type": "jwt",
+  "edits": [
+    {
+      "jwt from": "payload",
+      "jwt edit": "iss",
+      "value": "https://www.example.com/"
+    }
+  ]
+}
+```
 
 ## Session Operation
 
@@ -522,6 +561,7 @@ The Checks tag inside an operation has a list of Check elements, which can be de
   - `is subset of` used to check that a matched JSON array is a subset of the given array. Is subset means that all the values in the matched array are present in the given array.
   - `matches regex` when using `check param` or `check` in json, you can use this tag to execute a regex to the matched value of the parameter or the value of the json key specified with the jsonpath
   - `not matches regex` as `match regex` but the result is true when the regex doesn't match
+  - `json schema compliant` to pass a json schema to be validated against what you match with `check`. Can only be used in jwt checks. Make sure to match the json schema with what you are selecting with the json PATH with `check`.
 
 > Note that you can use `check regex` OR `check` OR `check param`.
 
@@ -968,3 +1008,8 @@ Examples: <br>
 - Removed OAuth metadata tag in test
 - Added signing of decoded jwt with private key inside Edit Operation
 - Added check of signature of jwt inside the decode operation
+- Added edit operation also in Operations: message editing
+- Added encode option to edit operation
+- Removed "remove match word" from edit operation, just use edit regex with empty substitution
+- Added decode regex in Decode Operations
+- Added json schema validation in checks for jwts

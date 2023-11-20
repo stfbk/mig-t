@@ -15,8 +15,6 @@ import java.time.Duration;
 /**
  * Class that executes a Session Track (series of user actions). It launches a browser with Selenium to automate the
  * actions
- *
- * @author Matteo Bitussi
  */
 public class ExecuteTrack implements Runnable {
     private static String snapshot = "";

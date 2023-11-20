@@ -1,6 +1,9 @@
 package migt;
 
-import burp.*;
+import burp.IBurpExtenderCallbacks;
+import burp.IHttpService;
+import burp.IMessageEditor;
+import burp.IMessageEditorController;
 import com.google.gson.Gson;
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -43,9 +46,6 @@ class CustomOutputStream extends OutputStream {
 
 /**
  * This class contains the GUI for the plugin, also a lot of functionality methods
- *
- * @author Matteo Bitussi
- * @author Wendy Barreto
  */
 public class GUI extends JSplitPane {
     private static DefaultTableModel resultTableModel;
@@ -97,7 +97,6 @@ public class GUI extends JSplitPane {
     JTabbedPane bot_tabbed;
     Map<String, Integer> bot_tabs_index;
     HTTPReqRes viewedMessage;
-    IExtensionHelpers helpers;
     IBurpExtenderCallbacks callbacks;
     List<String> sessions_names;
     Map<String, String> session_port;
@@ -245,7 +244,7 @@ public class GUI extends JSplitPane {
                         tmp += myReader.nextLine();
                     }
                     myReader.close();
-                    messageTypes = Tools.readMsgTypeFromJson(tmp);
+                    messageTypes = Tools.readMsgTypesFromJson(tmp);
                 } catch (ParsingException e) {
                     lblOutput.setText("Invalid message type in message type definition file");
                     e.printStackTrace();
@@ -256,7 +255,7 @@ public class GUI extends JSplitPane {
                 FileWriter w = new FileWriter(MSG_DEF_PATH);
                 w.write(Tools.getDefaultJSONMsgType());
                 w.close();
-                messageTypes = Tools.readMsgTypeFromJson(Tools.getDefaultJSONMsgType());
+                messageTypes = Tools.readMsgTypesFromJson(Tools.getDefaultJSONMsgType());
             }
         } catch (ParsingException e) {
             e.printStackTrace();
@@ -524,6 +523,7 @@ public class GUI extends JSplitPane {
                     public void onExecuteDone() {
                         if (passives.size() == 0) {
                             update_gui_test_results();
+                            testSuite.log_test_suite(LOG_FOLDER);
 
                             lblOutput.setText("Done. Executed Passive Tests: "
                                     + (passives.isEmpty() ? 0 : passives.size())
@@ -684,7 +684,7 @@ public class GUI extends JSplitPane {
                 }
             };
 
-            ExecutePassives expa = new ExecutePassives(helpers,
+            ExecutePassives expa = new ExecutePassives(
                     passives,
                     listener,
                     messageTypes);

@@ -5,8 +5,6 @@ import java.util.List;
 
 /**
  * Class storing a MessageType
- *
- * @author Matteo Bitussi
  */
 public class MessageType implements Cloneable {
     String name;

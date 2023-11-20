@@ -11,8 +11,6 @@ import java.util.regex.Pattern;
 
 /**
  * Class containing a session Operation
- *
- * @author Matteo Bitussi
  */
 public class SessionOperation {
     public String from_session;
@@ -88,7 +86,7 @@ public class SessionOperation {
                             break;
 
                         default:
-                            throw new ParsingException("Unexpected value: " + key);
+                            throw new ParsingException("Unexpected value: " + key + " in session operation");
                     }
                 }
                 lsop.add(sop);

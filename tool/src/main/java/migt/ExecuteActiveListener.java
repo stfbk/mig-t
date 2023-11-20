@@ -2,8 +2,6 @@ package migt;
 
 /**
  * Listener class for ExecuteActive class
- *
- * @author Matteo Bitussi
  */
 public interface ExecuteActiveListener {
 

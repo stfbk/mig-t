@@ -1,6 +1,5 @@
 package migt;
 
-import burp.IHttpService;
 import burp.IInterceptedProxyMessage;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -13,8 +12,6 @@ import static migt.Tools.*;
 
 /**
  * Class storing an Operation in a Test
- *
- * @author Matteo Bitussi
  */
 public class Operation extends Module {
     public List<MessageOperation> messageOperations;
@@ -29,11 +26,11 @@ public class Operation extends Module {
     public boolean isSessionOp = false;
     public List<HTTPReqRes> matchedMessages;
     public byte[] processed_message;
-    public IHttpService processed_message_service;  // null if it is not changed
     public List<IInterceptedProxyMessage> log_messages;
     public List<SessionOperation> session_operations;
     // Decode operations
     public List<DecodeOperation> decodeOperations;
+    public List<EditOperation> editOperations;
     // Session operation
     // API
     Operation_API api;
@@ -140,6 +137,11 @@ public class Operation extends Module {
                 decodeOperations.add(decode_op);
             }
         }
+
+        // Edit operations
+        if (operation_json.has("edits")) {
+            editOperations = Tools.parseEditsFromJSON(operation_json.getJSONArray("edits"));
+        }
     }
 
     private void init() {
@@ -151,6 +153,7 @@ public class Operation extends Module {
         this.session_operations = new ArrayList<>();
         this.log_messages = new ArrayList<>();
         this.decodeOperations = new ArrayList<>();
+        editOperations = new ArrayList<>();
         this.from_session = "";
         this.to_session = "";
         this.save_name = "";
@@ -159,7 +162,6 @@ public class Operation extends Module {
         this.replace_request_name = "";
         this.messageType = "";
         this.session = "";
-        this.processed_message_service = null;
         this.processed_message = null;
     }
 
@@ -368,6 +370,7 @@ public class Operation extends Module {
 
     /**
      * Sets the api of this Operation with the given api. Note that the variables are added, not substituted
+     *
      * @param api the new api to be set
      */
     public void setAPI(Operation_API api) {
@@ -419,7 +422,6 @@ public class Operation extends Module {
                 try {
                     applicable = true;
                     processed_message = getVariableByName(replace_request_name, api.vars).message;
-                    processed_message_service = getVariableByName(replace_request_name, api.vars).service_info;
                     //return op;
                 } catch (ParsingException e) {
                     e.printStackTrace();
@@ -432,7 +434,6 @@ public class Operation extends Module {
                 try {
                     applicable = true;
                     processed_message = getVariableByName(replace_response_name, api.vars).message;
-                    processed_message_service = getVariableByName(replace_response_name, api.vars).service_info;
                     //return op;
                 } catch (ParsingException e) {
                     e.printStackTrace();
@@ -445,10 +446,13 @@ public class Operation extends Module {
         // execute the message operations and the decode ops
         try {
             applicable = true;
-            executeMessageOperations(this, helpers); // TOOD: change to edits
+            executeMessageOperations(this);
             if (!applicable | !result)
                 return;
-            executeDecodeOps(this, helpers, api.vars);
+            executeEditOps(this, api.vars);
+            if (!applicable | !result)
+                return;
+            executeDecodeOps(this, api.vars);
             if (!applicable | !result)
                 return;
             executeChecks(this, api.vars);
@@ -466,7 +470,6 @@ public class Operation extends Module {
             v.name = save_name;
             v.isMessage = true;
             v.message = api.is_request ? api.message.getRequest() : api.message.getResponse();
-            v.service_info = api.message.getHttpService(helpers);
             api.vars.add(v);
         }
     }

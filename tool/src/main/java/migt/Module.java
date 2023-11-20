@@ -1,6 +1,5 @@
 package migt;
 
-import burp.IExtensionHelpers;
 import org.json.JSONObject;
 
 /**
@@ -11,7 +10,6 @@ public class Module {
     // These variables should be present in each module
     boolean result = true;
     boolean applicable = false;
-    IExtensionHelpers helpers;
     API api; // the api of this module
     API imported_api; // the api imported from a previous module
 
@@ -28,15 +26,9 @@ public class Module {
         // Parse
     }
 
-    public Module(IExtensionHelpers helpers) {
-        this.helpers = helpers;
-    }
-
     /**
      * This function should be called to check that after an initialization of a module all the necessary parameters
-     * are set correctly.
-     *
-     * @return
+     * are set correctly. And the JSON has been parsed correctly with all the required tags present.
      */
     public void validate() throws ParsingException {
 
@@ -63,7 +55,10 @@ public class Module {
      * @param api the imported API
      */
     public void loader(API api) {
-
+        if (api == null) {
+            throw new RuntimeException("loaded api is null");
+        }
+        this.imported_api = api;
     }
 
     /**

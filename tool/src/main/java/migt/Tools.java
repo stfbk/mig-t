@@ -1,6 +1,5 @@
 package migt;
 
-import burp.IExtensionHelpers;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonParser;
 import com.jayway.jsonpath.Configuration;
@@ -8,7 +7,6 @@ import com.jayway.jsonpath.JsonPath;
 import com.jayway.jsonpath.PathNotFoundException;
 import org.json.JSONArray;
 import org.json.JSONObject;
-
 
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -20,77 +18,8 @@ import java.util.regex.Pattern;
 
 /**
  * Class with methods to process messages and execute tests
- *
- * @author Matteo Bitussi
  */
 public class Tools {
-    /**
-     * Function that execute the given passive test.
-     *
-     * @param test        a <Code>Test</Code> element, it has to be a passive test
-     * @param messageList a list of <code>HTTPReqRes</code> messages
-     * @param helpers     an istance of <code>IExtensionHelpers</code>
-     * @param msg_types   the message types used by the test
-     * @return true if a test is passed, false otherwise
-     */
-    public static boolean executePassiveTest(Test test,
-                                             List<HTTPReqRes> messageList,
-                                             IExtensionHelpers helpers,
-                                             List<MessageType> msg_types) throws ParsingException {
-        int i, j;
-        boolean res = true;
-
-        for (i = 0; i < messageList.size(); i++) {
-            j = 0;
-            while (j < test.operations.size() && res) {
-                Operation currentOP = test.operations.get(j);
-                MessageType msg_type = MessageType.getFromList(msg_types, currentOP.getMessageType());
-
-                if (currentOP.api == null) {
-                    currentOP.api = new Operation_API(test.vars);
-                } else {
-                    currentOP.api.vars = test.vars;
-                }
-
-                if (messageList.get(i).matches_msg_type(msg_type)) {
-                    currentOP.helpers = helpers;
-
-                    currentOP.setAPI(new Operation_API(messageList.get(i), msg_type.msg_to_process_is_request));
-                    currentOP.execute();
-                    res = currentOP.getResult();
-                }
-
-                test.vars = currentOP.api.vars;
-                j++;
-            }
-        }
-
-        for (Operation op : test.operations) {
-            if (!op.applicable) {
-                res = false;
-                test.applicable = false;
-                break;
-            }
-        }
-
-        return res;
-    }
-
-    /**
-     * Function that given a list of headers, concatenates them in a single string
-     *
-     * @param headers the list of headers
-     * @return the string
-     */
-    public static String getAllHeaders(List<String> headers) {
-        StringBuilder out = new StringBuilder();
-        for (Object o : headers) {
-            out.append(o.toString());
-            out.append("\n");
-        }
-        return out.toString();
-    }
-
     /**
      * This function execute a list of checks over a message, returning true if all the checks are successful
      *
@@ -131,17 +60,15 @@ public class Tools {
     /**
      * Executes the decode operations in an operation. Uses APIs. Sets the result to the operation
      *
-     * @param op      the operation to execute the decode operations from
-     * @param helpers the Burp helpers
+     * @param op the operation to execute the decode operations from
      * @return The operation (edited)
      * @throws ParsingException if something goes wrong
      */
     public static Operation executeDecodeOps(Operation op,
-                                             IExtensionHelpers helpers,
                                              List<Var> vars) throws ParsingException {
         Operation_API api = op.getAPI();
         for (DecodeOperation dop : op.getDecodeOperations()) {
-            dop.loader(api, helpers);
+            dop.loader(api);
             dop.execute(vars);
             if (!op.setResult(dop))
                 break;
@@ -154,17 +81,15 @@ public class Tools {
     /**
      * Executes the decode operations in a decode operation. This is the recursive step.
      *
-     * @param op      the decode operation executing its child decode operations
-     * @param helpers the burp helpers
+     * @param op the decode operation executing its child decode operations
      * @return The operation (edited)
      * @throws ParsingException if something goes wrong
      */
     public static DecodeOperation executeDecodeOps(DecodeOperation op,
-                                                   IExtensionHelpers helpers,
                                                    List<Var> vars) throws ParsingException {
         DecodeOperation_API api = op.getAPI();
         for (DecodeOperation dop : op.decodeOperations) {
-            dop.loader(api, helpers);
+            dop.loader(api);
             dop.execute(vars);
             if (!op.setResult(dop))
                 break;
@@ -195,10 +120,30 @@ public class Tools {
         return op;
     }
 
-    public static Operation executeMessageOperations(Operation op, IExtensionHelpers helpers) throws ParsingException {
+    /**
+     * Executes the edit operations inside a standard Operation
+     *
+     * @param op the Operation to run the edit operations from
+     * @return the Operation (edited)
+     * @throws ParsingException if something goes wrong
+     */
+    public static Operation executeEditOps(Operation op, List<Var> vars) throws ParsingException {
+        Operation_API api = op.getAPI();
+        for (EditOperation eop : op.editOperations) {
+            eop.loader(api);
+            eop.execute(vars);
+            if (!op.setResult(eop))
+                break;
+            op.setAPI((Operation_API) eop.exporter());
+        }
+
+        return op;
+    }
+
+    public static Operation executeMessageOperations(Operation op) throws ParsingException {
         for (MessageOperation mop : op.messageOperations) {
             mop.loader(op.api);
-            mop.execute(op, helpers);
+            mop.execute(op);
             op.setAPI(mop.exporter());
             if (op.setResult(op))
                 break;
@@ -251,7 +196,7 @@ public class Tools {
      * @return a List of messagetype objects
      * @throws ParsingException if the input is malformed
      */
-    public static List<MessageType> readMsgTypeFromJson(String input) throws ParsingException {
+    public static List<MessageType> readMsgTypesFromJson(String input) throws ParsingException {
         List<MessageType> msg_types = new ArrayList<>();
 
         JSONObject obj = new JSONObject(input);
@@ -281,23 +226,6 @@ public class Tools {
         }
 
         return msg_types;
-    }
-
-    /**
-     * Returns the adding of a message operation, decides if the value to be inserted/edited should be a variable or
-     * a typed value and return it
-     *
-     * @param m the message operation which has to be examined
-     * @return the adding to be used in add/edit
-     * @throws ParsingException if the variable name is not valid or the variable has not been initiated
-     */
-    public static String getAdding(MessageOperation m, List<Var> vars) throws ParsingException {
-        if (!m.use.isEmpty()) {
-            return getVariableByName(m.use, vars).value;
-        } else {
-
-            return m.to;
-        }
     }
 
     /**
@@ -422,7 +350,7 @@ public class Tools {
             req_var.put(act_match, getVariableByName(act_match, vars).value);
         }
 
-        if (req_var.size() == 0) {
+        if (req_var.isEmpty()) {
             return s;
         }
 
@@ -604,7 +532,7 @@ public class Tools {
     public static HashMap<String, List<Test>> batchPassivesFromSession(List<Test> testList) throws ParsingException {
         HashMap<String, List<Test>> batch = new HashMap<>();
         for (Test t : testList) {
-            if (t.sessions.size() == 0) {
+            if (t.sessions.isEmpty()) {
                 throw new ParsingException("Undefined session in test " + t.name);
             }
 
@@ -640,7 +568,6 @@ public class Tools {
     /**
      * Edit a message treating it as a string using a regex
      *
-     * @param helpers     an instance of Burp's IExtensionHelper
      * @param regex       the regex used to match the things to change
      * @param mop         the message operation containing information about the section to match the regex
      * @param messageInfo the message as IHttpRequestResponse object
@@ -649,13 +576,12 @@ public class Tools {
      * @return the edited message as byte array
      * @throws ParsingException if problems are encountered in editing the message
      */
-    public static byte[] editMessage(IExtensionHelpers helpers,
-                                     String regex,
+    public static byte[] editMessage(String regex,
                                      MessageOperation mop,
                                      HTTPReqRes messageInfo,
                                      boolean isRequest,
                                      String new_value) throws ParsingException {
-        // TODO: remove dependency from Helpers
+        //TODO: remove in future versions
         Pattern pattern = null;
         Matcher matcher = null;
         switch (mop.from) {
@@ -669,7 +595,7 @@ public class Tools {
                     new_head.add(matcher.replaceAll(new_value));
                 }
                 messageInfo.setHeaders(isRequest, new_head);
-                return messageInfo.getMessage(isRequest, helpers);
+                return messageInfo.getMessage(isRequest);
 
             case BODY:
                 pattern = Pattern.compile(regex);
@@ -677,7 +603,7 @@ public class Tools {
                 matcher = pattern.matcher(new String(messageInfo.getBody(isRequest)));
                 messageInfo.setBody(isRequest, matcher.replaceAll(new_value));
                 //Automatically update content-lenght
-                return messageInfo.getMessage(isRequest, helpers);
+                return messageInfo.getMessage(isRequest);
 
             case URL:
                 if (!isRequest) {
@@ -689,7 +615,7 @@ public class Tools {
                 String replaced = matcher.replaceAll(new_value);
                 messageInfo.setUrlHeader(replaced);
 
-                return messageInfo.getMessage(isRequest, helpers);
+                return messageInfo.getMessage(isRequest);
         }
         return null;
     }
@@ -697,7 +623,6 @@ public class Tools {
     /**
      * Edit a message parameter
      *
-     * @param helpers         an instance of Burp's IExtensionHelper
      * @param param_name      the name of the parameter to edit
      * @param message_section the message section to edit
      * @param messageInfo     the message as IHttpRequestResponse object
@@ -708,19 +633,19 @@ public class Tools {
      * @return the edited message as byte array
      * @throws ParsingException if problems are encountered in editing the message
      */
-    public static byte[] editMessageParam(IExtensionHelpers helpers,
-                                          String param_name,
+    public static byte[] editMessageParam(String param_name,
                                           HTTPReqRes.MessageSection message_section,
                                           HTTPReqRes messageInfo,
                                           boolean isRequest,
                                           String new_value,
                                           boolean isBodyRegex) throws ParsingException {
+        //TODO: remove in future versions
         Pattern pattern = null;
         Matcher matcher = null;
         switch (message_section) {
             case HEAD:
                 messageInfo.editHeadParam(isRequest, param_name, new_value);
-                byte[] message = messageInfo.getMessage(isRequest, helpers);
+                byte[] message = messageInfo.getMessage(isRequest);
                 messageInfo.setHost(new_value); // this should be set when the message is converted to the burp class
                 return message;
 
@@ -735,7 +660,7 @@ public class Tools {
                 String new_body = matcher.replaceFirst(new_value);
                 messageInfo.setBody(isRequest, new_body);
                 //Automatically update content-lenght
-                return messageInfo.getMessage(isRequest, helpers);
+                return messageInfo.getMessage(isRequest);
 
             case URL:
                 if (!isRequest) {
@@ -748,46 +673,9 @@ public class Tools {
 
                 messageInfo.setUrlHeader(matcher.replaceAll(param_name + "=" + new_value)); // problema
 
-                return messageInfo.getMessage(isRequest, helpers);
+                return messageInfo.getMessage(isRequest);
         }
         return null;
-    }
-
-    public static byte[] editMessageParam(IExtensionHelpers helpers,
-                                          String param_name,
-                                          DecodeOperation.DecodeOperationFrom decodeOperationFrom,
-                                          HTTPReqRes messageInfo,
-                                          boolean isRequest,
-                                          String new_value,
-                                          boolean isBodyRegex) throws ParsingException {
-
-        HTTPReqRes.MessageSection ms = null;
-
-        switch (decodeOperationFrom) {
-            case HEAD:
-                ms = HTTPReqRes.MessageSection.HEAD;
-                break;
-            case BODY:
-                ms = HTTPReqRes.MessageSection.BODY;
-                break;
-            case URL:
-                ms = HTTPReqRes.MessageSection.URL;
-                break;
-            case JWT_HEADER:
-            case JWT_PAYLOAD:
-            case JWT_SIGNATURE:
-                throw new ParsingException("invalid from section in decode operation should be a message section");
-        }
-
-        return editMessageParam(
-                helpers,
-                param_name,
-                ms,
-                messageInfo,
-                isRequest,
-                new_value,
-                isBodyRegex
-        );
     }
 
     /**
@@ -847,6 +735,7 @@ public class Tools {
                                   List<Var> vars,
                                   String save_as,
                                   String newValue) throws PathNotFoundException {
+        //TODO: remove in future versions
         Object document = Configuration.defaultConfiguration().jsonProvider().parse(content);
         JsonPath jsonPath = JsonPath.compile(j_path);
 
@@ -873,6 +762,7 @@ public class Tools {
     /**
      * Checks that the json resulting by parsing the two strings is equals. Equals in this case means that the same keys
      * and values are present, but the order is ignored
+     *
      * @param s1 the string 1
      * @param s2 the string 2
      * @return true or false depending if the json parsing of the two strings is the same or not

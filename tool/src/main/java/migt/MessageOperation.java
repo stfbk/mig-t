@@ -1,6 +1,5 @@
 package migt;
 
-import burp.IExtensionHelpers;
 import org.json.JSONObject;
 
 import java.io.File;
@@ -12,12 +11,10 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import static migt.Tools.getAdding;
+import static migt.Tools.getVariableByName;
 
 /**
  * The class storing a MessageOperation object
- *
- * @author Matteo Bitussi
  */
 public class MessageOperation extends Module {
     HTTPReqRes.MessageSection from;
@@ -101,9 +98,25 @@ public class MessageOperation extends Module {
                     output_path = message_op_json.getString("output_path");
                     break;
                 default:
-                    System.err.println(key);
-                    throw new ParsingException("Message operation not valid");
+                    throw new ParsingException("Message operation key \" " + key + "\" not valid");
             }
+        }
+    }
+
+    /**
+     * Returns the adding of a message operation, decides if the value to be inserted/edited should be a variable or
+     * a typed value and return it
+     *
+     * @param m the message operation which has to be examined
+     * @return the adding to be used in add/edit
+     * @throws ParsingException if the variable name is not valid or the variable has not been initiated
+     */
+    public static String getAdding(MessageOperation m, List<Var> vars) throws ParsingException {
+        if (!m.use.isEmpty()) {
+            return getVariableByName(m.use, vars).value;
+        } else {
+
+            return m.to;
         }
     }
 
@@ -135,8 +148,7 @@ public class MessageOperation extends Module {
      * @return the updated Operation with the result
      * @throws ParsingException if parsing of names is not successfull
      */
-    public Operation execute(Operation op,
-                             IExtensionHelpers helpers) throws ParsingException {
+    public Operation execute(Operation op) throws ParsingException {
         for (MessageOperation mop : op.getMessageOperations()) {
             Pattern pattern;
             Matcher matcher;
@@ -182,12 +194,12 @@ public class MessageOperation extends Module {
                                         matcher = pattern.matcher(url_header);
                                         String new_url = matcher.replaceFirst("");
                                         op.api.message.setUrlHeader(new_url);
-                                        op.processed_message = op.api.message.getMessage(op.api.is_request, helpers);
+                                        op.processed_message = op.api.message.getMessage(op.api.is_request);
                                         break;
 
                                     case HEAD:
                                         op.api.message.removeHeadParameter(op.api.is_request, mop.what);
-                                        op.processed_message = op.api.message.getMessage(op.api.is_request, helpers);
+                                        op.processed_message = op.api.message.getMessage(op.api.is_request);
                                         break;
 
                                     case BODY:
@@ -196,7 +208,7 @@ public class MessageOperation extends Module {
                                         matcher = pattern.matcher(body);
                                         op.api.message.setBody(op.api.is_request, matcher.replaceAll(""));
                                         //Automatically update content-lenght
-                                        op.processed_message = op.api.message.getMessage(op.api.is_request, helpers);
+                                        op.processed_message = op.api.message.getMessage(op.api.is_request);
                                         break;
                                 }
                                 break;
@@ -209,7 +221,7 @@ public class MessageOperation extends Module {
                                 switch (mop.from) {
                                     case HEAD: {
                                         op.api.message.addHeadParameter(op.api.is_request, mop.what, getAdding(mop, op.api.vars));
-                                        op.processed_message = op.api.message.getMessage(op.api.is_request, helpers);
+                                        op.processed_message = op.api.message.getMessage(op.api.is_request);
                                         break;
                                     }
                                     case BODY: {
@@ -217,7 +229,7 @@ public class MessageOperation extends Module {
                                         tmp = tmp + getAdding(mop, op.api.vars);
                                         op.api.message.setBody(op.api.is_request, tmp);
                                         //Automatically update content-lenght
-                                        op.processed_message = op.api.message.getMessage(op.api.is_request, helpers);
+                                        op.processed_message = op.api.message.getMessage(op.api.is_request);
                                         break;
                                     }
                                     case URL:
@@ -238,14 +250,13 @@ public class MessageOperation extends Module {
                                             found = true;
                                         }
                                         op.api.message.setUrlHeader(newHeader_0);
-                                        op.processed_message = op.api.message.getMessage(op.api.is_request, helpers);
+                                        op.processed_message = op.api.message.getMessage(op.api.is_request);
                                         break;
                                 }
                                 break;
 
                             case EDIT:
                                 op.processed_message = Tools.editMessageParam(
-                                        helpers,
                                         mop.what,
                                         mop.from,
                                         op.api.message,
@@ -256,7 +267,6 @@ public class MessageOperation extends Module {
 
                             case EDIT_REGEX:
                                 op.processed_message = Tools.editMessage(
-                                        helpers,
                                         mop.what,
                                         mop,
                                         op.api.message,
@@ -277,7 +287,7 @@ public class MessageOperation extends Module {
                                         }
 
                                         op.api.message.setHeaders(op.api.is_request, new_headers);
-                                        op.processed_message = op.api.message.getMessage(op.api.is_request, helpers);
+                                        op.processed_message = op.api.message.getMessage(op.api.is_request);
                                         break;
                                     }
                                     case BODY: {
@@ -286,7 +296,7 @@ public class MessageOperation extends Module {
                                         op.api.message.setBody(op.api.is_request, matcher.replaceAll(""));
 
                                         //Automatically update content-lenght
-                                        op.processed_message = op.api.message.getMessage(op.api.is_request, helpers);
+                                        op.processed_message = op.api.message.getMessage(op.api.is_request);
                                         break;
                                     }
                                     case URL:
@@ -301,7 +311,7 @@ public class MessageOperation extends Module {
                                         String newHeader_0 = matcher.replaceFirst("");
 
                                         op.api.message.setUrlHeader(newHeader_0);
-                                        op.processed_message = op.api.message.getMessage(op.api.is_request, helpers);
+                                        op.processed_message = op.api.message.getMessage(op.api.is_request);
                                         break;
                                 }
                                 break;
@@ -390,10 +400,6 @@ public class MessageOperation extends Module {
                     } else {
                         op.api.message.setResponse(op.processed_message);
                     }
-                    if (op.processed_message_service != null) {
-                        // TODO: check if ok to remove
-                        //op.api.message.setHttpService(op.processed_message_service);
-                    }
                 }
             } catch (StackOverflowError e) {
                 e.printStackTrace();
@@ -412,7 +418,8 @@ public class MessageOperation extends Module {
         EDIT_REGEX,
         ADD,
         SAVE,
-        SAVE_MATCH;
+        SAVE_MATCH,
+        ENCODE;
 
         /**
          * From a string get the corresponding enum value
@@ -438,8 +445,10 @@ public class MessageOperation extends Module {
                         return SAVE;
                     case "save match":
                         return SAVE_MATCH;
+                    case "encode":
+                        return ENCODE;
                     default:
-                        throw new ParsingException("invalid check operation");
+                        throw new ParsingException("invalid Message operation action \"" + input + "\"");
                 }
             } else {
                 throw new NullPointerException();

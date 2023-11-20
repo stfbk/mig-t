@@ -2,8 +2,6 @@ package migt;
 
 /**
  * Exception raised when the parsing of the language fails
- *
- * @author Matteo Bitussi
  */
 public class ParsingException extends Exception {
     /**
