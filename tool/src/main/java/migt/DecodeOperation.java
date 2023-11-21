@@ -1,6 +1,5 @@
 package migt;
 
-import com.jayway.jsonpath.JsonPath;
 import org.json.JSONArray;
 import org.json.JSONObject;
 

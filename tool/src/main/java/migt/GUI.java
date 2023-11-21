@@ -120,6 +120,7 @@ public class GUI extends JSplitPane {
     private String DRIVER_PATH = "";
     private Thread active_ex;
     private boolean active_ex_finished = false;
+    private Integer DEFAULT_PORT = 8080;
 
     /**
      * Constructor of the plugin UI
@@ -284,6 +285,8 @@ public class GUI extends JSplitPane {
                     JSONObject obj = new JSONObject(tmp);
                     String last_driver_path = obj.getString("last_driver_path");
                     String last_used_browser = obj.getString("last_browser_used");
+                    DEFAULT_PORT = obj.getInt("default_port");
+
 
                     if (!last_driver_path.equals("")) {
                         DRIVER_PATH = last_driver_path;
@@ -397,7 +400,7 @@ public class GUI extends JSplitPane {
                 for (Session s : test.sessions) {
                     if (!sessions_names.contains(s.name)) {
                         sessions_names.add(s.name);
-                        session_port.put(s.name, "8080"); // set default port to session
+                        session_port.put(s.name, DEFAULT_PORT.toString()); // set default port to session
                     }
                 }
             }
@@ -1000,7 +1003,7 @@ public class GUI extends JSplitPane {
                     !btnselectChrome.isEnabled(),
                     DRIVER_PATH,
                     track,
-                    "8080",
+                    DEFAULT_PORT.toString(),
                     "test");
             ex.registerExecuteTrackListener(listener);
             new Thread(ex).start();
