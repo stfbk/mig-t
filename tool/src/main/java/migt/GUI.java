@@ -64,6 +64,11 @@ public class GUI extends JSplitPane {
     private final Object[][] foundData = {};
     private final Object lock2 = new Object();
     public ArrayList<HTTPReqRes> interceptedMessages;
+    String SAVE_FILE_PATH = "";
+    String RECORD_FILE_PATH = "";
+    boolean FILTERING = true;
+    String MSG_DEF_PATH = "msg_def.json";
+    String CONFIG_FILE_PATH = "config.json";
     //GUI
     JTable resultTable;
     JTable testTable;
@@ -106,21 +111,16 @@ public class GUI extends JSplitPane {
     boolean recording = false;
     boolean OFFLINE = false;
     boolean SAVE_TO_FILE = false;
-    String SAVE_FILE_PATH = "";
-    String RECORD_FILE_PATH = "";
-    boolean FILTERING = true;
-    String MSG_DEF_PATH = "msg_def.json";
-    String CONFIG_FILE_PATH = "config.json";
     Operation act_active_op;
     ExecuteActives ex;
     List<MessageType> messageTypes;
+    private Integer DEFAULT_PORT = 8080;
+    private String DRIVER_PATH = "";
     private List<Test> actives;
     private Map<String, Component> sessions_text;
     private List<Test> passives;
-    private String DRIVER_PATH = "";
     private Thread active_ex;
     private boolean active_ex_finished = false;
-    private Integer DEFAULT_PORT = 8080;
 
     /**
      * Constructor of the plugin UI
@@ -216,7 +216,7 @@ public class GUI extends JSplitPane {
     }
 
     /**
-     * Set a redirect of the stdout and stderr to the txtboxes in the GUI
+     * Set a redirect of the stdout and stderr to the txtboxes in the debug tab of the GUI
      */
     private void set_std_out_redirect() {
         // Stdout out redirect
@@ -236,29 +236,25 @@ public class GUI extends JSplitPane {
     private void readMsgDefFile() {
         File msg_def_file = new File(MSG_DEF_PATH);
         try {
-            if (!msg_def_file.createNewFile()) {
-                Scanner myReader = null;
-                String tmp = "";
-                try {
-                    myReader = new Scanner(msg_def_file);
-                    while (myReader.hasNextLine()) {
-                        tmp += myReader.nextLine();
-                    }
-                    myReader.close();
-                    messageTypes = Tools.readMsgTypesFromJson(tmp);
-                } catch (ParsingException e) {
-                    lblOutput.setText("Invalid message type in message type definition file");
-                    e.printStackTrace();
-                } catch (FileNotFoundException e) {
-                    lblOutput.setText("Cannot find message definition file");
-                }
-            } else {
+            if (msg_def_file.createNewFile()) {
+                // if file does not exist
                 FileWriter w = new FileWriter(MSG_DEF_PATH);
                 w.write(Tools.getDefaultJSONMsgType());
                 w.close();
-                messageTypes = Tools.readMsgTypesFromJson(Tools.getDefaultJSONMsgType());
             }
+
+            // read content
+            StringBuilder content = new StringBuilder();
+            Scanner myReader = new Scanner(msg_def_file);
+
+            while (myReader.hasNextLine()) {
+                content.append(myReader.nextLine());
+            }
+            myReader.close();
+            messageTypes = Tools.readMsgTypesFromJson(content.toString()); // load messsage types
+
         } catch (ParsingException e) {
+            lblOutput.setText("Invalid message type in message type definition file");
             e.printStackTrace();
         } catch (IOException e) {
             e.printStackTrace();
@@ -273,42 +269,33 @@ public class GUI extends JSplitPane {
         File config_file = new File(CONFIG_FILE_PATH);
         try {
             if (!config_file.createNewFile()) {
-                Scanner myReader = null;
-                String tmp = "";
-                try {
-                    myReader = new Scanner(config_file);
-                    while (myReader.hasNextLine()) {
-                        tmp += myReader.nextLine();
+                StringBuilder content = new StringBuilder();
+                Scanner myReader = new Scanner(config_file);
+                while (myReader.hasNextLine()) {
+                    content.append(myReader.nextLine());
+                }
+                myReader.close();
+
+                JSONObject obj = new JSONObject(content.toString());
+                String last_driver_path = obj.getString("last_driver_path");
+                String last_used_browser = obj.getString("last_browser_used");
+                DEFAULT_PORT = obj.getInt("default_port");
+
+                if (!last_driver_path.isEmpty()) {
+                    DRIVER_PATH = last_driver_path;
+                }
+
+                switch (last_used_browser) {
+                    case "firefox": {
+                        btnselectChrome.setEnabled(true);
+                        btnselectFirefox.setEnabled(false);
+                        break;
                     }
-                    myReader.close();
-
-                    JSONObject obj = new JSONObject(tmp);
-                    String last_driver_path = obj.getString("last_driver_path");
-                    String last_used_browser = obj.getString("last_browser_used");
-                    DEFAULT_PORT = obj.getInt("default_port");
-
-
-                    if (!last_driver_path.equals("")) {
-                        DRIVER_PATH = last_driver_path;
+                    case "chrome": {
+                        btnselectChrome.setEnabled(false);
+                        btnselectFirefox.setEnabled(true);
+                        break;
                     }
-
-                    switch (last_used_browser) {
-                        case "firefox": {
-                            btnselectChrome.setEnabled(true);
-                            btnselectFirefox.setEnabled(false);
-                            break;
-                        }
-                        case "chrome": {
-                            btnselectChrome.setEnabled(false);
-                            btnselectFirefox.setEnabled(true);
-                            break;
-                        }
-                    }
-
-                } catch (JSONException e) {
-                    lblOutput.setText("Invalid config file");
-                } catch (FileNotFoundException e) {
-                    lblOutput.setText("Cannot find config file");
                 }
             } else {
                 FileWriter w = new FileWriter(CONFIG_FILE_PATH);
@@ -316,8 +303,9 @@ public class GUI extends JSplitPane {
                 w.close();
             }
         } catch (IOException e) {
-            e.printStackTrace();
-            lblOutput.setText("cannot create message definition file");
+            lblOutput.setText("cannot create message definition file: " + e);
+        } catch (JSONException e) {
+            lblOutput.setText("Invalid config file: " + e);
         }
     }
 
@@ -330,38 +318,30 @@ public class GUI extends JSplitPane {
     private void editConfigFile(String key, String value) {
         File config_file = new File(CONFIG_FILE_PATH);
         try {
-            if (!config_file.createNewFile()) {
-                Scanner myReader = null;
-                String tmp = "";
-                try {
-                    myReader = new Scanner(config_file);
-                    while (myReader.hasNextLine()) {
-                        tmp += myReader.nextLine();
-                    }
-                    myReader.close();
-
-                    JSONObject obj = new JSONObject(tmp);
-                    obj.remove(key);
-                    obj.put(key, value);
-
-                    FileWriter w = new FileWriter(CONFIG_FILE_PATH);
-                    w.write(obj.toString());
-                    w.close();
-
-
-                } catch (JSONException e) {
-                    lblOutput.setText("Invalid config file");
-                } catch (FileNotFoundException e) {
-                    lblOutput.setText("Cannot find config file");
-                }
-            } else {
+            if (config_file.createNewFile()) {
                 FileWriter w = new FileWriter(CONFIG_FILE_PATH);
                 w.write(Tools.getDefaultJSONConfig());
                 w.close();
             }
+
+            StringBuilder content = new StringBuilder();
+            Scanner myReader = new Scanner(config_file);
+            while (myReader.hasNextLine()) {
+                content.append(myReader.nextLine());
+            }
+            myReader.close();
+
+            JSONObject obj = new JSONObject(content.toString());
+            obj.remove(key);
+            obj.put(key, value);
+
+            FileWriter w = new FileWriter(CONFIG_FILE_PATH);
+            w.write(obj.toString());
+            w.close();
         } catch (IOException e) {
-            e.printStackTrace();
-            lblOutput.setText("cannot create message definition file");
+            lblOutput.setText("cannot create message definition file: " + e);
+        } catch (JSONException e) {
+            lblOutput.setText("Invalid config file: " + e);
         }
     }
 
@@ -389,8 +369,6 @@ public class GUI extends JSplitPane {
 
             //Array of Tests
             JSONArray arrTests = obj.getJSONArray("tests");
-
-            //scorro tutti i test
             for (int i = 0; i < arrTests.length(); i++) {
                 JSONObject act_test = arrTests.getJSONObject(i).getJSONObject("test");
 
@@ -406,7 +384,6 @@ public class GUI extends JSplitPane {
             }
             updateSessionTabs();
             updateTxtSessionConfig();
-            //JSONArray result = obj.getJSONArray("Test Suite Result Table");
 
             this.testSuite = new TestSuite(suite_name, suite_description, tests);
             lblInfo.setText("JSON read successfully, Test Suite Object has been created");
@@ -418,9 +395,8 @@ public class GUI extends JSplitPane {
         } catch (Exception e) {
             e.printStackTrace();
 
-            setJSONError(true, "PROBLEM IN READING JSON, check it please");
+            setJSONError(true, "problem in reading json test suite");
         }
-
     }
 
     /**
@@ -494,15 +470,14 @@ public class GUI extends JSplitPane {
         }
         */
 
-        if (actives.size() == 0) {
+        if (actives.isEmpty()) {
             synchronized (lock2) {
                 active_ex_finished = true;
             }
         }
 
-        //FIXME: Passives thread starts without waiting for the end of actives one
         // Execute active tests
-        if (actives.size() != 0) {
+        if (!actives.isEmpty()) {
             try {
                 for (String key : session_port.keySet()) {
                     if (session_port.get(key).equals("")) {
@@ -526,7 +501,6 @@ public class GUI extends JSplitPane {
                     public void onExecuteDone() {
                         if (passives.size() == 0) {
                             update_gui_test_results();
-                            testSuite.log_test_suite(LOG_FOLDER);
 
                             lblOutput.setText("Done. Executed Passive Tests: "
                                     + (passives.isEmpty() ? 0 : passives.size())
@@ -614,7 +588,7 @@ public class GUI extends JSplitPane {
         }
 
         // Execute passive tests
-        if (passives.size() != 0) {
+        if (!passives.isEmpty()) {
             // TODO: Add offline clause
             /*
             if (defaultSession.messages.size() == 0) {
@@ -626,6 +600,7 @@ public class GUI extends JSplitPane {
             ExecutePassiveListener listener = new ExecutePassiveListener() {
                 @Override
                 public boolean onWaitToStart() {
+                    // waits for active test execution to finish before doing passives
                     synchronized (lock2) {
                         return active_ex_finished;
                     }
@@ -853,6 +828,8 @@ public class GUI extends JSplitPane {
             System.out.println(t.getName() + " " + esito);
             addItem(tmp);
         }
+
+        testSuite.log_test_suite(LOG_FOLDER);
 
         btnExecuteSuite.setEnabled(false);
     }

@@ -6,6 +6,7 @@ import com.jayway.jsonpath.Configuration;
 import com.jayway.jsonpath.JsonPath;
 import com.jayway.jsonpath.PathNotFoundException;
 import org.json.JSONArray;
+import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.nio.charset.StandardCharsets;
@@ -193,13 +194,19 @@ public class Tools {
      * Function used to parse the message types from a string
      *
      * @param input a string containing the msg types in JSON
-     * @return a List of messagetype objects
+     * @return a List of MessageType objects
      * @throws ParsingException if the input is malformed
      */
     public static List<MessageType> readMsgTypesFromJson(String input) throws ParsingException {
         List<MessageType> msg_types = new ArrayList<>();
 
-        JSONObject obj = new JSONObject(input);
+        JSONObject obj = null;
+
+        try {
+             obj = new JSONObject(input);
+        } catch (JSONException e) {
+            throw new ParsingException("Invalid JSON in message definition file: " + e);
+        }
         JSONArray message_types = obj.getJSONArray("message_types");
 
         for (int i = 0; i < message_types.length(); i++) {

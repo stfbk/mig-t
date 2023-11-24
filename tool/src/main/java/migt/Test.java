@@ -151,7 +151,7 @@ public class Test {
         violated_properties = "";
         mitigations = "";
 
-        mandatory_keys.add("result");
+        //mandatory_keys.add("result") // for manuals is not required
         mandatory_keys.add("name");
         mandatory_keys.add("type");
         mandatory_keys.add("sessions");
