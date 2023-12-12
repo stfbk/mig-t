@@ -323,7 +323,7 @@ public class Check extends Module {
             try {
                 string = URLDecoder.decode(string, StandardCharsets.UTF_8);
             } catch (IllegalArgumentException e) {
-                throw new RuntimeException("Failed URL-decode in check: " + e);
+                System.err.println("Failed URL-decode in check: " + e);
             }
         }
         return string;

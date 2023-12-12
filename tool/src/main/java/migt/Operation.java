@@ -67,13 +67,6 @@ public class Operation extends Module {
                 String session = operation_json.getString("session");
                 String action = operation_json.getString("action");
 
-                List<SessionOperation> lsop = SessionOperation.parseFromJson(operation_json);
-                if (lsop != null) {
-                    for (SessionOperation sop : lsop) {
-                        session_operations.add(sop);
-                    }
-                }
-
                 setSession(session);
                 setSessionAction(action);
                 isSessionOp = true;
@@ -135,6 +128,16 @@ public class Operation extends Module {
                 // recursion managed inside
                 DecodeOperation decode_op = new DecodeOperation(act_decode_op);
                 decodeOperations.add(decode_op);
+            }
+        }
+
+        // Session Operations
+        if (operation_json.has("session operations")) {
+            List<SessionOperation> session_ops = SessionOperation.parseFromJson(operation_json);
+            if (session_ops != null) {
+                for (SessionOperation sop : session_ops) {
+                    session_operations.add(sop);
+                }
             }
         }
 
@@ -242,7 +245,7 @@ public class Operation extends Module {
      *
      * @return An array of Object elements, the first is the edited operation, the second is the updated variables
      */
-    public List<Var> executeSessionOps(Test t,
+    public List<Var> executeSessionOps(Test t, //TODO add this to the input api of Operation
                                        List<Var> vars) throws ParsingException {
         List<Var> updated_vars = vars;
         for (SessionOperation sop : this.session_operations) {
@@ -458,6 +461,10 @@ public class Operation extends Module {
             executeChecks(this, api.vars);
             if (!applicable | !result)
                 return;
+            // TODO: move this here instead of Execute Actives
+            //executeSessionOps(, api.vars);
+            //if (!applicable | !result)
+            //    return;
 
         } catch (ParsingException | PatternSyntaxException e) {
             applicable = false;
