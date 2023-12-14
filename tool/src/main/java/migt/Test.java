@@ -252,6 +252,7 @@ public class Test {
         String test_log_folder = log_folder + "/" + timestamp + "/" + this.name + "/";
         String matched_folder = test_log_folder + "matched/";
         String all_path = test_log_folder + "all/";
+        String test_log_path = test_log_folder + "test.log";
         File directory = new File(test_log_folder);
         if (!directory.exists()) {
             if (!directory.mkdirs()) {
@@ -271,6 +272,24 @@ public class Test {
             }
         }
 
+        String test_log_content = "Name: " + this.name + "\n";
+
+        test_log_content += "Variables: \n";
+
+        for (Var v : vars) {
+            test_log_content += v.name=v.value+"\n";
+        }
+
+        File test_log = new File(test_log_path);
+        try {
+            FileWriter fw = new FileWriter(test_log.getAbsoluteFile());
+            BufferedWriter bw = new BufferedWriter(fw);
+            bw.write(test_log_content);
+            bw.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
         for (Session s : this.sessions) {
             if (s.name.equals("")) {
                 continue;
@@ -288,7 +307,8 @@ public class Test {
         Integer op_count = 0;
         for (Operation o : this.operations) {
             Integer message_count = 0;
-            String header = "========================= Info ===========================\n";
+            String header = "===================== Session Info =========================\n";
+            header += "===================== Message info =========================\n";
             header += "=\t" + "Intercepted from session: " + o.from_session + "\n";
             header += "=\t" + "Message name: " + o.getMessageType() + "\n";
             header += "==========================================================\n";
