@@ -1,5 +1,6 @@
 package migt;
 
+import com.jayway.jsonpath.JsonPath;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
@@ -516,13 +517,15 @@ public class DecodeOperation extends Module {
                             applicable = false;
                         }
                         break;
-                    } else {
-                        Pattern pattern = Pattern.compile(decode_target);
-                        Matcher matcher = pattern.matcher(j);
-                        while (matcher.find()) {
-                            found = matcher.group();
-                            break;
-                        }
+                    }
+
+                    // https://github.com/json-path/JsonPath
+                    try {
+                        found = JsonPath.read(j, decode_target); // select what to decode
+                    } catch (com.jayway.jsonpath.PathNotFoundException e) {
+                        applicable = false;
+                        result = false;
+                        return;
                     }
                     decoded_content = decode(encodings, found);
                     break;
