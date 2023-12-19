@@ -651,7 +651,7 @@ public class HTTPReqRes implements Cloneable {
      * @param new_value the new value to substitute
      */
     public void editHeadRegex(boolean isRequest, String regex, String new_value) {
-        if (!isResponse) {
+        if (!isRequest && !this.isResponse) {
             throw new RuntimeException("tried to edit headers of response not yet received");
         }
 
