@@ -8,6 +8,7 @@ import com.networknt.schema.JsonSchema;
 import com.networknt.schema.JsonSchemaFactory;
 import com.networknt.schema.SpecVersion;
 import com.networknt.schema.ValidationMessage;
+import org.apache.commons.text.StringEscapeUtils;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -637,6 +638,30 @@ public class Check extends Module {
     @Override
     public String toString() {
         return "check: " + what + (op == null ? "" : " " + op + ": " + op_val);
+    }
+
+    public String toStringExtended() {
+        String template = "Check:\n" +
+                "\tWhat: %s\n" +
+                "\tIs it a param check? %b\n" +
+                "\tregex: %s\n" +
+                "\tWhere: %s\n" +
+                "\tOp: %s\n" +
+                "\tOp val: %s\n" +
+                "\tValue list: %s\n" +
+                "\tUse variable: %b\n" +
+                "\tUrl decode: %b\n";
+
+        return String.format(template,
+                StringEscapeUtils.escapeJava(what),
+                isParamCheck,
+                StringEscapeUtils.escapeJava(regex),
+                in,
+                op,
+                op_val,
+                value_list,
+                use_variable,
+                url_decode);
     }
 
     protected JsonSchema getJsonSchemaFromStringContent(String schemaContent) {

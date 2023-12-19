@@ -142,7 +142,7 @@ public class Operation extends Module {
         }
 
         // Edit operations
-        if (operation_json.has("edits")) {
+        if (operation_json.has("edit operations")) {
             editOperations = Tools.parseEditsFromJSON(operation_json.getJSONArray("edits"));
         }
     }

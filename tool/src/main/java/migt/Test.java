@@ -277,7 +277,7 @@ public class Test {
         test_log_content += "Variables: \n";
 
         for (Var v : vars) {
-            test_log_content += v.name=v.value+"\n";
+            test_log_content += v.name = v.value + "\n";
         }
 
         File test_log = new File(test_log_path);
@@ -304,10 +304,21 @@ public class Test {
                 e.printStackTrace();
             }
         }
+
         Integer op_count = 0;
         for (Operation o : this.operations) {
             Integer message_count = 0;
-            String header = "===================== Session Info =========================\n";
+            String header = "===================== Operation Info =========================\n";
+            header += "Checks: ====================================\n";
+            for (Check c : o.getChecks()) {
+                header += c.toStringExtended();
+            }
+            header += "Decode Operations: =========================\n";
+            for (DecodeOperation d : o.getDecodeOperations()) {
+                header += d.toStringExtended();
+            }
+
+            header += "\n\n";
             header += "===================== Message info =========================\n";
             header += "=\t" + "Intercepted from session: " + o.from_session + "\n";
             header += "=\t" + "Message name: " + o.getMessageType() + "\n";
@@ -348,6 +359,8 @@ public class Test {
             }
 
             HashSet<Integer> logged_requests = new HashSet<Integer>();
+
+            // Save all messages seen by this operation
             if (o.log_messages != null) {
                 for (IInterceptedProxyMessage m : o.log_messages) {
                     if (!logged_requests.contains(m.getMessageReference())) {
@@ -389,6 +402,7 @@ public class Test {
                 }
             }
 
+            // Save edited message
             if (o.processed_message != null) {
                 File log_message = new File(base_path + "_edited.raw");
                 try {

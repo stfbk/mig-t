@@ -380,4 +380,16 @@ public class Checks_Test {
         }
         assertEquals(1,0);
     }
+    @Test
+    void test_print_extended() throws ParsingException {
+        String check_str = "{\n" +
+                "        \"in\": \"header\",\n" +
+                "        \"check\": \"$.pageInfo.imaninteger\",\n" +
+                "        \"json schema compliant\": \"wrongschema\" " +
+                "}";
+
+        Check c = initCheck_json(check_str);
+
+        System.out.println(c.toStringExtended());
+    }
 }

@@ -94,4 +94,10 @@ public class DecodeOperation_Test {
 
         assertEquals(1, dop.editOperations.size());
     }
+
+    @Test
+    void test_print_extended() throws ParsingException {
+        DecodeOperation dop = new DecodeOperation(new JSONObject(input_w_edits_save));
+        System.out.println(dop.toStringExtended());
+    }
 }

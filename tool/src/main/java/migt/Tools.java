@@ -203,7 +203,7 @@ public class Tools {
         JSONObject obj = null;
 
         try {
-             obj = new JSONObject(input);
+            obj = new JSONObject(input);
         } catch (JSONException e) {
             throw new ParsingException("Invalid JSON in message definition file: " + e);
         }

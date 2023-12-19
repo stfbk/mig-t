@@ -1,6 +1,7 @@
 package migt;
 
 import com.jayway.jsonpath.JsonPath;
+import org.apache.commons.text.StringEscapeUtils;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
@@ -587,6 +588,31 @@ public class DecodeOperation extends Module {
             }
         }
         return true;
+    }
+
+    /**
+     * Returns an extended string representation of this decode operation
+     *
+     * @return the extended string representation of this decode operation
+     */
+    public String toStringExtended() {
+        String template = "Decode operation:\n" +
+                "\tfrom: %s\n" +
+                "\tdecode target: %s\n" +
+                "\tis regex %b\n" +
+                "\tencodings: %s\n" +
+                "\ttype: %s\n" +
+                "\tdecoded content: %s\n" +
+                "\tdecode operations: %s\n";
+
+
+        return String.format(template, from,
+                StringEscapeUtils.escapeJava(decode_target),
+                is_regex,
+                encodings,
+                type,
+                StringEscapeUtils.escapeJava(decoded_content),
+                decodeOperations);
     }
 
     /**

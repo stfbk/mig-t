@@ -163,6 +163,18 @@ By using an Edit Operation inside an Operation, you are able to edit the interce
 
 >Note: Save from message is not possible in edit, is should be done in message operations
 
+example:
+
+```json
+"edit operations": [
+  {
+    "from": "url",
+    "edit": "client_id",
+    "value": "fakeclientid"
+  }
+]
+```
+
 ### Using Edit Operation in Decode Operations
 
 It is possible to edit the decoded content of decode Ops by using edit Operations. A list of edit Operations has to be specified. When using Edit Op. inside Decode Operations, depending on the `type` specified in Decode Operations, you can use different keys.
