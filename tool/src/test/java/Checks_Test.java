@@ -374,7 +374,7 @@ public class Checks_Test {
         Check c = initCheck_json(check_str);
         try {
             c.execute(new ArrayList<>());
-        } catch (RuntimeException e) {
+        } catch (RuntimeException | ParsingException e) {
             assertEquals(1,1);
             return;
         }

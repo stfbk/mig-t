@@ -4,10 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.jayway.jsonpath.JsonPath;
-import com.networknt.schema.JsonSchema;
-import com.networknt.schema.JsonSchemaFactory;
-import com.networknt.schema.SpecVersion;
-import com.networknt.schema.ValidationMessage;
+import com.networknt.schema.*;
 import org.apache.commons.text.StringEscapeUtils;
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -292,8 +289,6 @@ public class Check extends Module {
             if (m.find()) {
                 val = m.group();
                 val = val.trim();
-            } else {
-                //return false; // TODO: check if correct, is not present?
             }
 
             return do_check(val);
@@ -542,7 +537,7 @@ public class Check extends Module {
                 case IS_NOT_PRESENT:
                     return val_to_check.isEmpty();
                 case IS_IN:
-                    return value_list.contains(val_to_check); // TODO check
+                    return value_list.contains(val_to_check);
                 case IS_NOT_IN:
                     return !value_list.contains(val_to_check);
                 case MATCHES_REGEX: {
@@ -618,8 +613,8 @@ public class Check extends Module {
                     result = execute_json();
                     break;
                 case NONE:
+                    //TODO
                     break;
-                //TODO
                 case XML:
                     //TODO
                     break;
@@ -664,9 +659,15 @@ public class Check extends Module {
                 url_decode);
     }
 
-    protected JsonSchema getJsonSchemaFromStringContent(String schemaContent) {
-        JsonSchemaFactory factory = JsonSchemaFactory.getInstance(SpecVersion.VersionFlag.V4);
-        return factory.getSchema(schemaContent);
+    protected JsonSchema getJsonSchemaFromStringContent(String schemaContent) throws ParsingException {
+        JsonSchema res = null;
+        try {
+            JsonSchemaFactory factory = JsonSchemaFactory.getInstance(SpecVersion.VersionFlag.V4);
+            res = factory.getSchema(schemaContent);
+        } catch (JsonSchemaException e) {
+            throw new ParsingException("invalid json schema provided: " + e);
+        }
+        return res;
     }
 
     /**

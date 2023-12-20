@@ -38,6 +38,11 @@ public class TestSuite {
         this.tests = tests;
     }
 
+    /**
+     * This function logs the test suite results and calls the logging function of every test.
+     *
+     * @param log_folder_path the log path containing all the mig-t logs
+     */
     public void log_test_suite(String log_folder_path) {
         String timestamp = new SimpleDateFormat("yyyy_MM_dd_HH_mm").format(new java.util.Date());
         String test_log_folder = log_folder_path + "/" + timestamp + "/suite_" + this.name + "/";
@@ -59,6 +64,8 @@ public class TestSuite {
                     "|" + (t.isActive ? "active" : "passive") +
                     "|" + t.success +
                     "|" + t.applicable + "|\n";
+
+            t.logTest(log_folder_path);
         }
 
         File log_message = new File(test_log_folder + "results.md");

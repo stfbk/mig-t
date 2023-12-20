@@ -208,18 +208,24 @@ public class HTTPReqRes implements Cloneable {
 
         List<String> headers = getHeaders(isRequest);
         String content_header = "Content-Length: " + body.length;
+        boolean content_hearder_found = false;
 
         for (String header : headers) {
             if (header.contains("Content-Length:")) {
+                content_hearder_found = true;
                 if (body.length == 0)
                     continue;// if Content-Length header found, but message has no body, remove.
                 builded += content_header;
-
             } else {
                 builded += header;
             }
             builded += "\r\n";
         }
+
+        if (!content_hearder_found && body.length != 0) {
+            builded += content_header + "\r\n";
+        }
+
         builded += "\r\n"; // last row of header before body
 
         if (body.length != 0)
@@ -240,7 +246,6 @@ public class HTTPReqRes implements Cloneable {
         } else if (!isRequest && this.response == null) {
             throw new RuntimeException("Called getMessage on a message that is not initialized");
         }
-        build_message(isRequest);
 
         if (isRequest) {
             request = build_message(isRequest);

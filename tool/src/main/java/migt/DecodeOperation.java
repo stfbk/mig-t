@@ -452,7 +452,7 @@ public class DecodeOperation extends Module {
                     } else {
                         ((Operation_API) imported_api).message.editHeadParam(
                                 ((Operation_API) imported_api).is_request, decode_target, encoded
-                        ); // TODO test
+                        );
                     }
                     break;
                 case BODY:

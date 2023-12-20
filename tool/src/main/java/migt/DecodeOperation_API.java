@@ -3,7 +3,7 @@ package migt;
 public class DecodeOperation_API extends API {
     public DecodeOperation.DecodeOpType type; // the type of the decoded param
 
-    public JWT jwt; // TODO: use this instead of single strings
+    public JWT jwt;
     public String txt;
     public String xml;
 

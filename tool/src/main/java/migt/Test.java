@@ -240,12 +240,13 @@ public class Test {
     }
 
     /**
-     * Function used to log the test informations, such as matched messages, all the messages intercepted, and sessions
+     * Function used to logs informations about the test, such as matched messages, all the messages intercepted,
+     * and sessions
      *
-     * @param log_folder The folder where to log the test
+     * @param log_folder The folder containing all the mig-t logs
      */
     public void logTest(String log_folder) {
-        if (this.name.equals("")) {
+        if (this.name.isEmpty()) {
             return;
         }
         String timestamp = new SimpleDateFormat("yyyy_MM_dd_HH_mm").format(new java.util.Date());

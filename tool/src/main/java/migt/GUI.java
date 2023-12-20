@@ -499,7 +499,7 @@ public class GUI extends JSplitPane {
 
                     @Override
                     public void onExecuteDone() {
-                        if (passives.size() == 0) {
+                        if (passives.isEmpty()) {
                             update_gui_test_results();
 
                             lblOutput.setText("Done. Executed Passive Tests: "
@@ -561,9 +561,7 @@ public class GUI extends JSplitPane {
                         int indx = testSuite.tests.indexOf(actual_test);
                         if (indx != -1) {
                             System.out.printf("Saving test %s in test results", actual_test.getName());
-                            //TODO: add log of sessions
                             testSuite.tests.set(indx, actual_test);
-                            actual_test.logTest(LOG_FOLDER);
                         }
                     }
 
@@ -613,7 +611,7 @@ public class GUI extends JSplitPane {
 
                 @Override
                 public void onExecuteDone(List<Test> passives_test) {
-                    //TODO: Check if this is ok
+                    //Actives are already executed, because passives are started after actives
                     lblOutput.setText("Done. Executed Passive Tests: "
                             + (passives.isEmpty() ? 0 : passives.size())
                             + " - Active Tests: "

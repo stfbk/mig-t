@@ -65,7 +65,6 @@ public class EditOperation extends Module {
                     break;
                 case "value":
                     // value of xml or other edits
-                    // TODO add in doc, used also for messages
                     value = eop_json.getString("value");
                     break;
                 case "add tag":
@@ -339,7 +338,6 @@ public class EditOperation extends Module {
                                         jwt_action, tmp_imported_api.jwt.header, what, vars, save_as, value);
                                 break;
                             case PAYLOAD:
-                                // TODO: pass newvalue
                                 tmp_imported_api.jwt.payload = Tools.editJson(
                                         jwt_action, tmp_imported_api.jwt.payload, what, vars, save_as, value);
                                 break;
