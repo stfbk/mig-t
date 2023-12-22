@@ -12,10 +12,7 @@ import org.json.JSONObject;
 
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -401,6 +398,10 @@ public class Check extends Module {
                     found_obj instanceof java.lang.Integer) {
                 // the value is an double or integer, convert to string
                 found = String.valueOf(found_obj);
+            } else if (found_obj instanceof LinkedHashMap) {
+                found = new JSONObject((HashMap) found_obj).toString();
+            } else {
+                throw new RuntimeException("invalid object resulting from JWT Path");
             }
 
         } catch (com.jayway.jsonpath.PathNotFoundException e) {

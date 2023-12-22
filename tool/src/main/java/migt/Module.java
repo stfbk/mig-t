@@ -2,8 +2,6 @@ package migt;
 
 import org.json.JSONObject;
 
-import java.security.NoSuchAlgorithmException;
-
 /**
  * This class is the Parent class inherited by all modules. It provides some methods and parameters to be
  * used by other classes
@@ -105,6 +103,7 @@ public class Module {
 
     /**
      * Execute this module and give a result
+     *
      * @return the result of this module
      */
     public void execute() {

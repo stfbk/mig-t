@@ -1,7 +1,6 @@
 package migt;
 
 import burp.IInterceptedProxyMessage;
-import org.checkerframework.checker.units.qual.A;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
@@ -475,7 +474,7 @@ public class Operation extends Module {
                 at.loader(api);
                 at.execute();
                 setResult(at);
-                if (!applicable | ! result) {
+                if (!applicable | !result) {
                     return;
                 }
             }
