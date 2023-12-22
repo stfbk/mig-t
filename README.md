@@ -1,21 +1,21 @@
 # MIG-T Pentesting Tool
 
-MIG-T Pentesting Tool is a plugin for BurpSuite that helps security testers automate their testing activities. It allows the tester to define automations to edit or check correctnees of HTTP messages. It integrates an automated browser used to simulate user actions on a webpage, to trigger specific messages. It uses MIG-L language to define tests to be executed by MIG-T<br>
+MIG-T Pentesting Tool is a plugin for BurpSuite that helps security testers automate their testing activities. It allows the tester to define automations to edit or check correctnees of HTTP messages. It integrates an automated browser used to simulate user actions on a webpage, to trigger specific messages. It uses a machine-readable JSON language to define tests that will be executed by MIG-T<br>
 
 ## Quickstart
 
 <details>
   <summary>Details</summary>
-We suggest you to download the lastest release of the tool from the release page, otherwise you can compile the last version from the source code by following the steps described in the "how to compile the plugin" section.
+We suggest you to download the lastest release of the tool from the release page, otherwise you can compile the last version from the source code by following the steps described in the "[how to compile the plugin](#how-to-compile-the-plugin)" section.
 
 ## Download & start the tool
 
-1. download from the release page the last version of the tool select the one which ends with `with-dependencies`, or compile the source code.
+1. download from the release page the last version of the tool, select the jar which ends with `with-dependencies`, or compile the source code.
 2. Download the last version of [Burp Suite Community Edition](https://portswigger.net/burp/releases/community/latest)
 3. Start Burp and go in the _Exstensions_ tab
 4. Press _Add_ button
 5. In the _Extension file (.jar)_ select the tool jar you downloaded before
-6. Now the plugin should be loaded, go to the "MIG-T" tab
+6. Now the plugin should be loaded, go to the "MIG-T" tab, and you can start using it. For more info on how to start testing, check out the [wiki](https://github.com/stfbk/mig-t/wiki)
 
 ## Download and add browser driver
 
@@ -61,7 +61,7 @@ The folder tool is an intelliJ project, if you open it with intelliJ IDEA it sho
 
 <details>
   <summary>Details</summary>
-You don't need to use IDEA to compile the project, you can install maven, go to the project direcotry `tool` mentioned before and type
+You don't have to use IDEA to compile the project, you can install maven, go to the project direcotry `tool` mentioned before and type
 
 ```bash
 mvn install
@@ -83,17 +83,10 @@ You have to use the jar that has "-with-dependencies" in its name, the other wil
 
 ## Documentation
 
-You can find the documentation about the language used by the tool in the `doc/` folder. The documentation about the code is not yet finished, but all the functions are documented in the code.
-
-## Known Bugs
-
-- On windows, the re-signing of the SAML messages sometimes will fail
-
-# External / Related projects
-
-Extended in the context of the industrial collaboration with IPZS and Futuro&Conoscenza
+Documentation about MIG-T and the language can be found in this repo's [wiki](https://github.com/stfbk/mig-t/wiki)
 
 # Contributors
+
 Following is the list of students that contributed to the evolution of the tool, and their corresponding thesis.
 
 - Matteo Bitussi (Bachelor's Thesis, University of Trento, 2022) Declarative Specification of Pentesting Strategies for Browser-based Security Protocols: the Case Studies of SAML and OAuth/OIDC
@@ -132,4 +125,5 @@ Some parts of the tool that manages SAML certificates has been built by using po
 
 ### nimbus-jose-jwt
 
+Parts of the tool that manage JWTs has been built using nimbus-jose-jwt
 <https://connect2id.com/products/nimbus-jose-jwt>
