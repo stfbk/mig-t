@@ -1,6 +1,7 @@
 package migt;
 
 import burp.IInterceptedProxyMessage;
+import org.checkerframework.checker.units.qual.A;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
@@ -39,6 +40,8 @@ public class Operation extends Module {
     private Action action;
     private String session;
     private SessionOperation.SessionAction sessionAction;
+    // submodules
+    private boolean at_hash_verify;
 
     /**
      * Instantiate an operation
@@ -144,6 +147,11 @@ public class Operation extends Module {
         // Edit operations
         if (operation_json.has("edit operations")) {
             editOperations = Tools.parseEditsFromJSON(operation_json.getJSONArray("edits"));
+        }
+
+        //Other modules
+        if (operation_json.has("at_hash_verify")) {
+            at_hash_verify = operation_json.getBoolean("at_hash_verify");
         }
     }
 
@@ -461,6 +469,17 @@ public class Operation extends Module {
             executeChecks(this, api.vars);
             if (!applicable | !result)
                 return;
+
+            if (at_hash_verify) {
+                At_Hash at = new At_Hash();
+                at.loader(api);
+                at.execute();
+                setResult(at);
+                if (!applicable | ! result) {
+                    return;
+                }
+            }
+
             // TODO: move this here instead of Execute Actives
             //executeSessionOps(, api.vars);
             //if (!applicable | !result)

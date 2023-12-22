@@ -2,6 +2,8 @@ package migt;
 
 import org.json.JSONObject;
 
+import java.security.NoSuchAlgorithmException;
+
 /**
  * This class is the Parent class inherited by all modules. It provides some methods and parameters to be
  * used by other classes
@@ -13,14 +15,18 @@ public class Module {
     API api; // the api of this module
     API imported_api; // the api imported from a previous module
 
+    /**
+     * When the module doesn't require any input
+     */
     public Module() {
 
     }
 
     /**
+     * Used when the module requires input by the user.
      * Instantiate the module by parsing a JSONObject
      *
-     * @param json_module
+     * @param json_module the json input for this module
      */
     public Module(JSONObject json_module) {
         // Parse
@@ -95,5 +101,12 @@ public class Module {
      */
     public boolean getResult() {
         return this.result;
+    }
+
+    /**
+     * Execute this module and give a result
+     * @return the result of this module
+     */
+    public void execute() {
     }
 }
