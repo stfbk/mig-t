@@ -16,16 +16,10 @@ public class Utils_Test {
     @DisplayName("Testing build string with vars")
     void testBuildStringWithVars() throws ParsingException {
         List<Var> vars = new ArrayList<>();
-        Var v = new Var();
-        v.name = "questo";
-        v.isMessage = false;
-        v.value = "provona";
+        Var v = new Var("questo", "provona");
         vars.add(v);
 
-        Var v2 = new Var();
-        v2.name = "qualcosaltro";
-        v2.isMessage = false;
-        v2.value = "prova";
+        Var v2 = new Var("qualcosaltro", "prova");
         vars.add(v2);
 
         String s = "test da aggiungere $questo$ e poi $qualcosaltro$";
@@ -38,16 +32,10 @@ public class Utils_Test {
         assertEquals("test da aggiungere provona e poi prova", res);
 
         s = "open | https://$var3$$var4$ |";
-        Var v3 = new Var();
-        v3.name = "var3";
-        v3.isMessage = false;
-        v3.value = "www.youtube.com";
+        Var v3 = new Var("var3", "www.youtube.com");
         vars.add(v3);
 
-        Var v4 = new Var();
-        v4.name = "var4";
-        v4.isMessage = false;
-        v4.value = "/link/a/caso";
+        Var v4 = new Var("var4", "/link/a/caso");
         vars.add(v4);
 
         res = Tools.buildStringWithVars(vars, s);

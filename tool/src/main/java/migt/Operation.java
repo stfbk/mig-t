@@ -270,52 +270,50 @@ public class Operation extends Module {
 
             switch (sop.action) {
                 case SAVE:
-                    Var v = new Var();
-                    v.name = sop.as;
-                    v.isMessage = false;
-                    v.value = "";
+                    String value = "";
                     switch (sop.target) {
                         case TRACK:
                             for (SessionTrackAction sa : t.getSession(sop.from_session).track
                                     .getStasFromMarkers(sop.at, sop.to, sop.is_from_included, sop.is_to_included)) {
-                                v.value += sa.toString() + "\n";
+                                value += sa.toString() + "\n";
                             }
                             break;
                         case LAST_ACTION:
-                            v.value = session.last_action.toString();
+                            value = session.last_action.toString();
                             break;
                         case LAST_ACTION_ELEM:
-                            v.value = session.last_action.elem;
+                            value = session.last_action.elem;
                             break;
                         case LAST_ACTION_ELEM_PARENT:
-                            v.value = findParentDiv(session.last_action.elem);
+                            value = findParentDiv(session.last_action.elem);
                             break;
                         case LAST_CLICK:
-                            v.value = session.last_click.toString();
+                            value = session.last_click.toString();
                             break;
                         case LAST_CLICK_ELEM:
-                            v.value = session.last_click.elem;
+                            value = session.last_click.elem;
                             break;
                         case LAST_CLICK_ELEM_PARENT:
-                            v.value = findParentDiv(session.last_click.elem);
+                            value = findParentDiv(session.last_click.elem);
                             break;
                         case LAST_OPEN:
-                            v.value = session.last_open.toString();
+                            value = session.last_open.toString();
                             break;
                         case LAST_OPEN_ELEM:
-                            v.value = session.last_open.elem;
+                            value = session.last_open.elem;
                             break;
                         case LAST_URL:
-                            v.value = session.last_url;
+                            value = session.last_url;
                             break;
                         case ALL_ASSERT:
                             for (SessionTrackAction sa : t.getSession(sop.from_session).track.getTrack()) {
                                 if (sa.isAssert) {
-                                    v.value += sa + "\n";
+                                    value += sa + "\n";
                                 }
                             }
                             break;
                     }
+                    Var v = new Var(sop.as, value);
                     updated_vars.add(v);
                     break;
 
@@ -430,9 +428,9 @@ public class Operation extends Module {
         if (api.is_request) {
             if (!replace_request_name.equals("")) {
                 try {
+                    Var v = getVariableByName(replace_request_name, api.vars);
+                    processed_message = v.get_value_message();
                     applicable = true;
-                    processed_message = getVariableByName(replace_request_name, api.vars).message;
-                    //return op;
                 } catch (ParsingException e) {
                     e.printStackTrace();
                     applicable = false;
@@ -442,9 +440,9 @@ public class Operation extends Module {
         } else {
             if (!replace_response_name.equals("")) {
                 try {
+                    Var v = getVariableByName(replace_response_name, api.vars);
+                    processed_message = v.get_value_message();
                     applicable = true;
-                    processed_message = getVariableByName(replace_response_name, api.vars).message;
-                    //return op;
                 } catch (ParsingException e) {
                     e.printStackTrace();
                     applicable = false;
@@ -491,10 +489,10 @@ public class Operation extends Module {
         }
 
         if (!save_name.equals("")) {
-            Var v = new Var();
-            v.name = save_name;
-            v.isMessage = true;
-            v.message = api.is_request ? api.message.getRequest() : api.message.getResponse();
+            Var v = new Var(
+                    save_name,
+                    api.is_request ? api.message.getRequest() : api.message.getResponse()
+            );
             api.vars.add(v);
         }
     }

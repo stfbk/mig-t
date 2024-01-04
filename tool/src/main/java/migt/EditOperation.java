@@ -301,10 +301,7 @@ public class EditOperation extends Module {
                         String to_save = XML.getTagValaue(edited_xml,
                                 xml_action_name,
                                 xml_occurrency);
-                        Var v = new Var();
-                        v.name = save_as;
-                        v.isMessage = false;
-                        v.value = to_save;
+                        Var v = new Var(save_as, to_save);
                         vars.add(v);
                         break;
                     }
@@ -312,10 +309,7 @@ public class EditOperation extends Module {
                         String to_save = XML.getTagAttributeValue(edited_xml,
                                 xml_tag, xml_action_name,
                                 xml_occurrency);
-                        Var v = new Var();
-                        v.name = save_as;
-                        v.isMessage = false;
-                        v.value = to_save;
+                        Var v = new Var(save_as, to_save);
                         vars.add(v);
                         break;
                 }
@@ -395,10 +389,7 @@ public class EditOperation extends Module {
                             break;
                         }
 
-                        Var v = new Var();
-                        v.name = save_as;
-                        v.isMessage = false;
-                        v.value = val;
+                        Var v = new Var(save_as, val);
                         vars.add(v);
                         break;
                 }
@@ -538,11 +529,7 @@ public class EditOperation extends Module {
         // If a variable value has to be used, read the value of the variable at execution time
         if (!use.equals("")) {
             Var v = getVariableByName(use, vars);
-            if (!v.isMessage) {
-                value = v.value;
-            } else {
-                throw new ParsingException("Error while using variable, expected text var, got message var");
-            }
+            value = v.get_value_string();
         }
 
         if (imported_api instanceof DecodeOperation_API) {

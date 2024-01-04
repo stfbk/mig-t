@@ -111,32 +111,48 @@ public class Check extends Module {
                         break;
                     case "is in":
                         this.op = CheckOps.IS_IN;
-                        JSONArray jsonArr = json_check.getJSONArray("is in");
-                        Iterator<Object> it = jsonArr.iterator();
 
-                        while (it.hasNext()) {
-                            String act_enc = (String) it.next();
-                            value_list.add(act_enc);
+                        if (json_check.has("use variable")) {
+                            // inside "is in" a string with the name of the var is expected
+                            this.op_val = json_check.getString("is in");
+                        } else {
+                            JSONArray jsonArr = json_check.getJSONArray("is in");
+                            Iterator<Object> it = jsonArr.iterator();
+
+                            while (it.hasNext()) {
+                                String act_enc = (String) it.next();
+                                value_list.add(act_enc);
+                            }
                         }
                         break;
                     case "is not in":
                         this.op = CheckOps.IS_NOT_IN;
-                        JSONArray jsonArr2 = json_check.getJSONArray("is not in");
-                        Iterator<Object> it2 = jsonArr2.iterator();
+                        if (json_check.has("use variable")) {
+                            // inside "is not in" a string with the name of the var is expected
+                            this.op_val = json_check.getString("is not in");
+                        } else {
+                            JSONArray jsonArr2 = json_check.getJSONArray("is not in");
+                            Iterator<Object> it2 = jsonArr2.iterator();
 
-                        while (it2.hasNext()) {
-                            String act_enc = (String) it2.next();
-                            value_list.add(act_enc);
+                            while (it2.hasNext()) {
+                                String act_enc = (String) it2.next();
+                                value_list.add(act_enc);
+                            }
                         }
                         break;
                     case "is subset of":
                         this.op = IS_SUBSET_OF;
-                        JSONArray jsonArr3 = json_check.getJSONArray("is subset of");
-                        Iterator<Object> it3 = jsonArr3.iterator();
+                        if (json_check.has("use variable")) {
+                            // inside "is subset of" a string with the name of the var is expected
+                            this.op_val = json_check.getString("is subset of");
+                        } else {
+                            JSONArray jsonArr3 = json_check.getJSONArray("is subset of");
+                            Iterator<Object> it3 = jsonArr3.iterator();
 
-                        while (it3.hasNext()) {
-                            String act_enc = (String) it3.next();
-                            value_list.add(act_enc);
+                            while (it3.hasNext()) {
+                                String act_enc = (String) it3.next();
+                                value_list.add(act_enc);
+                            }
                         }
                         break;
                     case "json schema compliant":
@@ -231,7 +247,14 @@ public class Check extends Module {
      * @throws ParsingException if something wrong is found wrt the language
      */
     private boolean execute_http(HTTPReqRes message,
-                                 boolean isRequest) throws ParsingException {
+                                 boolean isRequest,
+                                 List<Var> vars) throws ParsingException {
+
+        if (use_variable) {
+            Var v = Tools.getVariableByName(op_val, vars);
+            op_val = v.get_value_string();
+        }
+
         String msg_str = "";
         if (this.in == null) {
             throw new ParsingException("from tag in checks is null");
@@ -328,11 +351,32 @@ public class Check extends Module {
      * @return the result of the execution
      * @throws ParsingException if something wrong is found wrt the language
      */
-    private boolean execute_json() throws ParsingException {
+    private boolean execute_json(List<Var> vars) throws ParsingException {
         DecodeOperation_API tmp = ((DecodeOperation_API) this.imported_api);
 
         if (isParamCheck) {
             throw new ParsingException("Cannot execute a 'check param' in a json, please use 'check'");
+        }
+
+        Var v = null;
+
+        if (use_variable) {
+            // Substitute to the op_val variable (that contains the name), the value of the variable
+            v = Tools.getVariableByName(op_val, vars);
+
+            // TODO: check for variable type and check operation compatibility
+            switch (v.getType()) {
+                case STRING:
+                    op_val = v.get_value_string();
+                    break;
+                case JSON_ARRAY: // if the variable is a json array, substitute the value_list
+                    for (Object el : ((JSONArray) v.value).toList()) {
+                        value_list.add(el.toString()); // TODO check for unwanted scenarios when converting to string
+                    }
+                    break;
+                default:
+                    throw new ParsingException("Invalid variable type to be used in check");
+            }
         }
 
         String j = "";
@@ -578,11 +622,8 @@ public class Check extends Module {
                            boolean isRequest,
                            List<Var> vars) throws ParsingException {
 
-        if (use_variable) {
-            // Substitute to the op_val variable (that contains the name), the value of the variable
-            op_val = Tools.getVariableByName(op_val, vars).value;
-        }
-        result = execute_http(message, isRequest);
+
+        result = execute_http(message, isRequest, vars);
         return result;
     }
 
@@ -592,26 +633,18 @@ public class Check extends Module {
      * @param vars the variables of the actual operation (test)
      */
     public void execute(List<Var> vars) throws ParsingException {
-        if (use_variable) {
-            // Substitute to the op_val variable (that contains the name), the value of the variable
-            op_val = Tools.getVariableByName(op_val, vars).value;
-
-            // URL-decode variable value
-            // when a string contains a "+" character then, it is replaced with a space.
-            op_val = url_decode(op_val);
-        }
-
         if (imported_api instanceof Operation_API) {
             // If is inside a standard Operation
             result = execute_http(
                     ((Operation_API) imported_api).message,
-                    ((Operation_API) imported_api).is_request
+                    ((Operation_API) imported_api).is_request,
+                    vars
             );
         } else if (imported_api instanceof DecodeOperation_API) {
             // if inside a decode operation
             switch (((DecodeOperation_API) imported_api).type) {
                 case JWT:
-                    result = execute_json();
+                    result = execute_json(vars);
                     break;
                 case NONE:
                     //TODO

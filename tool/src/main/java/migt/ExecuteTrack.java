@@ -208,9 +208,7 @@ public class ExecuteTrack implements Runnable {
                         continue;
                     }
                     case SET_VAR: {
-                        Var v = new Var();
-                        v.name = action.elem;
-                        v.value = action.content;
+                        Var v = new Var(action.elem, action.content);
                         listener.onSetVar(v);
                         continue;
                     }

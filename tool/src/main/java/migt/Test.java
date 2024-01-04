@@ -278,7 +278,11 @@ public class Test {
         test_log_content += "Variables: \n";
 
         for (Var v : vars) {
-            test_log_content += v.name = v.value + "\n";
+            try {
+                test_log_content += v.name = v.value + "\n";
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
         }
 
         File test_log = new File(test_log_path);

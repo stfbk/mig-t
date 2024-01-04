@@ -1,4 +1,5 @@
 import migt.*;
+import org.json.JSONArray;
 import org.json.JSONObject;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -184,7 +185,7 @@ public class Checks_Test {
                 "}";
 
         List<Var> vars = new ArrayList<Var>();
-        vars.add(new Var("variablename", "abc", false));
+        vars.add(new Var("variablename", "abc"));
 
         Check c = initCheck_json(check_str);
         c.execute(vars);
@@ -202,7 +203,7 @@ public class Checks_Test {
                 "}";
 
         List<Var> vars = new ArrayList<Var>();
-        vars.add(new Var("variablename", "ac", false));
+        vars.add(new Var("variablename", "ac"));
 
         Check c = initCheck_json(check_str);
         c.execute(vars);
@@ -263,6 +264,48 @@ public class Checks_Test {
         Check c = initCheck_json(check_str);
         c.execute(new ArrayList<Var>());
         assertTrue(c.getResult());
+    }
+
+    @Test
+    @DisplayName("check")
+    void test_check_json_array_is_subset_of_variable_ok() throws ParsingException {
+        Var v = new Var("var1", new JSONArray("[\"123\", \"abc\",\"cde\", \"altro\"]"));
+
+        String check_str = "{\n" +
+                "        \"in\": \"header\",\n" +
+                "        \"check\": \"$.pageInfo.entry\",\n" +
+                "        \"is subset of\": \"var1\",\n" +
+                "        \"use variable\": true\n" +
+                "}";
+
+        Check c = initCheck_json(check_str);
+
+        List<Var> vars = new ArrayList<Var>();
+        vars.add(v);
+
+        c.execute(vars);
+        assertTrue(c.getResult());
+    }
+
+    @Test
+    @DisplayName("check")
+    void test_check_json_array_is_subset_of_variable_not_ok() throws ParsingException {
+        Var v = new Var("var1", new JSONArray("[\"123\", \"abc\",\"fgh\", \"altro\"]"));
+
+        String check_str = "{\n" +
+                "        \"in\": \"header\",\n" +
+                "        \"check\": \"$.pageInfo.entry\",\n" +
+                "        \"is subset of\": \"var1\",\n" +
+                "        \"use variable\": true\n" +
+                "}";
+
+        Check c = initCheck_json(check_str);
+
+        List<Var> vars = new ArrayList<Var>();
+        vars.add(v);
+
+        c.execute(vars);
+        assertFalse(c.getResult());
     }
 
     @Test

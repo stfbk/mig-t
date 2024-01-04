@@ -354,7 +354,9 @@ public class Tools {
         while (m.find()) {
             String act_match = m.group();
             act_match = act_match.replaceAll("\\$", "");
-            req_var.put(act_match, getVariableByName(act_match, vars).value);
+
+            Var v = getVariableByName(act_match, vars);
+            req_var.put(act_match, v.get_value_string());
         }
 
         if (req_var.isEmpty()) {
@@ -756,10 +758,21 @@ public class Tools {
                 //TODO: check if set also adds in case it is not found
                 break;
             case SAVE:
-                Var v = new Var();
-                v.name = save_as;
-                v.isMessage = false;
-                v.value = JsonPath.read(content, j_path); //TODO could rise errors
+                Object to_save = JsonPath.read(content, j_path);
+
+                Var v = null;
+                if (to_save instanceof String) {
+                    v = new Var(save_as, (String) to_save);
+                } else if (to_save instanceof Double) {
+                    v = new Var(save_as, ((Double) to_save).toString());
+                } else if (to_save instanceof Integer) {
+                    v = new Var(save_as, ((Integer) to_save).toString());
+                } else if (to_save instanceof net.minidev.json.JSONArray) {
+                    v = new Var(save_as, ((net.minidev.json.JSONArray) to_save).toJSONString());
+                } else {
+                    throw new RuntimeException("Invalid type of saving variable");
+                }
+
                 vars.add(v);
                 break;
         }

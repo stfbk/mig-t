@@ -113,7 +113,8 @@ public class MessageOperation extends Module {
      */
     public static String getAdding(MessageOperation m, List<Var> vars) throws ParsingException {
         if (!m.use.isEmpty()) {
-            return getVariableByName(m.use, vars).value;
+            Var v = getVariableByName(m.use, vars);
+            return v.get_value_string();
         } else {
 
             return m.to;
@@ -336,10 +337,7 @@ public class MessageOperation extends Module {
                                             }
                                         }
 
-                                        Var v = new Var();
-                                        v.name = mop.save_as;
-                                        v.isMessage = false;
-                                        v.value = value;
+                                        Var v = new Var(mop.save_as, value);
                                         op.api.vars.add(v);
                                         break;
                                     }
@@ -347,15 +345,14 @@ public class MessageOperation extends Module {
                                         String tmp = new String(op.api.message.getBody(op.api.is_request), StandardCharsets.UTF_8);
                                         pattern = Pattern.compile(mop.what);
                                         matcher = pattern.matcher(tmp);
-                                        Var v = new Var();
+                                        Var v = null;
 
                                         while (matcher.find()) {
-                                            v.name = mop.save_as;
-                                            v.isMessage = false;
-                                            v.value = matcher.group();
+                                            v = new Var(mop.save_as, matcher.group());
                                             break;
                                         }
-                                        op.api.vars.add(v);
+                                        if (v != null)
+                                            op.api.vars.add(v);
                                         break;
                                     }
                                     case URL: {
@@ -378,10 +375,7 @@ public class MessageOperation extends Module {
                                                     matched.split("=")[1] :
                                                     matched;
 
-                                            Var v = new Var();
-                                            v.name = mop.save_as;
-                                            v.isMessage = false;
-                                            v.value = value;
+                                            Var v = new Var(mop.save_as, value);
                                             op.api.vars.add(v);
                                         }
                                         break;
