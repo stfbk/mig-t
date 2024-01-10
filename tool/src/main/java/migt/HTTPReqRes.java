@@ -33,7 +33,7 @@ public class HTTPReqRes implements Cloneable {
     byte[] body_resp = null; // the body of the response message
     // host data
     private String host;
-    private int port = 0;
+    private int port = -1;
     private String protocol;
     // message data
     private String request_url; // The url of the request (not the header)
@@ -812,6 +812,12 @@ public class HTTPReqRes implements Cloneable {
         new_header_0 += "/" + header_0[2].split("/")[1];
 
         String new_header_1 = "Host: " + url.getHost();
+
+        port = url.getPort();
+
+        if (port != -1) {
+            new_header_1 += ":" + port;
+        }
 
         if (!headers_req.get(1).contains("Host")) {
             throw new RuntimeException("could not find Host header in header");
