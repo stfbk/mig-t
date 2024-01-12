@@ -369,10 +369,8 @@ public class Check extends Module {
                 case STRING:
                     op_val = v.get_value_string();
                     break;
-                case JSON_ARRAY: // if the variable is a json array, substitute the value_list
-                    for (Object el : ((JSONArray) v.value).toList()) {
-                        value_list.add(el.toString()); // TODO check for unwanted scenarios when converting to string
-                    }
+                case STRING_ARRAY: // if the variable is a json array, substitute the value_list
+                    value_list = Arrays.asList((String[]) v.value);
                     break;
                 default:
                     throw new ParsingException("Invalid variable type to be used in check");

@@ -768,7 +768,7 @@ public class Tools {
                 } else if (to_save instanceof Integer) {
                     v = new Var(save_as, ((Integer) to_save).toString());
                 } else if (to_save instanceof net.minidev.json.JSONArray) {
-                    v = new Var(save_as, ((net.minidev.json.JSONArray) to_save).toJSONString());
+                    v = new Var(save_as, ((net.minidev.json.JSONArray) to_save).toArray());
                 } else {
                     throw new RuntimeException("Invalid type of saving variable");
                 }

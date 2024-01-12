@@ -34,10 +34,11 @@ public class Var_Test {
     void test_var_json_array() {
         JSONArray ja = new JSONArray("[\"first\", \"second\"]");
 
-        Var v = new Var("var1", ja);
+        Var v = new Var("var1", ja.toList().toArray());
 
         assertEquals(v.name, "var1");
-        assertEquals(v.value, ja);
-        assertEquals(v.getType(), Var.VarType.JSON_ARRAY);
+        assertEquals(((String[]) v.value)[0], ja.get(0));
+        assertEquals(((String[]) v.value)[1], ja.get(1));
+        assertEquals(v.getType(), Var.VarType.STRING_ARRAY);
     }
 }

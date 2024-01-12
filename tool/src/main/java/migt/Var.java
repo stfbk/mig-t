@@ -1,7 +1,5 @@
 package migt;
 
-import org.json.JSONArray;
-
 /**
  * The class storing the variables used in the test and sessions
  */
@@ -45,9 +43,20 @@ public class Var {
      * @param name  the name of the variable
      * @param value the value of the JSON array
      */
-    public Var(String name, JSONArray value) {
+    public Var(String name, Object[] value) {
         this.name = name;
-        this.value = value;
+
+        int len = value.length;
+        this.value = new String[len];
+
+        int c = 0;
+
+        for (Object o : value) {
+            if (!(o instanceof String)) {
+                throw new RuntimeException("invalid value in saved array, can only save strings");
+            }
+            ((String[]) this.value)[c++] = (String) o;
+        }
     }
 
     /**
@@ -60,8 +69,8 @@ public class Var {
             return VarType.STRING;
         } else if (value instanceof byte[]) {
             return VarType.MESSAGE;
-        } else if (value instanceof JSONArray) {
-            return VarType.JSON_ARRAY;
+        } else if (value instanceof String[]) {
+            return VarType.STRING_ARRAY;
         } else {
             throw new RuntimeException("The type of the variable is not valid");
         }
@@ -101,6 +110,6 @@ public class Var {
     public enum VarType {
         STRING,
         MESSAGE,
-        JSON_ARRAY
+        STRING_ARRAY
     }
 }

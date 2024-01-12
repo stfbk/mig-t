@@ -269,7 +269,7 @@ public class Checks_Test {
     @Test
     @DisplayName("check")
     void test_check_json_array_is_subset_of_variable_ok() throws ParsingException {
-        Var v = new Var("var1", new JSONArray("[\"123\", \"abc\",\"cde\", \"altro\"]"));
+        Var v = new Var("var1", new JSONArray("[\"123\", \"abc\",\"cde\", \"altro\"]").toList().toArray());
 
         String check_str = "{\n" +
                 "        \"in\": \"header\",\n" +
@@ -290,7 +290,7 @@ public class Checks_Test {
     @Test
     @DisplayName("check")
     void test_check_json_array_is_subset_of_variable_not_ok() throws ParsingException {
-        Var v = new Var("var1", new JSONArray("[\"123\", \"abc\",\"fgh\", \"altro\"]"));
+        Var v = new Var("var1", new JSONArray("[\"123\", \"abc\",\"fgh\", \"altro\"]").toList().toArray());
 
         String check_str = "{\n" +
                 "        \"in\": \"header\",\n" +
