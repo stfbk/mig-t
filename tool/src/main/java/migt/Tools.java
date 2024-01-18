@@ -776,7 +776,14 @@ public class Tools {
                 vars.add(v);
                 break;
         }
-        return Configuration.defaultConfiguration().jsonProvider().toJson(document); //basically converts to string
+
+        // This difference has been added because the parsed documed removed backslashes from the content even if it
+        // was not modified (like if it was just a save)
+        if (!(action == EditOperation.Jwt_action.SAVE)) {
+            return Configuration.defaultConfiguration().jsonProvider().toJson(document); //basically converts to string
+        } else {
+            return content;
+        }
     }
 
     /**
