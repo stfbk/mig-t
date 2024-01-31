@@ -418,11 +418,12 @@ public class Checks_Test {
         try {
             c.execute(new ArrayList<>());
         } catch (RuntimeException | ParsingException e) {
-            assertEquals(1,1);
+            assertEquals(1, 1);
             return;
         }
-        assertEquals(1,0);
+        assertEquals(1, 0);
     }
+
     @Test
     void test_print_extended() throws ParsingException {
         String check_str = "{\n" +

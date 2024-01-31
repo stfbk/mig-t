@@ -137,7 +137,7 @@ public class SessionTrackAction {
                 res += " | " + elem + " |";
                 break;
             case SET_VAR:
-                res += " | " + elem + " | " + elem_source + " |";
+                res += " | " + elem + " | " + content + " |";
                 break;
             case TYPE:
             case CLICK:

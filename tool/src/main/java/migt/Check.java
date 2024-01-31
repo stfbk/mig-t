@@ -332,9 +332,11 @@ public class Check extends Module {
     private String url_decode(String string) {
         if (url_decode) {
             if (string.contains("+")) {
-                System.err.println("Warning! During a check on the value\"" + string + "\" a '+' symbol has been" +
+                System.err.println("Warning! During a check on the value\"" +
+                        ((string.length() > 10) ? string.substring(0,9) + "..." : string) +
+                        "\" a '+' symbol has been" +
                         "converted to a space, as it has been interpreted as url-encoded character. If you want to avoid" +
-                        "this behaviour use 'url decode' tag set to false inside the check to disable url-decoding ");
+                        "this behaviour use 'url decode' tag set to false inside the check to disable url-decoding");
             }
             try {
                 string = URLDecoder.decode(string, StandardCharsets.UTF_8);

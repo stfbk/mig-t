@@ -65,7 +65,7 @@ public class DecodeOperation_Test {
 
         assertEquals(DecodeOperation.DecodeOperationFrom.URL, dop.from);
         assertEquals("asd", dop.decode_target);
-        assertTrue(dop.decodeOperations.size() == 1);
+        assertEquals(1, dop.decodeOperations.size());
 
         DecodeOperation child_dop = dop.decodeOperations.get(0);
         assertEquals(DecodeOperation.DecodeOperationFrom.JWT_HEADER, child_dop.from);

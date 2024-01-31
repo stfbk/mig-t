@@ -319,6 +319,7 @@ public class Tools {
         return "{\n" +
                 "  \"last_driver_path\":\"\",\n" +
                 "  \"last_browser_used\": \"\"\n" +
+                "  \"default_port\":8080\n" +
                 "}";
     }
 

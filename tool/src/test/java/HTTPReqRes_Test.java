@@ -3,10 +3,8 @@ import migt.ParsingException;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-import java.net.MalformedURLException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
@@ -290,7 +288,7 @@ public class HTTPReqRes_Test {
         assertEquals("https://play.google.com/log?format=json&hasfast=true&authuser=0&test=test", message.getUrl());
     }
 
-        @Test
+    @Test
     @DisplayName("")
     public void test_getHeadParam() {
         HTTPReqRes message = initMessage_ok();

@@ -80,7 +80,7 @@ public class ExecuteTrack implements Runnable {
             proxy.setHttpProxy("localhost:" + port);
             proxy.setSslProxy("localhost:" + port);
             options.setCapability(CapabilityType.PROXY, proxy);
-            options.setHeadless(isHeadless);
+            //options.setHeadless(isHeadless);
 
             System.setProperty("webdriver.chrome.driver", driver_path);
             try {
@@ -98,7 +98,7 @@ public class ExecuteTrack implements Runnable {
             proxy.setHttpProxy("localhost:" + port);
             proxy.setSslProxy("localhost:" + port);
             options.setCapability(CapabilityType.PROXY, proxy);
-            options.setHeadless(isHeadless);
+            //options.setHeadless(isHeadless);
 
             System.setProperty("webdriver.gecko.driver", driver_path);
             try {

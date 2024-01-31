@@ -10,7 +10,7 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-public class GUI_Test {
+public class main_Test {
 
     @Test
     @DisplayName("ParsingRawSessionAction test")

@@ -14,7 +14,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 public class At_Hash_Test {
 
     public HTTPReqRes init_message_token_resp() {
-        String raw= "HTTP/1.1 200 OK\r\n" +
+        String raw = "HTTP/1.1 200 OK\r\n" +
                 "Date: Fri, 22 Dec 2023 13:12:13 GMT\r\n" +
                 "Server: WSGIServer/0.2 CPython/3.10.13\r\n" +
                 "Content-Type: application/json\r\n" +

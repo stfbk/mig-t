@@ -47,7 +47,7 @@ class CustomOutputStream extends OutputStream {
 /**
  * This class contains the GUI for the plugin, also a lot of functionality methods
  */
-public class GUI extends JSplitPane {
+public class Main extends JSplitPane {
     private static DefaultTableModel resultTableModel;
     private static DefaultTableModel testTableModel;
     final Object waiting = new Object();
@@ -107,11 +107,11 @@ public class GUI extends JSplitPane {
     Map<String, String> session_port;
     Session defaultSession;
     TestSuite testSuite;
-    boolean ACTIVE_ENABLED;
+    boolean INTERCEPT_ENABLED;
     boolean recording = false;
     boolean OFFLINE = false;
     boolean SAVE_TO_FILE = false;
-    Operation act_active_op;
+    Operation actual_operation;
     ExecuteActives ex;
     List<MessageType> messageTypes;
     private Integer DEFAULT_PORT = 8080;
@@ -125,7 +125,7 @@ public class GUI extends JSplitPane {
     /**
      * Constructor of the plugin UI
      */
-    public GUI() {
+    public Main() {
         super(JSplitPane.VERTICAL_SPLIT);
         //initialize vars
         init();
@@ -206,7 +206,7 @@ public class GUI extends JSplitPane {
         passives = new ArrayList<>();
         actives = new ArrayList<>();
         sessions_names = new ArrayList<>();
-        ACTIVE_ENABLED = false;
+        INTERCEPT_ENABLED = false;
         sessions_text = new HashMap<>();
         messageTypes = new ArrayList<>();
         session_port = new HashMap<>();
@@ -439,7 +439,7 @@ public class GUI extends JSplitPane {
         // clears all previously saved tests
         actives.clear();
         passives.clear();
-        act_active_op = null;
+        actual_operation = null;
         ex = null;
         active_ex_finished = false;
 
@@ -492,8 +492,8 @@ public class GUI extends JSplitPane {
                 ex.registerExecuteActivesListener(new ExecuteActiveListener() {
                     @Override
                     public void onExecuteStart() {
-                        ACTIVE_ENABLED = false;
-                        act_active_op = new Operation();
+                        INTERCEPT_ENABLED = false;
+                        actual_operation = new Operation();
                         lblOutput.setText("Executing active tests");
                     }
 
@@ -517,16 +517,16 @@ public class GUI extends JSplitPane {
 
                     @Override
                     public void onNewProcessOperation(Operation op) {
-                        ACTIVE_ENABLED = true;
-                        act_active_op = op;
+                        INTERCEPT_ENABLED = true;
+                        actual_operation = op;
                     }
 
                     @Override
                     public Operation onOperationDone() {
-                        ACTIVE_ENABLED = false;
-                        Operation tmp = act_active_op;
+                        INTERCEPT_ENABLED = false;
+                        Operation tmp = actual_operation;
 
-                        act_active_op = new Operation();
+                        actual_operation = new Operation();
                         return tmp;
                     }
 
@@ -554,7 +554,7 @@ public class GUI extends JSplitPane {
 
                     @Override
                     public void onNewTest(Test actual_test) {
-                        act_active_op = null;
+                        actual_operation = null;
                     }
 
                     public void onTestDone(Test actual_test) {
@@ -866,7 +866,7 @@ public class GUI extends JSplitPane {
         btndriverSelector = new JButton("Select Driver");
 
         btndriverSelector.addActionListener(actionEvent -> {
-            int returnVal = driverSelector.showOpenDialog(GUI.this);
+            int returnVal = driverSelector.showOpenDialog(Main.this);
             if (returnVal == JFileChooser.APPROVE_OPTION) {
                 File file = driverSelector.getSelectedFile();
                 DRIVER_PATH = file.getPath();
@@ -1039,7 +1039,7 @@ public class GUI extends JSplitPane {
         // Recording button listener
         btnSetRecording.addActionListener(actionEvent -> {
             if (btnSetRecording.isEnabled()) {
-                int returnVal = messageSaver.showOpenDialog(GUI.this);
+                int returnVal = messageSaver.showOpenDialog(Main.this);
                 if (returnVal == JFileChooser.APPROVE_OPTION) {
                     File file = messageSaver.getSelectedFile();
                     RECORD_FILE_PATH = file.getPath();
@@ -1278,7 +1278,7 @@ public class GUI extends JSplitPane {
                 SAVE_FILE_PATH = "";
 
             } else {
-                int returnVal = messageLoader.showOpenDialog(GUI.this);
+                int returnVal = messageLoader.showOpenDialog(Main.this);
                 if (returnVal == JFileChooser.APPROVE_OPTION) {
                     File file = messageLoader.getSelectedFile();
                     SAVE_FILE_PATH = file.getPath();
@@ -1426,7 +1426,7 @@ public class GUI extends JSplitPane {
         btnStop.addActionListener(e -> {
             if (active_ex != null) {
                 active_ex.interrupt();
-                ACTIVE_ENABLED = false;
+                INTERCEPT_ENABLED = false;
                 active_ex.stop();
             }
         });

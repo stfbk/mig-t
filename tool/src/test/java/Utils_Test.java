@@ -1,14 +1,12 @@
 import migt.*;
 import org.json.JSONObject;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class Utils_Test {
 
@@ -190,6 +188,6 @@ public class Utils_Test {
                 "{b : 2, a : {a : 2}}"
         );
 
-        assertEquals(true, res);
+        assertTrue(res);
     }
 }

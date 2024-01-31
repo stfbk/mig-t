@@ -54,7 +54,7 @@ public class SessionTrackAction_Test {
         in = "assert clickable | xpath=/html/body/div[1]/div[2]/div/div[2]/div/div/div/div[2]/div[2]/form/div[6]/div/div[3]/div/div[2]/div[1]/a |";
         s.parse_raw_action(in);
         assertEquals(s.action, SessionOperation.SessAction.ASSERT_CLICKABLE);
-        assertEquals(s.toString(), in);
+        assertEquals(in, s.toString());
 
         s = new SessionTrackAction();
         in = "assert not clickable | xpath=/html/body/div[1]/div[2]/div/div[2]/div/div/div/div[2]/div[2]/form/div[6]/div/div[3]/div/div[2]/div[1]/a |";

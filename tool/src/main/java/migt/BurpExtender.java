@@ -18,7 +18,7 @@ public class BurpExtender implements IBurpExtender, ITab, IProxyListener {
     public static PrintStream printStream;
     public static PrintStream errorStream;
     public IBurpExtenderCallbacks callbacks;
-    private GUI mainPane; // The GUI
+    private Main mainPane; // The GUI
 
     /**
      * Main function creating the extension
@@ -55,7 +55,7 @@ public class BurpExtender implements IBurpExtender, ITab, IProxyListener {
             printStream = new PrintStream(stdOut);
             errorStream = new PrintStream(stdErr);
 
-            mainPane = new GUI();
+            mainPane = new Main();
             mainPane.callbacks = callbacks;
             mainPane.messageViewer = callbacks.createMessageEditor(mainPane.controller, false);
             mainPane.splitPane.setRightComponent(mainPane.messageViewer.getComponent());
@@ -102,36 +102,40 @@ public class BurpExtender implements IBurpExtender, ITab, IProxyListener {
                 proxy_message.getMessageReference()
         );
 
-        if (mainPane.ACTIVE_ENABLED) {
-            if (!port.equals(mainPane.act_active_op.session_port)) {
+        if (mainPane.INTERCEPT_ENABLED) {
+            /* Check at which port of the proxy the message has been received
+               if it is different from the one of the session avoid message*/
+            if (!port.equals(mainPane.actual_operation.session_port)) {
                 return;
             }
 
+            // Log the received message by adding it to the list of received messages
             log_message(messageIsRequest, proxy_message);
 
             MessageType msg_type = null;
             try {
                 msg_type = MessageType.getFromList(mainPane.messageTypes,
-                        mainPane.act_active_op.getMessageType());
+                        mainPane.actual_operation.getMessageType());
             } catch (Exception e) {
                 e.printStackTrace();
-                mainPane.act_active_op.applicable = false;
+                mainPane.actual_operation.applicable = false;
             }
 
+            // Check that the given message matches the message type specified in the test
             boolean matchMessage = message.matches_msg_type(msg_type);
 
             if (matchMessage) {
                 // If the operation's action is an intercept
-                if (Objects.requireNonNull(mainPane.act_active_op.getAction()) == Operation.Action.INTERCEPT) {
+                if (Objects.requireNonNull(mainPane.actual_operation.getAction()) == Operation.Action.INTERCEPT) {
                     try {
                         processMatchedMsg(msg_type, messageInfo, message);
-                        if (mainPane.act_active_op.then != null &
-                                mainPane.act_active_op.then == Operation.Then.DROP) {
+                        if (mainPane.actual_operation.then != null &
+                                mainPane.actual_operation.then == Operation.Then.DROP) {
                             proxy_message.setInterceptAction(IInterceptedProxyMessage.ACTION_DROP);
                         }
                     } catch (Exception e) {
                         e.printStackTrace();
-                        mainPane.act_active_op.applicable = false;
+                        mainPane.actual_operation.applicable = false;
                     }
                 }
             }
@@ -162,19 +166,19 @@ public class BurpExtender implements IBurpExtender, ITab, IProxyListener {
                                    HTTPReqRes message) {
         messageInfo.setHighlight("red");
 
-        mainPane.act_active_op.setAPI(new Operation_API(message, msg_type.msg_to_process_is_request));
-        mainPane.act_active_op.execute();
+        mainPane.actual_operation.setAPI(new Operation_API(message, msg_type.msg_to_process_is_request));
+        mainPane.actual_operation.execute();
 
         // if message has been edited inside operation update the value
         try {
-            if (mainPane.act_active_op.processed_message != null) {
+            if (mainPane.actual_operation.processed_message != null) {
                 if (msg_type.msg_to_process_is_request) {
-                    if (!Arrays.equals(messageInfo.getRequest(), mainPane.act_active_op.processed_message)) {
-                        messageInfo.setRequest(mainPane.act_active_op.processed_message);
+                    if (!Arrays.equals(messageInfo.getRequest(), mainPane.actual_operation.processed_message)) {
+                        messageInfo.setRequest(mainPane.actual_operation.processed_message);
                     }
                 } else {
-                    if (!Arrays.equals(messageInfo.getResponse(), mainPane.act_active_op.processed_message)) {
-                        messageInfo.setResponse(mainPane.act_active_op.processed_message);
+                    if (!Arrays.equals(messageInfo.getResponse(), mainPane.actual_operation.processed_message)) {
+                        messageInfo.setResponse(mainPane.actual_operation.processed_message);
                     }
                 }
             }
@@ -196,6 +200,6 @@ public class BurpExtender implements IBurpExtender, ITab, IProxyListener {
     }
 
     private void log_message(boolean isRequest, IInterceptedProxyMessage message) {
-        mainPane.act_active_op.log_messages.add(message);
+        mainPane.actual_operation.log_messages.add(message);
     }
 }
