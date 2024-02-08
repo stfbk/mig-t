@@ -532,7 +532,7 @@ public class Check extends Module {
                     ObjectMapper mapper = new ObjectMapper();
                     node = mapper.readTree(found);
                 } catch (JsonProcessingException e) {
-                    throw new RuntimeException(e);
+                    throw new ParsingException(e.getMessage());
                 }
 
                 Set<ValidationMessage> errors = schema.validate(node);
