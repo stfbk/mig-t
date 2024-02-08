@@ -144,7 +144,7 @@ public class Tools {
     public static Operation executeMessageOperations(Operation op) throws ParsingException {
         for (MessageOperation mop : op.messageOperations) {
             mop.loader(op.api);
-            mop.execute(op);
+            mop.execute();
             op.setAPI(mop.exporter());
             if (op.setResult(op))
                 break;

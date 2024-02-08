@@ -333,7 +333,7 @@ public class Check extends Module {
         if (url_decode) {
             if (string.contains("+")) {
                 System.err.println("Warning! During a check on the value\"" +
-                        ((string.length() > 10) ? string.substring(0,9) + "..." : string) +
+                        ((string.length() > 10) ? string.substring(0, 9) + "..." : string) +
                         "\" a '+' symbol has been" +
                         "converted to a space, as it has been interpreted as url-encoded character. If you want to avoid" +
                         "this behaviour use 'url decode' tag set to false inside the check to disable url-decoding");
