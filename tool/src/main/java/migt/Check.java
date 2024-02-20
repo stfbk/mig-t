@@ -251,6 +251,7 @@ public class Check extends Module {
                                  List<Var> vars) throws ParsingException {
 
         if (use_variable) {
+            // if use_variable is set, substitute the value to check with the variable value
             Var v = Tools.getVariableByName(op_val, vars);
             op_val = v.get_value_string();
         }
@@ -278,14 +279,14 @@ public class Check extends Module {
                 return false;
         }
 
-        if (msg_str.length() == 0) {
+        if (msg_str.isEmpty()) {
             applicable = true;
             return this.op != null && op == IS_NOT_PRESENT;
         }
 
         msg_str = url_decode(msg_str);
 
-        // if a regex is present, execute it
+        // if a regex is present, execute it instead of the rest
         if (!regex.isEmpty()) {
             return execute_regex(msg_str);
         }

@@ -63,7 +63,6 @@ public class ExecutePassives implements Runnable {
         for (String sessionName : batch.keySet()) {
             List<Test> actual_batch = batch.get(sessionName);
 
-            //FIXME: TEST ARE NOT UPDATED
             Session act_session = actual_batch.get(0).sessions.get(0);
             try {
                 if (act_session.messages.size() == 0) {
@@ -73,14 +72,12 @@ public class ExecutePassives implements Runnable {
                 listener.onError("Error in retrieving session");
                 return;
             }
-            //TODO: make sure that all the tests having the same session have the session
 
             Session executedSession = act_session;
-            //If sessions already executed, don't re-execute them, TODO: they are resetted in the GUI class
+            //If sessions already executed, don't re-execute them
             if (act_session.messages.size() == 0) {
                 executedSession = executePassiveTestSession(act_session);
                 for (Test t : actual_batch) {
-                    // TODO: limit one session for active tests
                     t.sessions.set(0, executedSession);
                 }
                 batch.put(sessionName, actual_batch);
@@ -103,7 +100,7 @@ public class ExecutePassives implements Runnable {
                 System.out.println("Actual test result: " + res);
                 actual_test.success = res;
             }
-            // TODO: Remove used session
+            // Remove used session
             executedSession = null;
         }
         passives = Tools.debatchPassive(batch);

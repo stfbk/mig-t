@@ -189,7 +189,6 @@ public class EditOperation extends Module {
                     action = MessageOperation.MessageOperationActions.REMOVE_PARAMETER;
                     what = eop_json.getString("remove");
                     break;
-                // todo add action of message operation actions
                 default:
                     throw new ParsingException("Invalid key \"" + key + "\" in Edit Operation");
             }

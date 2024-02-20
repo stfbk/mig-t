@@ -26,20 +26,6 @@ public class BurpExtender implements IBurpExtender, ITab, IProxyListener {
      * @param callbacks The callbacks received by Burp
      */
     public void registerExtenderCallbacks(IBurpExtenderCallbacks callbacks) {
-        /*
-        try {
-            System.setOut(new PrintStream("output_log.txt")); // Changes the default outstream with this file
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
-        }
-
-        try {
-            System.setErr(new PrintStream("error_log.txt"));
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
-        }
-        */
-
         System.out.println("Initializing extension");
 
         this.callbacks = callbacks;

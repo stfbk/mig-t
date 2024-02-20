@@ -23,7 +23,7 @@ public interface ExecuteActiveListener {
     void onNewProcessOperation(Operation op);
 
     /**
-     * Called when the execution of an operation is complete
+     * Called when the execution of an operation is completed
      *
      * @return the finished operation
      */

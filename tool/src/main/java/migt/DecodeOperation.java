@@ -458,7 +458,7 @@ public class DecodeOperation extends Module {
                 case BODY:
                     ((Operation_API) imported_api).message.editBodyRegex(
                             ((Operation_API) imported_api).is_request, decode_target, encoded
-                    ); // TODO test
+                    );
                     break;
                 case URL:
                     if (is_regex) {
@@ -468,7 +468,7 @@ public class DecodeOperation extends Module {
                     } else {
                         ((Operation_API) imported_api).message.editUrlParam(
                                 decode_target, encoded
-                        ); //TODO test
+                        );
                     }
                     break;
                 case JWT_HEADER:
@@ -532,9 +532,8 @@ public class DecodeOperation extends Module {
                     break;
 
                 default:
-                    throw new UnsupportedOperationException(
-                            "the from you selected in the recursive decode operation is not yet supported");
-                    //TODO implement missing
+                    throw new ParsingException(
+                            "the from you selected in the recursive decode operation is not supported");
             }
         }
 
@@ -551,17 +550,17 @@ public class DecodeOperation extends Module {
         }
 
         // execute edit operations
-        if (editOperations.size() > 0) {
+        if (!editOperations.isEmpty()) {
             executeEditOps(this, vars);
         }
 
         // executes recursive decode operations
-        if (decodeOperations.size() != 0) {
+        if (!decodeOperations.isEmpty()) {
             executeDecodeOps(this, vars);
         }
 
         // execute checks
-        if (checks.size() != 0) {
+        if (!checks.isEmpty()) {
             executeChecks(vars);
         }
 

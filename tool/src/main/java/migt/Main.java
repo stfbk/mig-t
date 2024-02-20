@@ -629,7 +629,6 @@ public class Main extends JSplitPane {
 
                 @Override
                 public Session onNewSession(Session s) throws ParsingException {
-                    //TODO: implement
                     s.setTrackFromString(getSessionTxt(s.name));
 
                     String port = session_port.get(s.name);

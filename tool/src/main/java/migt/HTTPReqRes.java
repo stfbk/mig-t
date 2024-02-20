@@ -122,7 +122,6 @@ public class HTTPReqRes implements Cloneable {
      * @return the edited message with the request and/or response replaced
      */
     public IHttpRequestResponse replaceBurpMessage(IHttpRequestResponse message, IExtensionHelpers helpers) {
-        // TODO: eventually rebuild the message with the edited parts, here or when edited ?
         if (isRequest) {
             message.setRequest(request);
         }

@@ -2,6 +2,8 @@ package migt;
 
 import org.json.JSONObject;
 
+import javax.swing.*;
+
 /**
  * This class is the Parent class inherited by all modules. It provides some methods and parameters to be
  * used by other classes
@@ -21,8 +23,8 @@ public class Module {
     }
 
     /**
-     * Used when the module requires input by the user.
-     * Instantiate the module by parsing a JSONObject
+     * Used when the module requires inputs from the JSON language.
+     * Instantiate the module by parsing a JSONObject which contains the JSON inputs.
      *
      * @param json_module the json input for this module
      */
@@ -107,5 +109,16 @@ public class Module {
      * @return the result of this module
      */
     public void execute() {
+    }
+
+    /**
+     * This method should return a graphical representation of the module, used to visualize the module from the GUI.
+     * The representation should include useful informations about what the module did, or which errors were found
+     * during execution
+     *
+     * @return a JPanel object containing the graphical interface of this module
+     */
+    public JPanel view() {
+        return null;
     }
 }
