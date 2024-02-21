@@ -1,5 +1,7 @@
 package migt;
 
+import org.apache.commons.text.StringEscapeUtils;
+
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
@@ -55,7 +57,7 @@ public class TestSuite {
         }
 
         String log_content = "";
-        log_content += "| test name | description | type | result | applicable |\n";
+        log_content += "| name | description | type | result | applicable |\n";
         log_content += "|-----------|-------------|------|--------|------------|\n";
 
         for (Test t : tests) {
@@ -73,6 +75,27 @@ public class TestSuite {
             FileWriter fw = new FileWriter(log_message.getAbsoluteFile());
             BufferedWriter bw = new BufferedWriter(fw);
             bw.write(log_content);
+            bw.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        String log_content_csv ="";
+        log_content_csv += "name,description,type,result,applicable\n";
+        for (Test t : tests) {
+            log_content_csv +=
+                    StringEscapeUtils.escapeJava(t.name.replaceAll(",","")) + "," +
+                    StringEscapeUtils.escapeJava(t.description.replaceAll(",","")) + "," +
+                    (t.isActive ? "active" : "passive") + "," +
+                    t.success + "," +
+                    t.applicable + "\n";
+        }
+
+        File log_suite_csv = new File(test_log_folder + "results.csv");
+        try {
+            FileWriter fw = new FileWriter(log_suite_csv.getAbsoluteFile());
+            BufferedWriter bw = new BufferedWriter(fw);
+            bw.write(log_content_csv);
             bw.close();
         } catch (IOException e) {
             e.printStackTrace();
