@@ -80,15 +80,15 @@ public class TestSuite {
             e.printStackTrace();
         }
 
-        String log_content_csv ="";
+        String log_content_csv = "";
         log_content_csv += "name,description,type,result,applicable\n";
         for (Test t : tests) {
             log_content_csv +=
-                    StringEscapeUtils.escapeJava(t.name.replaceAll(",","")) + "," +
-                    StringEscapeUtils.escapeJava(t.description.replaceAll(",","")) + "," +
-                    (t.isActive ? "active" : "passive") + "," +
-                    t.success + "," +
-                    t.applicable + "\n";
+                    StringEscapeUtils.escapeJava(t.name.replaceAll(",", "")) + "," +
+                            StringEscapeUtils.escapeJava(t.description.replaceAll(",", "")) + "," +
+                            (t.isActive ? "active" : "passive") + "," +
+                            t.success + "," +
+                            t.applicable + "\n";
         }
 
         File log_suite_csv = new File(test_log_folder + "results.csv");

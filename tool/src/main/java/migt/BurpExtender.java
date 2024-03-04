@@ -108,7 +108,7 @@ public class BurpExtender implements IBurpExtender, ITab, IProxyListener {
             }
 
             // Check that the given message matches the message type specified in the test
-            boolean matchMessage = message.matches_msg_type(msg_type);
+            boolean matchMessage = message.matches_msg_type(msg_type, messageIsRequest);
 
             if (matchMessage) {
                 // If the operation's action is an intercept

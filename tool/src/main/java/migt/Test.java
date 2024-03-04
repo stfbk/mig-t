@@ -449,7 +449,7 @@ public class Test {
                     currentOP.api.vars = vars;
                 }
 
-                if (messageList.get(i).matches_msg_type(msg_type)) {
+                if (messageList.get(i).matches_msg_type(msg_type, currentOP.api.is_request)) {
                     currentOP.setAPI(new Operation_API(messageList.get(i), msg_type.msg_to_process_is_request));
                     currentOP.execute();
                     res = currentOP.getResult();

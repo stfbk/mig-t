@@ -829,10 +829,11 @@ public class HTTPReqRes implements Cloneable {
     /**
      * Function to check if the given message matches a message_type
      *
-     * @param msg_type the message type to check against it
+     * @param msg_type   the message type to check against it
+     * @param is_request tells whether the message you are checking is a request or a response
      * @return true or false, if matched or not respectively
      */
-    public boolean matches_msg_type(MessageType msg_type) {
+    public boolean matches_msg_type(MessageType msg_type, boolean is_request) {
         boolean matchedMessage = false;
         try {
             /* If the response message name is searched, the getByResponse will be true.
@@ -855,6 +856,8 @@ public class HTTPReqRes implements Cloneable {
                         new ArrayList<>() // TODO: fix
                 );
             } else {
+                // this check is done to avoid matching request messages when intercepting a response
+                if (is_request != msg_type.isRequest) return false;
                 if (!msg_type.isRequest && !isResponse) return false; // this message is not containing a response
                 matchedMessage = Tools.executeChecks(
                         msg_type.checks,
