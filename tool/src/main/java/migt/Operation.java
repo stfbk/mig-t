@@ -145,7 +145,7 @@ public class Operation extends Module {
 
         // Edit operations
         if (operation_json.has("edit operations")) {
-            editOperations = Tools.parseEditsFromJSON(operation_json.getJSONArray("edits"));
+            editOperations = Tools.parseEditsFromJSON(operation_json.getJSONArray("edit operations"));
         }
 
         //Other modules
