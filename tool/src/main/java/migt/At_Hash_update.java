@@ -12,9 +12,11 @@ import java.util.Arrays;
  * Module used to check the correctness of the at_hash parameter inside of the id_token wrt to the released access_token
  * https://openid.net/specs/openid-connect-core-1_0.html#CodeIDToken
  */
-public class At_Hash extends Module {
+public class At_Hash_update extends Module {
+    String sign_key = "";
 
-    public At_Hash() {
+    public At_Hash_update(JSONObject o) {
+        sign_key = o.getString("sign key");
     }
 
     @Override
@@ -41,8 +43,10 @@ public class At_Hash extends Module {
         String id_token = "";
         String access_token = "";
 
+        JSONObject o = null;
+
         try {
-            JSONObject o = new JSONObject(body);
+            o = new JSONObject(body);
             id_token = o.getString("id_token");
             access_token = o.getString("access_token");
         } catch (JSONException e) {
@@ -51,14 +55,11 @@ public class At_Hash extends Module {
 
         // parse id_token jwt taking alg and at_hash parameters
         String alg = "";
-        String at_hash = "";
+        JWT j = new JWT();
         try {
-            JWT j = new JWT();
             j.parse(id_token);
-            JSONObject o = new JSONObject(j.header);
-            alg = o.getString("alg");
-            o = new JSONObject(j.payload);
-            at_hash = o.getString("at_hash");
+            JSONObject oo = new JSONObject(j.header);
+            alg = oo.getString("alg");
 
         } catch (ParsingException | JSONException e) {
             System.out.println(e);
@@ -98,9 +99,33 @@ public class At_Hash extends Module {
         // remove "=" characters
         at_hash_generated = at_hash_generated.replaceAll("=", "");
 
-        applicable = true; // this means that all the steps that precedes the check were accomplished correctly
+        j.payload = Tools.editJson(
+                EditOperation.Jwt_action.EDIT,
+                j.payload,
+                "$.at_hash",
+                null,
+                "",
+                at_hash_generated);
 
-        // check previous value is equal to at_hash
-        result = at_hash_generated.equals(at_hash);
+        String new_id_token = "";
+        try {
+            j.sign = true;
+            j.private_key_pem = sign_key;
+            new_id_token = j.build();
+        } catch (ParsingException e) {
+            applicable = false;
+            return;
+        }
+
+        o.put("id_token", new_id_token);
+
+        ((Operation_API) imported_api).message.setBody(false, o.toString());
+
+        applicable = true; // this means that all the steps that precedes the check were accomplished correctly
+        result = true;
+    }
+
+    public Operation_API exporter() {
+        return (Operation_API) this.imported_api;
     }
 }

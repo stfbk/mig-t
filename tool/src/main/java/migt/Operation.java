@@ -41,6 +41,7 @@ public class Operation extends Module {
     private SessionOperation.SessionAction sessionAction;
     // submodules
     private boolean at_hash_verify;
+    private At_Hash_update at_hash_update;
 
     /**
      * Instantiate an operation
@@ -151,6 +152,10 @@ public class Operation extends Module {
         //Other modules
         if (operation_json.has("at_hash_verify")) {
             at_hash_verify = operation_json.getBoolean("at_hash_verify");
+        }
+
+        if (operation_json.has("at_hash_update")) {
+            at_hash_update = new At_Hash_update(operation_json.getJSONObject("at_hash_update"));
         }
     }
 
@@ -451,7 +456,8 @@ public class Operation extends Module {
             }
         }
 
-        // execute the message operations and the decode ops
+        // Execute other modules
+        // The order of execution is very important
         try {
             applicable = true;
             executeMessageOperations(this);
@@ -468,10 +474,20 @@ public class Operation extends Module {
                 return;
 
             if (at_hash_verify) {
-                At_Hash at = new At_Hash();
+                At_Hash_check at = new At_Hash_check();
                 at.loader(api);
                 at.execute();
                 setResult(at);
+                if (!applicable | !result) {
+                    return;
+                }
+            }
+
+            if (at_hash_update != null) {
+                at_hash_update.loader(api);
+                at_hash_update.execute();
+                this.setAPI(at_hash_update.exporter());
+                setResult(at_hash_update);
                 if (!applicable | !result) {
                     return;
                 }

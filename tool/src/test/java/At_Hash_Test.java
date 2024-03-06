@@ -1,4 +1,4 @@
-import migt.At_Hash;
+import migt.At_Hash_check;
 import migt.HTTPReqRes;
 import migt.Operation_API;
 import org.junit.jupiter.api.Test;
@@ -48,7 +48,7 @@ public class At_Hash_Test {
     public void test_At_Hash() throws NoSuchAlgorithmException {
         HTTPReqRes test_message = init_message_token_resp();
 
-        At_Hash ah = new At_Hash();
+        At_Hash_check ah = new At_Hash_check();
 
         Operation_API o = new Operation_API(test_message, false);
 
