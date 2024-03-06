@@ -67,9 +67,8 @@ public class Tools {
      */
     public static Operation executeDecodeOps(Operation op,
                                              List<Var> vars) throws ParsingException {
-        Operation_API api = op.getAPI();
         for (DecodeOperation dop : op.getDecodeOperations()) {
-            dop.loader(api);
+            dop.loader(op.getAPI());
             dop.execute(vars);
             if (!op.setResult(dop))
                 break;
@@ -88,9 +87,8 @@ public class Tools {
      */
     public static DecodeOperation executeDecodeOps(DecodeOperation op,
                                                    List<Var> vars) throws ParsingException {
-        DecodeOperation_API api = op.getAPI();
         for (DecodeOperation dop : op.decodeOperations) {
-            dop.loader(api);
+            dop.loader(op.getAPI());
             dop.execute(vars);
             if (!op.setResult(dop))
                 break;
@@ -109,9 +107,8 @@ public class Tools {
      */
     public static DecodeOperation executeEditOps(DecodeOperation op,
                                                  List<Var> vars) throws ParsingException {
-        DecodeOperation_API api = op.getAPI();
         for (EditOperation eop : op.editOperations) {
-            eop.loader(api);
+            eop.loader(op.getAPI());
             eop.execute(vars);
             if (!op.setResult(eop))
                 break;
@@ -129,9 +126,8 @@ public class Tools {
      * @throws ParsingException if something goes wrong
      */
     public static Operation executeEditOps(Operation op, List<Var> vars) throws ParsingException {
-        Operation_API api = op.getAPI();
         for (EditOperation eop : op.editOperations) {
-            eop.loader(api);
+            eop.loader(op.getAPI());
             eop.execute(vars);
             if (!op.setResult(eop))
                 break;
@@ -146,7 +142,7 @@ public class Tools {
             mop.loader(op.api);
             mop.execute();
             op.setAPI(mop.exporter());
-            if (op.setResult(op))
+            if (!op.setResult(mop))
                 break;
         }
         return op;
