@@ -857,7 +857,7 @@ public class HTTPReqRes implements Cloneable {
                 );
             } else {
                 // this check is done to avoid matching request messages when intercepting a response
-                if (is_request != msg_type.isRequest) return false;
+                if (is_request != msg_type.msg_to_process_is_request) return false;
                 if (!msg_type.isRequest && !isResponse) return false; // this message is not containing a response
                 matchedMessage = Tools.executeChecks(
                         msg_type.checks,
