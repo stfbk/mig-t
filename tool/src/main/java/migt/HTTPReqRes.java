@@ -7,14 +7,20 @@ import burp.IHttpService;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.utils.URLEncodedUtils;
 import org.apache.http.message.BasicNameValuePair;
+import org.apache.http.message.ParserCursor;
+import org.apache.http.message.TokenParser;
+import org.apache.http.util.Args;
+import org.apache.http.util.CharArrayBuffer;
 
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.BitSet;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -112,6 +118,50 @@ public class HTTPReqRes implements Cloneable {
         this.setProtocol(service.getProtocol());
 
         instances++;
+    }
+
+    /**
+     * Function taken from URLEncodedUtils and edited
+     * Returns a list of {@link NameValuePair}s parameters.
+     *
+     * @param buf        text to parse.
+     * @param charset    Encoding to use when decoding the parameters.
+     * @param separators element separators.
+     * @return a list of {@link NameValuePair} as built from the URI's query portion.
+     * @since 4.4
+     */
+    public static List<NameValuePair> parse_url_query_no_decoding(
+            final CharArrayBuffer buf, final Charset charset, final char... separators) {
+        Args.notNull(buf, "Char array buffer");
+        final TokenParser tokenParser = TokenParser.INSTANCE;
+        final BitSet delimSet = new BitSet();
+        for (final char separator : separators) {
+            delimSet.set(separator);
+        }
+        final ParserCursor cursor = new ParserCursor(0, buf.length());
+        final List<NameValuePair> list = new ArrayList<NameValuePair>();
+        while (!cursor.atEnd()) {
+            delimSet.set('=');
+            final String name = tokenParser.parseToken(buf, cursor, delimSet);
+            String value = null;
+            if (!cursor.atEnd()) {
+                final int delim = buf.charAt(cursor.getPos());
+                cursor.updatePos(cursor.getPos() + 1);
+                if (delim == '=') {
+                    delimSet.clear('=');
+                    value = tokenParser.parseToken(buf, cursor, delimSet);
+                    if (!cursor.atEnd()) {
+                        cursor.updatePos(cursor.getPos() + 1);
+                    }
+                }
+            }
+            if (!name.isEmpty()) {
+                list.add(new BasicNameValuePair(
+                        name,
+                        value));
+            }
+        }
+        return list;
     }
 
     /**
@@ -360,12 +410,11 @@ public class HTTPReqRes implements Cloneable {
     }
 
     /**
-     * Get the given parameter value from the url of the request messsage
+     * Get the Name Value Pair list of the query parameters in the url.
      *
-     * @param param the parameter name to be searched
-     * @return the value of the parameter
+     * @return the List of Name Value pairs
      */
-    public String getUrlParam(String param) {
+    private List<NameValuePair> getNameValuePairUrl() {
         if (!isRequest || request_url == null) {
             throw new RuntimeException("Trying to access the url of a response message");
         }
@@ -373,11 +422,48 @@ public class HTTPReqRes implements Cloneable {
         List<NameValuePair> params = new ArrayList<>();
 
         try {
-            params = URLEncodedUtils.parse(
-                    new URI(request_url), StandardCharsets.UTF_8
-            );
+            URI u = new URI(request_url);
+            params = URLEncodedUtils.parse(u, StandardCharsets.UTF_8);
         } catch (URISyntaxException e) {
             throw new RuntimeException(e);
+        }
+
+        return params;
+    }
+
+    /**
+     * Get the given parameter value from the url of the request messsage
+     *
+     * @param param the parameter name to be searched
+     * @return the value of the parameter
+     */
+    public String getUrlParam(String param) {
+        List<NameValuePair> params = getNameValuePairUrl();
+
+        for (NameValuePair p : params) {
+            if (p.getName().equals(param)) {
+                return p.getValue();
+            }
+        }
+
+        return "";
+    }
+
+    /**
+     * Get the given parameter value from the url of the request messsage.
+     *
+     * @param disable_url_encode Set to true to get the value of the parameter without URL decoding it
+     * @param param              the parameter name to be searched
+     * @return the value of the parameter
+     */
+    public String getUrlParam(String param, boolean disable_url_encode) {
+        List<NameValuePair> params = new ArrayList<>();
+        if (disable_url_encode) {
+            final CharArrayBuffer buffer = new CharArrayBuffer(getUrl().length());
+            buffer.append(getUrl());
+            params = parse_url_query_no_decoding(buffer, StandardCharsets.UTF_8, '&', ';');
+        } else {
+            params = getNameValuePairUrl();
         }
 
         for (NameValuePair p : params) {
@@ -619,7 +705,6 @@ public class HTTPReqRes implements Cloneable {
         }
         return res;
     }
-
 
     /**
      * Edits the Header of the given message

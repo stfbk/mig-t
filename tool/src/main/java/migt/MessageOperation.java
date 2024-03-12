@@ -24,6 +24,7 @@ public class MessageOperation extends Module {
     String save_as; // The name of the variable to save the parameter's value
     String use;
     MessageOpType type;
+    boolean url_decode = true; // enable or disable url decoding of url parameters
 
     // GENERATE POC
     String template;
@@ -96,6 +97,9 @@ public class MessageOperation extends Module {
                     break;
                 case "output_path":
                     output_path = message_op_json.getString("output_path");
+                    break;
+                case "url decode":
+                    url_decode = message_op_json.getBoolean("url decode");
                     break;
                 default:
                     throw new ParsingException("Message operation key \" " + key + "\" not valid");
@@ -360,7 +364,7 @@ public class MessageOperation extends Module {
                                 }
 
                                 String value = action == SAVE ?
-                                        ((Operation_API) imported_api).message.getUrlParam(what) :
+                                        ((Operation_API) imported_api).message.getUrlParam(what, !url_decode) :
                                         ((Operation_API) imported_api).message.getUrlRegex(what);
 
                                 if (value.isEmpty()) {

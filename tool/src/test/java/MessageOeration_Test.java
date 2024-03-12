@@ -70,6 +70,26 @@ public class MessageOeration_Test {
     }
 
     @Test
+    void test_save_url_param_no_decode() throws ParsingException {
+        HTTPReqRes msg = HTTPReqRes_Test.initMessage_ok();
+        String msg_op_txt =
+                "{\n" +
+                        "            \"from\": \"url\",\n" +
+                        "            \"save\": \"paramwithspace\",\n" +
+                        "            \"as\": \"var_name\",\n" +
+                        "            \"url decode\": false" +
+                        "        }";
+
+        MessageOperation mop = new MessageOperation(new JSONObject(msg_op_txt));
+        Operation_API op_api = new Operation_API(msg, true);
+        mop.loader(op_api);
+        mop.execute();
+        op_api = mop.exporter();
+        assertTrue(mop.getResult());
+        assertEquals("first+last", op_api.vars.get(0).value);
+    }
+
+    @Test
     void test_save_url_regex() throws ParsingException {
         HTTPReqRes msg = HTTPReqRes_Test.initMessage_ok();
         String msg_op_txt =

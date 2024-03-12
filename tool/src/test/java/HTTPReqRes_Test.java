@@ -13,7 +13,7 @@ import static org.junit.jupiter.api.Assertions.*;
 public class HTTPReqRes_Test {
 
     public static HTTPReqRes initMessage_ok() {
-        String raw = "POST /log?format=json&hasfast=true&authuser=0 HTTPS/2\r\n" +
+        String raw = "POST /log?format=json&hasfast=true&authuser=0&paramwithspace=first+last HTTPS/2\r\n" +
                 "Host: play.google.com\r\n" +
                 "Cookie: CONSENT=PENDING+392; SOCS=CAISHAgCEhJnd3NfMjAyMzAyMjgtMF9SQzIaAml0IAEaBgiA2pSgBg; AEC=AUEFqZdSS4hmP6dNNRrldXefJFuHK2ldiLrZLJG24hUqaFA2L0jJxZwSBA; NID=511=SPj3DZBbWBMVstxl414okznEMUOaUHRzxZehEHxoaTi0Fr_X9RQ6UmFDBvI6wWn1Iivh7lzi_q7Ktri2q8hHc9nVY3XNgQP-IQ4AHNz7lCKra72IjxzhBvEBQFdXy7lEaIVC3wK5TfPIXLX3TWhKwrZAVEg77UkqV2oHYohcSXg\r\n" +
                 "Content-Length: 11\r\n" +
@@ -50,14 +50,13 @@ public class HTTPReqRes_Test {
         message.setHeaders(true, headers);
         message.isRequest = true;
         message.isResponse = false;
-        message.setRequest_url("https://play.google.com/log?format=json&hasfast=true&authuser=0");
+        message.setRequest_url("https://play.google.com/log?format=json&hasfast=true&authuser=0&paramwithspace=first+last");
 
         return message;
     }
 
-    @Test
     public HTTPReqRes init_message_no_body() {
-        String raw = "POST /log?format=json&hasfast=true&authuser=0 HTTPS/2\r\n" +
+        String raw = "POST /log?format=json&hasfast=true&authuser=0&paramwithspace=first+last HTTPS/2\r\n" +
                 "Host: play.google.com\r\n" +
                 "Cookie: CONSENT=PENDING+392; SOCS=CAISHAgCEhJnd3NfMjAyMzAyMjgtMF9SQzIaAml0IAEaBgiA2pSgBg; AEC=AUEFqZdSS4hmP6dNNRrldXefJFuHK2ldiLrZLJG24hUqaFA2L0jJxZwSBA; NID=511=SPj3DZBbWBMVstxl414okznEMUOaUHRzxZehEHxoaTi0Fr_X9RQ6UmFDBvI6wWn1Iivh7lzi_q7Ktri2q8hHc9nVY3XNgQP-IQ4AHNz7lCKra72IjxzhBvEBQFdXy7lEaIVC3wK5TfPIXLX3TWhKwrZAVEg77UkqV2oHYohcSXg\r\n" +
                 "Content-Length: 11\r\n" +
@@ -90,7 +89,7 @@ public class HTTPReqRes_Test {
         message.setHeaders(true, headers);
         message.isRequest = true;
         message.isResponse = false;
-        message.setRequest_url("https://play.google.com/log?format=json&hasfast=true&authuser=0");
+        message.setRequest_url("https://play.google.com/log?format=json&hasfast=true&authuser=0&paramwithspace=first+last");
 
         return message;
     }
@@ -98,7 +97,7 @@ public class HTTPReqRes_Test {
     @Test
     @DisplayName("")
     public void test_build() {
-        String raw = "POST /log?format=json&hasfast=true&authuser=0 HTTP/2\r\n" +
+        String raw = "POST /log?format=json&hasfast=true&authuser=0&paramwithspace=first+last HTTP/2\r\n" +
                 "Host: play.google.com\r\n" +
                 "Cookie: CONSENT=PENDING+392; SOCS=CAISHAgCEhJnd3NfMjAyMzAyMjgtMF9SQzIaAml0IAEaBgiA2pSgBg; AEC=AUEFqZdSS4hmP6dNNRrldXefJFuHK2ldiLrZLJG24hUqaFA2L0jJxZwSBA; NID=511=SPj3DZBbWBMVstxl414okznEMUOaUHRzxZehEHxoaTi0Fr_X9RQ6UmFDBvI6wWn1Iivh7lzi_q7Ktri2q8hHc9nVY3XNgQP-IQ4AHNz7lCKra72IjxzhBvEBQFdXy7lEaIVC3wK5TfPIXLX3TWhKwrZAVEg77UkqV2oHYohcSXg\r\n" +
                 "Content-Length: 11\r\n" +
@@ -140,7 +139,7 @@ public class HTTPReqRes_Test {
     @Test
     @DisplayName("")
     public void test_build_no_body() {
-        String raw = "POST /log?format=json&hasfast=true&authuser=0 HTTP/2\r\n" +
+        String raw = "POST /log?format=json&hasfast=true&authuser=0&paramwithspace=first+last HTTP/2\r\n" +
                 "Host: play.google.com\r\n" +
                 "Cookie: CONSENT=PENDING+392; SOCS=CAISHAgCEhJnd3NfMjAyMzAyMjgtMF9SQzIaAml0IAEaBgiA2pSgBg; AEC=AUEFqZdSS4hmP6dNNRrldXefJFuHK2ldiLrZLJG24hUqaFA2L0jJxZwSBA; NID=511=SPj3DZBbWBMVstxl414okznEMUOaUHRzxZehEHxoaTi0Fr_X9RQ6UmFDBvI6wWn1Iivh7lzi_q7Ktri2q8hHc9nVY3XNgQP-IQ4AHNz7lCKra72IjxzhBvEBQFdXy7lEaIVC3wK5TfPIXLX3TWhKwrZAVEg77UkqV2oHYohcSXg\r\n" +
                 "Sec-Ch-Ua: \"Chromium\";v=\"111\", \"Not(A:Brand\";v=\"8\"\r\n" +
@@ -178,7 +177,7 @@ public class HTTPReqRes_Test {
     @Test
     @DisplayName("")
     public void test_build_no_body_with_content_len() {
-        String raw = "POST /log?format=json&hasfast=true&authuser=0 HTTP/2\r\n" +
+        String raw = "POST /log?format=json&hasfast=true&authuser=0&paramwithspace=first+last HTTP/2\r\n" +
                 "Host: play.google.com\r\n" +
                 "Cookie: CONSENT=PENDING+392; SOCS=CAISHAgCEhJnd3NfMjAyMzAyMjgtMF9SQzIaAml0IAEaBgiA2pSgBg; AEC=AUEFqZdSS4hmP6dNNRrldXefJFuHK2ldiLrZLJG24hUqaFA2L0jJxZwSBA; NID=511=SPj3DZBbWBMVstxl414okznEMUOaUHRzxZehEHxoaTi0Fr_X9RQ6UmFDBvI6wWn1Iivh7lzi_q7Ktri2q8hHc9nVY3XNgQP-IQ4AHNz7lCKra72IjxzhBvEBQFdXy7lEaIVC3wK5TfPIXLX3TWhKwrZAVEg77UkqV2oHYohcSXg\r\n" +
                 "Sec-Ch-Ua: \"Chromium\";v=\"111\", \"Not(A:Brand\";v=\"8\"\r\n" +
@@ -224,7 +223,7 @@ public class HTTPReqRes_Test {
         HTTPReqRes message = initMessage_ok();
         String header_0 = message.getUrlHeader();
 
-        assertEquals("POST /log?format=json&hasfast=true&authuser=0 HTTPS/2", header_0);
+        assertEquals("POST /log?format=json&hasfast=true&authuser=0&paramwithspace=first+last HTTPS/2", header_0);
     }
 
     @Test
@@ -244,7 +243,7 @@ public class HTTPReqRes_Test {
     public void test_editUrlParam() throws ParsingException {
         HTTPReqRes message = initMessage_ok();
         message.editUrlParam("format", "new");
-        assertEquals("https://play.google.com/log?format=new&hasfast=true&authuser=0", message.getUrl());
+        assertEquals("https://play.google.com/log?format=new&hasfast=true&authuser=0&paramwithspace=first+last", message.getUrl());
         message.setRequest_url("https://play.google.com:8080/log?format=new&hasfast=true&authuser=0#123123123");
         message.editUrlParam("format", "newnew");
         assertEquals("https://play.google.com:8080/log?format=newnew&hasfast=true&authuser=0#123123123", message.getUrl());
@@ -263,13 +262,13 @@ public class HTTPReqRes_Test {
     public void test_editUrlHeaders() throws ParsingException {
         HTTPReqRes message = initMessage_ok();
         message.updateHeadersWHurl();
-        assertEquals("POST /log?format=json&hasfast=true&authuser=0 HTTPS/2", message.getHeaders(true).get(0));
+        assertEquals("POST /log?format=json&hasfast=true&authuser=0&paramwithspace=first+last HTTPS/2", message.getHeaders(true).get(0));
         message.editUrlParam("format", "new");
-        assertEquals("POST /log?format=new&hasfast=true&authuser=0 HTTPS/2", message.getHeaders(true).get(0));
+        assertEquals("POST /log?format=new&hasfast=true&authuser=0&paramwithspace=first+last HTTPS/2", message.getHeaders(true).get(0));
         message.removeUrlParam("hasfast");
-        assertEquals("POST /log?format=new&authuser=0 HTTPS/2", message.getHeaders(true).get(0));
+        assertEquals("POST /log?format=new&authuser=0&paramwithspace=first+last HTTPS/2", message.getHeaders(true).get(0));
         message.addUrlParam("prova", "provona");
-        assertEquals("POST /log?format=new&authuser=0&prova=provona HTTPS/2", message.getHeaders(true).get(0));
+        assertEquals("POST /log?format=new&authuser=0&paramwithspace=first+last&prova=provona HTTPS/2", message.getHeaders(true).get(0));
     }
 
     @Test
@@ -277,7 +276,7 @@ public class HTTPReqRes_Test {
     public void test_removeUrlParam() throws ParsingException {
         HTTPReqRes message = initMessage_ok();
         message.removeUrlParam("format");
-        assertEquals("https://play.google.com/log?hasfast=true&authuser=0", message.getUrl());
+        assertEquals("https://play.google.com/log?hasfast=true&authuser=0&paramwithspace=first+last", message.getUrl());
     }
 
     @Test
@@ -285,7 +284,7 @@ public class HTTPReqRes_Test {
     public void test_addUrlParam() throws ParsingException {
         HTTPReqRes message = initMessage_ok();
         message.addUrlParam("test", "test");
-        assertEquals("https://play.google.com/log?format=json&hasfast=true&authuser=0&test=test", message.getUrl());
+        assertEquals("https://play.google.com/log?format=json&hasfast=true&authuser=0&paramwithspace=first+last&test=test", message.getUrl());
     }
 
     @Test
@@ -348,5 +347,17 @@ public class HTTPReqRes_Test {
         assertEquals("body1234nt", new String(message.getBody(true)));
     }
 
+    @Test
+    public void test_get_url_param_no_urlencode() {
+        HTTPReqRes msg = initMessage_ok();
+
+        // with url encode (default)
+        String value = msg.getUrlParam("paramwithspace");
+        assertEquals("first last", value);
+
+        // without url encode
+        value = msg.getUrlParam("paramwithspace", true);
+        assertEquals("first+last", value);
+    }
 
 }
