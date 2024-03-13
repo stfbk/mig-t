@@ -105,7 +105,8 @@ public class At_Hash_update extends Module {
                 "$.at_hash",
                 null,
                 "",
-                at_hash_generated);
+                at_hash_generated,
+                "");
 
         String new_id_token = "";
         try {

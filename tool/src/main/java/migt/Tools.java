@@ -740,7 +740,8 @@ public class Tools {
                                   String j_path,
                                   List<Var> vars,
                                   String save_as,
-                                  String newValue) throws PathNotFoundException {
+                                  String newValue,
+                                  String newKey) throws PathNotFoundException {
         //TODO: remove in future versions
         Object document = Configuration.defaultConfiguration().jsonProvider().parse(content);
         JsonPath jsonPath = JsonPath.compile(j_path);
@@ -750,8 +751,10 @@ public class Tools {
                 document = jsonPath.delete(document, Configuration.defaultConfiguration());
                 break;
             case EDIT:
-            case ADD:
                 document = jsonPath.set(document, newValue, Configuration.defaultConfiguration());
+                break;
+            case ADD:
+                document = jsonPath.put(document, newKey, newValue, Configuration.defaultConfiguration());
                 //TODO: check if set also adds in case it is not found
                 break;
             case SAVE:

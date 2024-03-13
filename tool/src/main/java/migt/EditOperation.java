@@ -39,6 +39,7 @@ public class EditOperation extends Module {
     String jwt_private_key_pem;
 
     String what;
+    String key_add;
 
     // TXT
     TxtAction txt_action;
@@ -189,6 +190,9 @@ public class EditOperation extends Module {
                     action = MessageOperation.MessageOperationActions.REMOVE_PARAMETER;
                     what = eop_json.getString("remove");
                     break;
+                case "key":
+                    key_add = eop_json.getString("key");
+                    break;
                 default:
                     throw new ParsingException("Invalid key \"" + key + "\" in Edit Operation");
             }
@@ -328,15 +332,15 @@ public class EditOperation extends Module {
                         switch (jwt_section) {
                             case HEADER:
                                 tmp_imported_api.jwt.header = Tools.editJson(
-                                        jwt_action, tmp_imported_api.jwt.header, what, vars, save_as, value);
+                                        jwt_action, tmp_imported_api.jwt.header, what, vars, save_as, value, key_add);
                                 break;
                             case PAYLOAD:
                                 tmp_imported_api.jwt.payload = Tools.editJson(
-                                        jwt_action, tmp_imported_api.jwt.payload, what, vars, save_as, value);
+                                        jwt_action, tmp_imported_api.jwt.payload, what, vars, save_as, value, key_add);
                                 break;
                             case SIGNATURE:
                                 tmp_imported_api.jwt.signature = Tools.editJson(
-                                        jwt_action, tmp_imported_api.jwt.signature, what, vars, save_as, value);
+                                        jwt_action, tmp_imported_api.jwt.signature, what, vars, save_as, value, key_add);
                                 break;
                         }
                     } catch (PathNotFoundException e) {

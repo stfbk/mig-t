@@ -94,13 +94,21 @@ public class Module {
         return module.result;
     }
 
+    public void setResult(boolean result) {
+        this.result = result;
+    }
+
+    public void setApplicable(boolean applicable) {
+        this.applicable = applicable;
+    }
+
     /**
      * Get the result of this module
      *
      * @return the result of the module
      */
     public boolean getResult() {
-        return this.result;
+        return this.result & this.applicable;
     }
 
     /**
@@ -109,6 +117,7 @@ public class Module {
      * @return the result of this module
      */
     public void execute() {
+        throw new RuntimeException("Called execute method of root Module");
     }
 
     /**

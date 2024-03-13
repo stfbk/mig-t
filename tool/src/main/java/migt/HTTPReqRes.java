@@ -55,6 +55,7 @@ public class HTTPReqRes implements Cloneable {
      * @param response the response in byte[] form
      */
     public HTTPReqRes(byte[] request, byte[] response) {
+        //TODO: make method to work as with helpers
         this.isRequest = true;
         this.isResponse = true;
         this.setRequest(request);

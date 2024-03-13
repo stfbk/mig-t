@@ -169,6 +169,7 @@ public class Checks_Test {
         c.execute(new ArrayList<Var>());
 
         DecodeOperation dop = new DecodeOperation();
+        dop.setApplicable(true);
         dop.setResult(c);
 
         assertTrue(dop.getResult());
