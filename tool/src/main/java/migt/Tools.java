@@ -754,8 +754,11 @@ public class Tools {
                 document = jsonPath.set(document, newValue, Configuration.defaultConfiguration());
                 break;
             case ADD:
-                document = jsonPath.put(document, newKey, newValue, Configuration.defaultConfiguration());
-                //TODO: check if set also adds in case it is not found
+                document = jsonPath.put(
+                        document,
+                        newKey,
+                        newValue.isEmpty() ? null : newValue,
+                        Configuration.defaultConfiguration());
                 break;
             case SAVE:
                 Object to_save = JsonPath.read(content, j_path);

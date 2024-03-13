@@ -173,8 +173,33 @@ public class EditOperation_test {
         dop.loader(new Operation_API(DecodeOperation_Test.get_test_message_with_jwt(), false));
 
         dop.execute(null);
-        assertEquals(true, dop.editOperations.get(0).getResult());
+        assertTrue(dop.editOperations.get(0).getResult());
 
         assertEquals("{\"exp\":1710327846,\"iat\":1710325866,\"iss\":\"http://trust-anchor.org:8000\",\"sub\":\"http://trust-anchor.org:8000\",\"jwks\":{\"keys\":[{\"kty\":\"RSA\",\"n\":\"o8IolRjZlkzct-48rhrVlTnYU1pkMbVJD-DU05oMS9RVGrsFypg98m-Kw4H4qNPyQVx2OQORi-xShgk7HU-gK_2pVguYkv06FajL_edEAqqsqt_74Qf2WLRC5pfJG_z9OPzY8JGyk-z3SbeHN_BXKI8GY5E4WU2SstmQ9fyL4CxtRfjUia8limTC_3MOpT3zi5nr03jfbjpnjga51qXurxnlzc3a_xjk5RAApKxUvNwhJ275M0CmB99DjPwF6BLvUgJqgyCpUOn36LOhI4FquVqhqhiwKlMmiMe3yy0yNQ7FXBWxjzhexbpyc3Vu7zFIHPAcC4UyIQhc3waEj2viXw\",\"e\":\"AQAB\",\"kid\":\"BXvfrlnhAMuHR07ajUmAcBRQcSzmw0c_RAgJnpS-9WQ\"}]},\"metadata\":{\"federation_entity\":{\"contacts\":[\"ops@localhost\"],\"federation_fetch_endpoint\":\"http://trust-anchor.org:8000/fetch\",\"federation_resolve_endpoint\":\"http://trust-anchor.org:8000/resolve\",\"federation_trust_mark_status_endpoint\":\"http://trust-anchor.org:8000/trust_mark_status\",\"homepage_uri\":\"http://trust-anchor.org:8000\",\"organization_name\":\"example TA\",\"policy_uri\":\"http://trust-anchor.org:8000/en/website/legal-information\",\"logo_uri\":\"http://trust-anchor.org:8000/static/svg/spid-logo-c-lb.svg\",\"federation_list_endpoint\":\"http://trust-anchor.org:8000/list\"}},\"trust_mark_issuers\":{\"https://www.spid.gov.it/certification/rp/public\":[\"https://registry.spid.agid.gov.it\",\"https://public.intermediary.spid.it\"],\"https://www.spid.gov.it/certification/rp/private\":[\"https://registry.spid.agid.gov.it\",\"https://private.other.intermediary.it\"],\"https://sgd.aa.it/onboarding\":[\"https://sgd.aa.it\"]},\"constraints\":{\"max_path_length\":1},\"new\":\"valuenew\"}", dop.getAPI().jwt.payload);
+    }
+
+    @Test
+    public void test_add_json_jwt_null() throws ParsingException {
+        String input = "{\n" +
+                "    \"from\": \"body\",\n" +
+                "    \"type\": \"jwt\",\n" +
+                "    \"decode regex\": \"[^\\\\n\\\\r]*\",\n" +
+                "    \"edits\": [\n" +
+                "        {\n" +
+                "            \"jwt from\": \"payload\",\n" +
+                "            \"jwt add\": \"$\",\n" +
+                "            \"key\": \"new\",\n" +
+                "            \"value\": \"\"\n" +
+                "        }\n" +
+                "    ]\n" +
+                "}";
+
+        DecodeOperation dop = new DecodeOperation(new JSONObject(input));
+        dop.loader(new Operation_API(DecodeOperation_Test.get_test_message_with_jwt(), false));
+
+        dop.execute(null);
+        assertTrue(dop.editOperations.get(0).getResult());
+
+        assertEquals("{\"exp\":1710327846,\"iat\":1710325866,\"iss\":\"http://trust-anchor.org:8000\",\"sub\":\"http://trust-anchor.org:8000\",\"jwks\":{\"keys\":[{\"kty\":\"RSA\",\"n\":\"o8IolRjZlkzct-48rhrVlTnYU1pkMbVJD-DU05oMS9RVGrsFypg98m-Kw4H4qNPyQVx2OQORi-xShgk7HU-gK_2pVguYkv06FajL_edEAqqsqt_74Qf2WLRC5pfJG_z9OPzY8JGyk-z3SbeHN_BXKI8GY5E4WU2SstmQ9fyL4CxtRfjUia8limTC_3MOpT3zi5nr03jfbjpnjga51qXurxnlzc3a_xjk5RAApKxUvNwhJ275M0CmB99DjPwF6BLvUgJqgyCpUOn36LOhI4FquVqhqhiwKlMmiMe3yy0yNQ7FXBWxjzhexbpyc3Vu7zFIHPAcC4UyIQhc3waEj2viXw\",\"e\":\"AQAB\",\"kid\":\"BXvfrlnhAMuHR07ajUmAcBRQcSzmw0c_RAgJnpS-9WQ\"}]},\"metadata\":{\"federation_entity\":{\"contacts\":[\"ops@localhost\"],\"federation_fetch_endpoint\":\"http://trust-anchor.org:8000/fetch\",\"federation_resolve_endpoint\":\"http://trust-anchor.org:8000/resolve\",\"federation_trust_mark_status_endpoint\":\"http://trust-anchor.org:8000/trust_mark_status\",\"homepage_uri\":\"http://trust-anchor.org:8000\",\"organization_name\":\"example TA\",\"policy_uri\":\"http://trust-anchor.org:8000/en/website/legal-information\",\"logo_uri\":\"http://trust-anchor.org:8000/static/svg/spid-logo-c-lb.svg\",\"federation_list_endpoint\":\"http://trust-anchor.org:8000/list\"}},\"trust_mark_issuers\":{\"https://www.spid.gov.it/certification/rp/public\":[\"https://registry.spid.agid.gov.it\",\"https://public.intermediary.spid.it\"],\"https://www.spid.gov.it/certification/rp/private\":[\"https://registry.spid.agid.gov.it\",\"https://private.other.intermediary.it\"],\"https://sgd.aa.it/onboarding\":[\"https://sgd.aa.it\"]},\"constraints\":{\"max_path_length\":1},\"new\":null}", dop.getAPI().jwt.payload);
     }
 }

@@ -94,10 +94,6 @@ public class Module {
         return module.result;
     }
 
-    public void setResult(boolean result) {
-        this.result = result;
-    }
-
     public void setApplicable(boolean applicable) {
         this.applicable = applicable;
     }
@@ -109,6 +105,10 @@ public class Module {
      */
     public boolean getResult() {
         return this.result & this.applicable;
+    }
+
+    public void setResult(boolean result) {
+        this.result = result;
     }
 
     /**
