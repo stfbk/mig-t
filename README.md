@@ -127,3 +127,7 @@ Some parts of the tool that manages SAML certificates has been built by using po
 
 Parts of the tool that manage JWTs has been built using nimbus-jose-jwt
 <https://connect2id.com/products/nimbus-jose-jwt>
+
+# MIG-T API Documentation
+
+Explore the API endpoints and documentation here: <https://app.swaggerhub.com/apis-docs/PGSENO02/MIG-TAPIs/1.0.0#/>
