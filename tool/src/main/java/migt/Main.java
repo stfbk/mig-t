@@ -48,8 +48,8 @@ class CustomOutputStream extends OutputStream {
  * This class contains the GUI for the plugin, also a lot of functionality methods
  */
 public class Main extends JSplitPane {
-    private static DefaultTableModel resultTableModel;
-    private static DefaultTableModel testTableModel;
+    protected static DefaultTableModel resultTableModel;
+    protected static DefaultTableModel testTableModel;
     final Object waiting = new Object();
     final String LOG_FOLDER = "logs/";
     private final String[] foundTableColNames = {"Op. num", "Message Type", "message section", "check/regex", "index", "result"};
@@ -115,7 +115,7 @@ public class Main extends JSplitPane {
     ExecuteActives ex;
     List<MessageType> messageTypes;
     private Integer DEFAULT_PORT = 8080;
-    private String DRIVER_PATH = "";
+    private String DRIVER_PATH;
     private List<Test> actives;
     private Map<String, Component> sessions_text;
     private List<Test> passives;
@@ -184,6 +184,13 @@ public class Main extends JSplitPane {
 
         readMsgDefFile();
         readConfigFile();
+
+        //--------------------------------------
+        //DRIVER_PATH = Main.class.getClassLoader().getResource("driver/geckodriver").getPath();
+        //DRIVER_PATH = JOptionPane.showInputDialog(null, "enter the driver path:");
+        DRIVER_PATH = "/usr/local/bin/geckodriver";
+        //--------------------------------------
+
         if (!DRIVER_PATH.equals("")) {
             lbldriver.setText("Driver Selected");
             btndriverSelector.setBackground(Color.GREEN);
@@ -350,7 +357,7 @@ public class Main extends JSplitPane {
      *
      * @param jsonInput the json input
      */
-    private void readJSONinput(String jsonInput) {
+    protected void readJSONinput(String jsonInput) {
         sessions_names.clear();
         txtSearch.setBorder(BorderFactory.createEmptyBorder());
         setJSONError(false, "");
@@ -435,7 +442,7 @@ public class Main extends JSplitPane {
     /**
      * Method which executes the entire test suite
      */
-    private void executeSuite() {
+    protected void executeSuite() {
         // clears all previously saved tests
         actives.clear();
         passives.clear();
