@@ -52,6 +52,10 @@ public class BurpExtender implements IBurpExtender, ITab, IProxyListener {
             // register ourselves as an HTTP listener
             callbacks.registerProxyListener(BurpExtender.this);
             //callbacks.registerHttpListener(BurpExtender.this);
+
+            ExecuteWebServer ex2 = new ExecuteWebServer(callbacks, mainPane);
+            Thread active_ex2 = new Thread(ex2);
+            active_ex2.start();
         });
     }
 

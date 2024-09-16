@@ -127,3 +127,16 @@ Some parts of the tool that manages SAML certificates has been built by using po
 
 Parts of the tool that manage JWTs has been built using nimbus-jose-jwt
 <https://connect2id.com/products/nimbus-jose-jwt>
+
+# MIG-T API Documentation
+
+Explore the API endpoints and documentation here: <https://app.swaggerhub.com/apis-docs/PGSENO02/MIG-TAPIs/1.0.0#/>
+
+### API Endpoints
+
+The APIs exposed by MIG-T have the following endpoints: `/users`, `/users/login`, `/messages`, and `/validation`. The first three APIs can be interacted with through the frontend exposed by MIG-T at the URL [http://localhost:3000](http://localhost:3000).
+
+- **/users**: Allows the user to register the username and password in MIG-T.
+- **/users/login**: Allows the user to log in to MIG-T.
+- **/messages**: Allows the user to send session & test data to MIG-T so that MIG-T can execute them and return the output.
+- **/validation**: Allows the user to submit a test to MIG-T and check if it is valid.
