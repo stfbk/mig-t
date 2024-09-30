@@ -97,6 +97,11 @@ Following is the list of students that contributed to the evolution of the tool,
 - Valentina Odorizzi (Bachelor's Thesis, University of Trento, 2018) Progettazione e sviluppo di uno strumento per l'analisi automatica di vulnerabilità "Missing XML Validation" in SAML SSO
 - Giulio Pellizzari (Bachelor's Thesis, University of Trento, 2018) Design and implementation of a tool to detect Login Cross-Site Request Forgery in SAML SSO: G Suite case study
 
+# References
+- [CSRFing the SSO Waves: Security Testing of SSO-Based Account Linking Process
+](https://doi.org/10.1109/EuroSP60621.2024.00016) @ 2024 IEEE 9th European Symposium on Security and Privacy (EuroS&P)
+- [Enhancing Security Testing for Identity Management Implementations: Introducing Micro-Id-Gym Language and Micro-Id-Gym Testing Tool](https://doi.org/10.1109/MSEC.2024.3450277) @ IEEE Security & Privacy
+
 # License
 
 ```
