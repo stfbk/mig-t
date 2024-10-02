@@ -1,0 +1,23 @@
+{
+  "user_options": {
+    "extender": {
+      "extensions": [
+        {
+          "errors": "ui",
+          "extension_file": "/IdeaProjects/tool/target/mig-t-beta-jar-with-dependencies.jar",
+          "extension_type": "java",
+          "loaded": true,
+          "name": "MIG-T",
+          "output": "ui"
+        }
+      ],
+      "settings": {
+        "automatically_reload_extensions_on_startup": true,
+        "automatically_update_bapps_on_startup": true
+      }
+    }
+  },
+  "misc": {
+    "enable_proxy_interception_at_startup": "never"
+  }
+}

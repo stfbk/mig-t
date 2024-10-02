@@ -1,0 +1,110 @@
+version: "3"
+
+services:
+  burpsuite:
+    image: mig/burpsuite
+    build:
+      context: .
+      dockerfile: Dockerfile
+    volumes:
+      - /tmp/.X11-unix/:/tmp/.X11-unix/
+      - /etc/localtime:/etc/localtime:ro
+      - "$HOME/.Xauthority:/root/.Xauthority:rw"
+    ports:
+      - "8443:8443"
+      - "9095:9095"
+    networks:
+      - net
+      - oidcfed
+    command: sleep infinity
+    environment:
+      - DISPLAY
+    stdin_open: true
+    tty: true
+
+  trust-anchor.org:
+    # image: ghcr.io/italia/spid-cie-oidc-django:latest
+    build:
+      context: ../../../../testplans/spid-cie-oidc/implementations/spid-cie-oidc-django/spid-cie-oidc-django
+      # dockerfile: ../../../../../testplans/spid-cie-oidc/implementations/spid-cie-oidc-django/spid-cie-oidc-django/Dockerfile
+      dockerfile: ./Dockerfile
+    ports:
+      - "8000:8000"
+    volumes:
+      - ../../../../testplans/spid-cie-oidc/implementations/spid-cie-oidc-django/spid-cie-oidc-django/examples-docker/federation_authority:/django-project
+    depends_on:
+      - burpsuite
+    networks:
+      - oidcfed
+    command: |
+      bash -c "
+      echo 'base {log_debug = off;log_info = on;log = stderr;redirector = iptables;} redsocks {local_ip = localhost;local_port = 12345;ip = burpsuite;port = 9095;type = http-connect; }' > /etc/redsocks.conf &&
+      /usr/sbin/redsocks -c /etc/redsocks.conf &
+      iptables -t nat -A OUTPUT -p tcp --dport 8002 -j REDIRECT --to-port 12345 &&
+      iptables -t nat -A OUTPUT -p tcp --dport 8001 -j REDIRECT --to-port 12345 &&
+      cd /django-project/ &&
+      python3 manage.py migrate &&
+      python3 manage.py loaddata dumps/example.json &&
+      python3 manage.py runserver 0.0.0.0:8000"
+    cap_add:
+      - NET_ADMIN
+
+  cie-provider.org:
+    # image: ghcr.io/italia/spid-cie-oidc-django:latest
+    build:
+     context: ../../../../testplans/spid-cie-oidc/implementations/spid-cie-oidc-django/spid-cie-oidc-django
+     dockerfile: ./Dockerfile
+    ports:
+      - "8002:8002"
+    volumes:
+      - ../../../../testplans/spid-cie-oidc/implementations/spid-cie-oidc-django/spid-cie-oidc-django/examples-docker/provider:/django-project
+    networks:
+      - oidcfed
+    depends_on:
+      - burpsuite
+      - trust-anchor.org
+    command: |
+      bash -c "
+      echo 'base {log_debug = off;log_info = on;log = stderr;redirector = iptables;} redsocks {local_ip = localhost;local_port = 12345;ip = burpsuite;port = 9095;type = http-connect; }' > /etc/redsocks.conf &&
+      /usr/sbin/redsocks -c /etc/redsocks.conf &
+      iptables -t nat -A OUTPUT -p tcp --dport 8001 -j REDIRECT --to-port 12345 &&
+      iptables -t nat -A OUTPUT -p tcp --dport 8000 -j REDIRECT --to-port 12345 &&
+      cd /django-project/ &&
+      python3 manage.py migrate &&
+      python3 manage.py loaddata dumps/example.json &&
+      python3 manage.py runserver 0.0.0.0:8002"
+    cap_add:
+      - NET_ADMIN
+
+  relying-party.org:
+    # image: ghcr.io/italia/spid-cie-oidc-django:latest
+    build:
+      context: ../../../../testplans/spid-cie-oidc/implementations/spid-cie-oidc-django/spid-cie-oidc-django
+      dockerfile: ./Dockerfile
+    ports:
+      - "8001:8001"
+    volumes:
+      - ../../../../testplans/spid-cie-oidc/implementations/spid-cie-oidc-django/spid-cie-oidc-django/examples-docker/relying_party:/django-project
+    networks:
+      - oidcfed
+    depends_on:
+      - burpsuite
+      - trust-anchor.org
+    command: |
+      bash -c "
+      echo 'base {log_debug = off;log_info = on;log = stderr;redirector = iptables;} redsocks {local_ip = localhost;local_port = 12345;ip = burpsuite;port = 9095;type = http-connect; }' > /etc/redsocks.conf &&
+      /usr/sbin/redsocks -c /etc/redsocks.conf &
+      iptables -t nat -A OUTPUT -p tcp --dport 8002 -j REDIRECT --to-port 12345 &&
+      iptables -t nat -A OUTPUT -p tcp --dport 8000 -j REDIRECT --to-port 12345 &&
+      cd /django-project/ &&
+      python3 manage.py migrate &&
+      python3 manage.py loaddata dumps/example.json &&
+      python3 manage.py runserver 0.0.0.0:8001"
+    cap_add:
+      - NET_ADMIN
+
+
+networks:
+  net:
+  oidcfed:
+
