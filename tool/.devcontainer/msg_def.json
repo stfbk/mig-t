@@ -1,0 +1,786 @@
+{
+  "message_types": [
+    {
+      "name": "Authentication request",
+      "is request": true,
+      "response name": "Authentication error response",
+      "checks": [
+        {
+          "in": "url",
+          "check": "response_type",
+          "is present": "true"
+        }
+      ]
+    },
+    {
+      "name": "Authentication response",
+      "is request": false,
+      "checks": [
+        {
+          "in": "head",
+          "check param": "Location",
+          "contains": "state"
+        }
+      ]
+    },
+    {
+      "name": "Authorization request",
+      "is request": true,
+      "response name": "Authorization response",
+      "checks": [
+        {
+          "in": "body",
+          "check regex": "username",
+          "is present": "true"
+        },
+        {
+          "in": "body",
+          "check regex": "password",
+          "is present": "true"
+        }
+      ]
+    },
+    {
+      "name": "Token request",
+      "is request": true,
+      "response name": "Token response",
+      "checks": [
+        {
+          "in": "url",
+          "check regex": "/token"
+        }
+      ]
+    },
+    {
+      "name": "Revocation request",
+      "is request": true,
+      "response name": "Revocation response",
+      "checks": [
+        {
+          "in": "url",
+          "check regex": "/revocation"
+        }
+      ]
+    },
+    {
+      "name": "Entity Configuration request RP",
+      "is request": true,
+      "response name": "Entity Configuration response RP",
+      "checks": [
+        {
+          "in": "url",
+          "check": "/.well-known/openid-federation",
+          "is present": "true"
+        },
+        {
+          "in": "head",
+          "check param": "Host",
+          "contains": "relying-party.org:8001"
+        }
+      ]
+    },
+    {
+      "name": "Entity Configuration request OP",
+      "is request": true,
+      "response name": "Entity Configuration response OP",
+      "checks": [
+        {
+          "in": "url",
+          "check": "oidc/op/.well-known/openid-federation",
+          "is present": "true"
+        },
+        {
+          "in": "head",
+          "check param": "Host",
+          "contains": "cie-provider.org:8002"
+        }
+      ]
+    },
+    {
+      "name": "Entity Configuration request TA",
+      "is request": true,
+      "response name": "Entity Configuration response TA",
+      "checks": [
+        {
+          "in": "url",
+          "check regex": "\\s/.well-known/openid-federation"
+        },
+        {
+          "in": "head",
+          "check param": "Host",
+          "contains": "trust-anchor.org:8000"
+        }
+      ]
+    },
+    {
+      "name": "Entity Configuration request SA",
+      "is request": true,
+      "response name": "Entity Configuration response SA",
+      "checks": [
+        {
+          "in": "url",
+          "check regex": "\\s/.well-known/openid-federation"
+        },
+        {
+          "in": "head",
+          "check param": "Host",
+          "contains": "soggetti-aggregatori.org:8004"
+        }
+      ]
+    },
+    {
+      "name": "Entity Configuration request AA",
+      "is request": true,
+      "response name": "Entity Configuration response AA",
+      "checks": [
+        {
+          "in": "url",
+          "check": "/.well-known/openid-federation",
+          "is present": "true"
+        },
+        {
+          "in": "head",
+          "check param": "Host",
+          "contains": "attribute-authority.org"
+        }
+      ]
+    },
+    {
+      "name": "Entity Configuration request SA",
+      "is request": true,
+      "response name": "Entity Configuration response SA",
+      "checks": [
+        {
+          "in": "url",
+          "check": "/.well-known/openid-federation",
+          "is present": "true"
+        },
+        {
+          "in": "head",
+          "check param": "Host",
+          "contains": "soggetti-aggregatori.org:8004"
+        }
+      ]
+    },
+    {
+      "name": "Trust Mark status request TA",
+      "is request": true,
+      "response name": "Trust Mark status response TA",
+      "checks": [
+        {
+          "in": "url",
+          "check": "/trust_mark_status",
+          "is present": "true"
+        },
+        {
+          "in": "head",
+          "check param": "Host",
+          "contains": "trust-anchor.org:8000"
+        }
+      ]
+    },
+    {
+      "name": "Trust Mark status request SA",
+      "is request": true,
+      "response name": "Trust Mark status response SA",
+      "checks": [
+        {
+          "in": "url",
+          "check": "/trust_mark_status",
+          "is present": "true"
+        },
+        {
+          "in": "head",
+          "check param": "Host",
+          "contains": "soggetti-aggregatori.org:8004"
+        }
+      ]
+    },
+    {
+      "name": "Trust Mark status request AA",
+      "is request": true,
+      "response name": "Trust Mark status response AA",
+      "checks": [
+        {
+          "in": "url",
+          "check": "/trust_mark_status",
+          "is present": "true"
+        },
+        {
+          "in": "head",
+          "check param": "Host",
+          "contains": "attribute-authority.org"
+        }
+      ]
+    },
+    {
+      "name": "UserInfo request",
+      "is request": true,
+      "response name": "UserInfo response",
+      "checks": [
+        {
+          "in": "url",
+          "check regex": "/userinfo"
+        }
+      ]
+    },
+    {
+      "name": "Introspection request",
+      "is request": true,
+      "response name": "Introspection response",
+      "checks": [
+        {
+          "in": "url",
+          "check regex": "/oidc/op/introspection"
+        }
+      ]
+    },
+    {
+      "name": "Entity Statement request TA RP",
+      "is request": true,
+      "response name": "Entity Statement response TA RP",
+      "checks": [
+        {
+          "in": "url",
+          "check regex": "/fetch\\?sub=http://relying-party\\.org:8001"
+        },
+        {
+          "in": "head",
+          "check param": "Host",
+          "contains": "trust-anchor.org:8000"
+        }
+      ]
+    },
+    {
+      "name": "Entity Statement request TA OP",
+      "is request": true,
+      "response name": "Entity Statement response TA OP",
+      "checks": [
+        {
+          "in": "url",
+          "check regex": "/fetch\\?sub=http://cie-provider.org:8002"
+        },
+        {
+          "in": "head",
+          "check param": "Host",
+          "contains": "trust-anchor.org:8000"
+        }
+      ]
+    },
+    {
+      "name": "Entity Statement request TA SA",
+      "is request": true,
+      "response name": "Entity Statement response TA SA",
+      "checks": [
+        {
+          "in": "url",
+          "check regex": "/fetch\\?sub=http://soggetti-aggregatori.org:8004"
+        },
+        {
+          "in": "head",
+          "check param": "Host",
+          "contains": "trust-anchor.org:8000"
+        }
+      ]
+    },
+    {
+      "name": "Entity Statement request SA RP",
+      "is request": true,
+      "response name": "Entity Statement response SA RP",
+      "checks": [
+        {
+          "in": "url",
+          "check regex": "/fetch\\?sub=http://relying-party\\.org:8001"
+        },
+        {
+          "in": "head",
+          "check param": "Host",
+          "contains": "soggetti-aggregatori.org:8004"
+        }
+      ]
+    },
+    {
+      "name": "Entity Statement request SA OP",
+      "is request": true,
+      "response name": "Entity Statement response SA OP",
+      "checks": [
+        {
+          "in": "url",
+          "check regex": "/fetch\\?sub=http://cie-provider.org:8002"
+        },
+        {
+          "in": "head",
+          "check param": "Host",
+          "contains": "soggetti-aggregatori.org:8004"
+        }
+      ]
+    },
+    {
+      "name": "Entity Listing request",
+      "is request": true,
+      "response name": "Entity Listing response",
+      "checks": [
+        {
+          "in": "url",
+          "check regex": "/list\\?entity_type="
+        }
+      ]
+    },
+    {
+      "name": "Fetch Entity Statement request TA OP",
+      "is request": true,
+      "response name": "Fetch Entity Statement response TA OP",
+      "checks": [
+        {
+          "in": "url",
+          "check regex": "/federation_fetch_endpoint\\?iss=http://cie-provider.org:8002&sub=http://trust-anchor.org:8000"
+        }
+      ]
+    },
+    {
+      "name": "Fetch Entity Statement request TA RP",
+      "is request": true,
+      "response name": "Fetch Entity Statement response TA RP",
+      "checks": [
+        {
+          "in": "url",
+          "check regex": "/federation_fetch_endpoint\\?iss=http://relying-party.org:8001&sub=http://trust-anchor.org:8000"
+        }
+      ]
+    },
+    {
+      "name": "Fetch Entity Statement request SA OP",
+      "is request": true,
+      "response name": "Fetch Entity Statement response SA OP",
+      "checks": [
+        {
+          "in": "url",
+          "check regex": "/federation_fetch_endpoint\\?iss=http://cie-provider.org:8002&sub=http://subject-aggregator.org:8004"
+        }
+      ]
+    },
+    {
+      "name": "Fetch Entity Statement request SA RP",
+      "is request": true,
+      "response name": "Fetch Entity Statement response SA RP",
+      "checks": [
+        {
+          "in": "url",
+          "check regex": "/federation_fetch_endpoint\\?iss=http://relying-party.org:8001&sub=http://subject-aggregator.org:8004"
+        }
+      ]
+    },
+    {
+      "name": "Public Keys History request",
+      "is request": true,
+      "response name": "Public Keys History response",
+      "checks": [
+        {
+          "in": "url",
+          "check regex": "/.well-known/openid-federation-jwks"
+        }
+      ]
+    },
+    {
+      "name": "Resolve Entity Statement request AA TA",
+      "is request": true,
+      "response name": "Resolve Entity Statement response AA TA",
+      "checks": [
+        {
+          "in": "url",
+          "check regex": "/resolve/\\?sub=trust-anchor.org:8000"
+        },
+        {
+          "in": "head",
+          "check param": "Host",
+          "contains": "attribute-authority.org"
+        }
+      ]
+    },
+    {
+      "name": "Resolve Entity Statement request AA RP",
+      "is request": true,
+      "response name": "Resolve Entity Statement response AA RP",
+      "checks": [
+        {
+          "in": "url",
+          "check regex": "/resolve/\\?sub=relying-party.org:8001"
+        },
+        {
+          "in": "head",
+          "check param": "Host",
+          "contains": "attribute-authority.org"
+        }
+      ]
+    },
+    {
+      "name": "Resolve Entity Statement request AA OP",
+      "is request": true,
+      "response name": "Resolve Entity Statement response AA OP",
+      "checks": [
+        {
+          "in": "url",
+          "check regex": "/resolve/\\?sub=trust-anchor.org:8000"
+        },
+        {
+          "in": "head",
+          "check param": "Host",
+          "contains": "cie-provider.org:8002"
+        }
+      ]
+    },
+    {
+      "name": "Resolve Entity Statement request AA SA",
+      "is request": true,
+      "response name": "Resolve Entity Statement response AA SA",
+      "checks": [
+        {
+          "in": "url",
+          "check regex": "/resolve/\\?sub=soggetti-aggregatori.org:8004"
+        },
+        {
+          "in": "head",
+          "check param": "Host",
+          "contains": "attribute-authority.org"
+        }
+      ]
+    },
+    {
+      "name": "Resolve Entity Statement request TA AA",
+      "is request": true,
+      "response name": "Resolve Entity Statement response TA AA",
+      "checks": [
+        {
+          "in": "url",
+          "check regex": "/resolve/\\?sub=attribute-authority.org"
+        },
+        {
+          "in": "head",
+          "check param": "Host",
+          "contains": "trust-anchor.org:8000"
+        }
+      ]
+    },
+    {
+      "name": "Resolve Entity Statement request TA RP",
+      "is request": true,
+      "response name": "Resolve Entity Statement response TA RP",
+      "checks": [
+        {
+          "in": "url",
+          "check regex": "/resolve/\\?sub=relying-party.org:8001"
+        },
+        {
+          "in": "head",
+          "check param": "Host",
+          "contains": "trust-anchor.org:8000"
+        }
+      ]
+    },
+    {
+      "name": "Resolve Entity Statement request TA OP",
+      "is request": true,
+      "response name": "Resolve Entity Statement response TA OP",
+      "checks": [
+        {
+          "in": "url",
+          "check regex": "/resolve/\\?sub=cie-provider.org:8002"
+        },
+        {
+          "in": "head",
+          "check param": "Host",
+          "contains": "trust-anchor.org:8000"
+        }
+      ]
+    },
+    {
+      "name": "Resolve Entity Statement request TA SA",
+      "is request": true,
+      "response name": "Resolve Entity Statement response TA SA",
+      "checks": [
+        {
+          "in": "url",
+          "check regex": "/resolve/\\?sub=soggetti-aggregatori.org:8004"
+        },
+        {
+          "in": "head",
+          "check param": "Host",
+          "contains": "trust-anchor.org:8000"
+        }
+      ]
+    },
+    {
+      "name": "Resolve Entity Statement request RP AA",
+      "is request": true,
+      "response name": "Resolve Entity Statement response RP AA",
+      "checks": [
+        {
+          "in": "url",
+          "check regex": "/resolve/\\?sub=attribute-authority.org"
+        },
+        {
+          "in": "head",
+          "check param": "Host",
+          "contains": "relying-party.org:8001"
+        }
+      ]
+    },
+    {
+      "name": "Resolve Entity Statement request RP TA",
+      "is request": true,
+      "response name": "Resolve Entity Statement response RP TA",
+      "checks": [
+        {
+          "in": "url",
+          "check regex": "/resolve/\\?sub=trust-anchor.org:8000"
+        },
+        {
+          "in": "head",
+          "check param": "Host",
+          "contains": "relying-party.org:8001"
+        }
+      ]
+    },
+    {
+      "name": "Resolve Entity Statement request RP OP",
+      "is request": true,
+      "response name": "Resolve Entity Statement response RP OP",
+      "checks": [
+        {
+          "in": "url",
+          "check regex": "/resolve/\\?sub=cie-provider.org:8002"
+        },
+        {
+          "in": "head",
+          "check param": "Host",
+          "contains": "relying-party.org:8001"
+        }
+      ]
+    },
+    {
+      "name": "Resolve Entity Statement request RP SA",
+      "is request": true,
+      "response name": "Resolve Entity Statement response RP SA",
+      "checks": [
+        {
+          "in": "url",
+          "check regex": "/resolve/\\?sub=soggetti-aggregatori.org:8004"
+        },
+        {
+          "in": "head",
+          "check param": "Host",
+          "contains": "relying-party.org:8001"
+        }
+      ]
+    },
+    {
+      "name": "Resolve Entity Statement request OP AA",
+      "is request": true,
+      "response name": "Resolve Entity Statement response OP AA",
+      "checks": [
+        {
+          "in": "url",
+          "check regex": "/resolve/\\?sub=attribute-authority.org"
+        },
+        {
+          "in": "head",
+          "check param": "Host",
+          "contains": "cie-provider.org:8002"
+        }
+      ]
+    },
+    {
+      "name": "Resolve Entity Statement request OP TA",
+      "is request": true,
+      "response name": "Resolve Entity Statement response OP TA",
+      "checks": [
+        {
+          "in": "url",
+          "check regex": "/resolve/\\?sub=trust-anchor.org:8000"
+        },
+        {
+          "in": "head",
+          "check param": "Host",
+          "contains": "cie-provider.org:8002"
+        }
+      ]
+    },
+    {
+      "name": "Resolve Entity Statement request OP RP",
+      "is request": true,
+      "response name": "Resolve Entity Statement response OP RP",
+      "checks": [
+        {
+          "in": "url",
+          "check regex": "/resolve/\\?sub=relying-party.org:8001"
+        },
+        {
+          "in": "head",
+          "check param": "Host",
+          "contains": "cie-provider.org:8002"
+        }
+      ]
+    },
+    {
+      "name": "Resolve Entity Statement request OP SA",
+      "is request": true,
+      "response name": "Resolve Entity Statement response OP SA",
+      "checks": [
+        {
+          "in": "url",
+          "check regex": "/resolve/\\?sub=soggetti-aggregatori.org:8004"
+        },
+        {
+          "in": "head",
+          "check param": "Host",
+          "contains": "cie-provider.org:8002"
+        }
+      ]
+    },
+    {
+      "name": "Resolve Entity Statement request SA AA",
+      "is request": true,
+      "response name": "Resolve Entity Statement response SA AA",
+      "checks": [
+        {
+          "in": "url",
+          "check regex": "/resolve/\\?sub=attribute-authority.org"
+        },
+        {
+          "in": "head",
+          "check param": "Host",
+          "contains": "soggetti-aggregatori.org:8004"
+        }
+      ]
+    },
+    {
+      "name": "Resolve Entity Statement request SA TA",
+      "is request": true,
+      "response name": "Resolve Entity Statement response SA TA",
+      "checks": [
+        {
+          "in": "url",
+          "check regex": "/resolve/\\?sub=trust-anchor.org:8000"
+        },
+        {
+          "in": "head",
+          "check param": "Host",
+          "contains": "soggetti-aggregatori.org:8004"
+        }
+      ]
+    },
+    {
+      "name": "Resolve Entity Statement request SA RP",
+      "is request": true,
+      "response name": "Resolve Entity Statement response SA RP",
+      "checks": [
+        {
+          "in": "url",
+          "check regex": "/resolve/\\?sub=relying-party.org:8001"
+        },
+        {
+          "in": "head",
+          "check param": "Host",
+          "contains": "soggetti-aggregatori.org:8004"
+        }
+      ]
+    },
+    {
+      "name": "Resolve Entity Statement request SA OP",
+      "is request": true,
+      "response name": "Resolve Entity Statement response SA OP",
+      "checks": [
+        {
+          "in": "url",
+          "check regex": "/resolve/\\?sub=cie-provider.org:8002"
+        },
+        {
+          "in": "head",
+          "check param": "Host",
+          "contains": "soggetti-aggregatori.org:8004"
+        }
+      ]
+    },
+    {
+      "name": "Consent Page request",
+      "is request": true,
+      "response name": "Consent Page response",
+      "checks": [
+        {
+          "in": "url",
+          "check regex": "/consent"
+        },
+        {
+          "in": "head",
+          "check regex": "POST"
+        },
+        {
+          "in": "head",
+          "check param": "Host",
+          "contains": "cie-provider.org:8002"
+        }
+      ]
+    },
+    {
+      "name": "Echo Attribute request",
+      "is request": true,
+      "response name": "Echo Attribute response",
+      "checks": [
+        {
+          "in": "url",
+          "check regex": "/echo_attributes"
+        },
+        {
+          "in": "head",
+          "check param": "Host",
+          "contains": "relying-party.org:8001"
+        }
+      ]
+    },
+    {
+      "name": "Trust Mark revoke request SA",
+      "is request": true,
+      "response name": "Trust Mark revoke response SA",
+      "checks": [
+        {
+          "in": "url",
+          "check": "/trust_mark_revoke",
+          "is present": "true"
+        },
+        {
+          "in": "head",
+          "check param": "Host",
+          "contains": "soggetti-aggregatori.org:8004"
+        }
+      ]
+    },
+    {
+      "name": "Trust Mark revoke request TA",
+      "is request": true,
+      "response name": "Trust Mark revoke response TA",
+      "checks": [
+        {
+          "in": "url",
+          "check": "/trust_mark_revoke",
+          "is present": "true"
+        },
+        {
+          "in": "head",
+          "check param": "Host",
+          "contains": "trust-anchor.org:8000"
+        }
+      ]
+    },
+    {
+      "name": "Validating request",
+      "is request": true,
+      "response name": "Validating response",
+      "checks": [
+        {
+          "in": "url",
+          "check regex": "csrfmiddlewaretoken"
+        }
+      ]
+    }
+  ]
+}
