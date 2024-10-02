@@ -559,46 +559,6 @@ public class XMLHelpers {
         }
     }
 
-    //
-    //    /**
-    //     * Sign whole SAML Message
-    //     *
-    //     * @param document        Document with the response to sign
-    //     * @param signAlgorithm   Signature algorithm in uri form, default if an unknown
-    //     *                        algorithm is provided:
-    //     *                        http://www.w3.org/2001/04/xmldsig-more#rsa-sha256
-    //     * @param digestAlgorithm Digest algorithm in uri form, default if an unknown algorithm
-    //     *                        is provided: http://www.w3.org/2001/04/xmlenc#sha256
-    //     */
-    //    public void signMessage(Document document, String signAlgorithm, String digestAlgorithm,
-    // X509Certificate cert, PrivateKey key)
-    //            throws CertificateException, NoSuchAlgorithmException, InvalidKeySpecException,
-    //            MarshalException, XMLSignatureException, IOException {
-    //        try {
-    //            if (Thread.currentThread().getContextClassLoader() == null) {
-    //                Thread.currentThread().setContextClassLoader(getClass().getClassLoader());
-    //            }
-    //            setIDAttribute(document);
-    //            XPath xpath = XPathFactory.newInstance().newXPath();
-    //            XPathExpression expr = xpath.compile("//*[local-name()='Response']/@ID");
-    //            NodeList nlURIs = (NodeList) expr.evaluate(document, XPathConstants.NODESET);
-    //
-    //            String[] sigIDs = new String[nlURIs.getLength()];
-    //
-    //            for (int i = 0; i < nlURIs.getLength(); i++) {
-    //                sigIDs[i] = nlURIs.item(i).getNodeValue();
-    //            }
-    //
-    //            Init.init();
-    //            for (String id : sigIDs) {
-    //                signElement(document, id, cert, key, signAlgorithm, digestAlgorithm);
-    //            }
-    //        } catch (XPathExpressionException e) {
-    //            e.printStackTrace();
-    //        }
-    //    }
-    //
-    //
     /**
      * Sign the assertion with the given id
      *
@@ -713,58 +673,4 @@ public class XMLHelpers {
         }
         return null;
     }
-    //
-    //	/*------------
-    //	//Source: http://www.oracle.com/technetwork/articles/javase/dig-signature-api-140772.html
-    //	------------*/
-    //
-    //    /**
-    //     * Validates if the first XML Signature of the given document is valid
-    //     * Only used for test purposes
-    //     *
-    //     * @param document Document with signature to validate
-    //     * @return true if valid, else false
-    //     */
-    //    public boolean validateSignature(Document document) throws Exception {
-    //
-    //        setIDAttribute(document);
-    //        XMLSignatureFactory fac = XMLSignatureFactory.getInstance("DOM");
-    //
-    //        // Find Signature element.
-    //        NodeList nl =
-    // document.getElementsByTagNameNS(javax.xml.crypto.dsig.XMLSignature.XMLNS, "Signature");
-    //        if (nl.getLength() == 0) {
-    //            throw new Exception("Cannot find Signature element");
-    //        }
-    //
-    //        // Create a DOMValidateContext and specify a KeySelector
-    //        // and document context.
-    //        DOMValidateContext valContext = new DOMValidateContext(new X509KeySelector(),
-    // nl.item(0));
-    //
-    //        // Unmarshal the XMLSignature
-    //        javax.xml.crypto.dsig.XMLSignature signature = fac.unmarshalXMLSignature(valContext);
-    //
-    //        // Validate the XMLSignature.
-    //        boolean coreValidity = signature.validate(valContext);
-    //
-    //        // Check core validation status.
-    //        if (coreValidity == false) {
-    //            boolean sv = signature.getSignatureValue().validate(valContext);
-    //            if (sv == false) {
-    //                if (Flags.DEBUG) {
-    //                    // Check the validation status of each Reference.
-    //                    @SuppressWarnings("rawtypes")
-    //                    Iterator i = signature.getSignedInfo().getReferences().iterator();
-    //                    for (int j = 0; i.hasNext(); j++) {
-    //                        boolean refValid = ((Reference) i.next()).validate(valContext);
-    //                        System.out.println("ref[" + j + "] validity status: " + refValid);
-    //                    }
-    //                }
-    //            }
-    //        }
-    //        return coreValidity;
-    //    }
-    //
-
 }

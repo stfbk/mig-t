@@ -239,7 +239,7 @@ public class GUIclass extends JSplitPane {
         resultTableModel.addRow(data);
     }
 
-    // BusinessLogic --> contiene creazione DebugTab
+    // BusinessLogic --> creation of the DebugTab
     public void init() {
         interceptedMessages = new ArrayList<>();
         testSuite = new TestSuite();
@@ -267,7 +267,7 @@ public class GUIclass extends JSplitPane {
     }
 
     /**
-     * BusinessLogic --> contiene operazioni GUI (stampa errori) Function used to read the message
+     * BusinessLogic --> contains GUI operations (printing errors) Function used to read the message
      * definition file
      */
     private void readMsgDefFile() {
@@ -288,7 +288,7 @@ public class GUIclass extends JSplitPane {
                 content.append(myReader.nextLine());
             }
             myReader.close();
-            messageTypes = Tools.readMsgTypesFromJson(content.toString()); // load messsage types
+            messageTypes = Tools.readMsgTypesFromJson(content.toString()); // load message types
 
         } catch (ParsingException e) {
             lblOutput.setText("Invalid message type in message type definition file");
@@ -300,7 +300,7 @@ public class GUIclass extends JSplitPane {
     }
 
     /**
-     * BusinessLogic --> contiene operazioni GUI (impostazione Tab di default)
+     * BusinessLogic --> contains GUI operations (default Tab setting)
      *
      * <p>Function used to read the json config file
      */
@@ -346,14 +346,14 @@ public class GUIclass extends JSplitPane {
         } catch (IOException e) {
             lblOutput.setText("cannot create message definition file: " + e);
         }
-        // TODO sistema, commentata temporaneamente perche dava errore
+        // TODO fix, commented since there was an error
         //        catch (JSONException e) {
         //            lblOutput.setText("Invalid config file: " + e);
         //        }
     }
 
     /**
-     * BusinessLogic --> contiene operazioni GUI (stampa errori) Function that edits the config
+     * BusinessLogic --> contains GUI operations (printing errors) Function that edits the config
      * file.
      *
      * @param key the key of the config to change
@@ -386,14 +386,14 @@ public class GUIclass extends JSplitPane {
             lblOutput.setText("cannot create message definition file: " + e);
         }
 
-        // TODO sistema, commentata temporaneamente perche dava errore
-        //        catch (JSONException e) {
-        //            lblOutput.setText("Invalid config file: " + e);
-        //        }
+        // TODO fix, commented since there was an error
+//                catch (JSONException e) {
+//                    lblOutput.setText("Invalid config file: " + e);
+//                }
     }
 
     /**
-     * BusinessLogic --> preleva json da GUI (modifiche GUI + stampa errori) + richiama le funzioni
+     * BusinessLogic --> get json from GUI (GUI changes + printing errors) + invoke functions
      * updateSessionTabs(); e updateTxtSessionConfig();
      *
      * <p>This function parses the given jsonInput string of the language
@@ -417,7 +417,7 @@ public class GUIclass extends JSplitPane {
                 FILTERING = obj.getJSONObject("test suite").getBoolean("filter messages");
             }
 
-            // Array of Tests + probabilmente qua è dove devo fare le modifiche
+            // Array of Tests
             JSONArray arrTests = obj.getJSONArray("tests");
             for (int i = 0; i < arrTests.length(); i++) {
                 JSONObject act_test = arrTests.getJSONObject(i).getJSONObject("test");
@@ -485,7 +485,7 @@ public class GUIclass extends JSplitPane {
         }
     }
 
-    /** BusinessLogic --> update della GUI Method which executes the entire test suite */
+    /** BusinessLogic --> update of the GUI Method which executes the entire test suite */
     private void executeSuite() {
         // clears all previously saved tests
         actives.clear();
@@ -754,7 +754,7 @@ public class GUIclass extends JSplitPane {
     }
 
     /**
-     * BusinessLogic? --> anche GUI Update the session config tab, using the session_port variable,
+     * BusinessLogic? --> also GUI, Update the session config tab, using the session_port variable,
      * at the same time reads if there are changes, and updates the session_port variable
      */
     private void updateTxtSessionConfig() throws ParsingException {

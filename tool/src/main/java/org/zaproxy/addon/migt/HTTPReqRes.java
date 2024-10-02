@@ -296,7 +296,7 @@ public class HTTPReqRes implements Cloneable {
                 message.getRequestHeader().setSecure(false);
             }
 
-            //TODO: verificare che le modiche all'URI in questo modo vadano bene
+            //TODO: check that the changes to the URI in this way are fine
             org.apache.commons.httpclient.URI origialURI = new org.apache.commons.httpclient.URI(request_url, true);
 
             org.apache.commons.httpclient.URI newURI = new org.apache.commons.httpclient.URI(
@@ -309,7 +309,7 @@ public class HTTPReqRes implements Cloneable {
                     origialURI.getFragment()
             );
 
-            //imposto i valori di host e port cambiando l'URI
+            //set host and port values by changing the URI
             message.getRequestHeader().setURI(newURI);
 
 

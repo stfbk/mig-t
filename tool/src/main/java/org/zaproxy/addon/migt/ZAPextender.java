@@ -20,15 +20,12 @@
 package org.zaproxy.addon.migt;
 
 import java.awt.BorderLayout;
-import java.awt.GridLayout;
 import java.io.PrintStream;
 import java.net.MalformedURLException;
 import java.net.URISyntaxException;
 import java.util.Arrays;
 import java.util.Objects;
 import javax.swing.ImageIcon;
-import javax.swing.JButton;
-import javax.swing.JPanel;
 import javax.swing.SwingUtilities;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -43,7 +40,7 @@ import org.parosproxy.paros.network.HttpMalformedHeaderException;
 import org.parosproxy.paros.network.HttpMessage;
 
 /** Main class executed by ZAP */
-public class ZAPPrincipale extends ExtensionAdaptor implements ProxyListener {
+public class ZAPextender extends ExtensionAdaptor implements ProxyListener {
 
     public static PrintStream printStream;
     public static PrintStream errorStream;
@@ -53,9 +50,9 @@ public class ZAPPrincipale extends ExtensionAdaptor implements ProxyListener {
     public static final String NAME = "MIGT";
     protected static final String PREFIX = "migt";
 
-    private static final Logger LOGGER = LogManager.getLogger(ZAPPrincipale.class);
+    private static final Logger LOGGER = LogManager.getLogger(ZAPextender.class);
 
-    public ZAPPrincipale() {
+    public ZAPextender() {
         super(NAME);
         setI18nPrefix(PREFIX);
     }
@@ -91,33 +88,32 @@ public class ZAPPrincipale extends ExtensionAdaptor implements ProxyListener {
                         //                        printStream = new PrintStream(stdOut);
                         //                        errorStream = new PrintStream(stdErr);
 
-                        // questo dovreppe permettere di testare il funzionamento ma potrebbe
-                        // implicare il reindirizzamento
-                        // di tutto lo stderr e stdout di ZAP al nostro pannello
+                        //this should allow you to test the operation but could
+                        //Imply redirection
+                        //of all ZAP stderr and stdout to our panel
 
                         //                OutputStream stdOut = System.out;
                         //                OutputStream stdErr = System.err;
                         //                printStream = new PrintStream(stdOut);
                         //                errorStream = new PrintStream(stdErr);
 
-                        // TODO: controllare questo codice, prima creava un istanza a parte
+                        // TODO: check this code, before it created a separate instance
                         mainPane = new GUIclass();
 
                         _mainPane_.messageViewer = new ReqResPanel();
                         _mainPane_.splitPane.setRightComponent(mainPane.messageViewer);
 
-                        /*             dovrei aver sostituito questi elementi nel metodo hook
+                        /*             I should have replaced these elements in the hook method
                                        callbacks.registerProxyListener(BurpExtender.this);
                                        callbacks.registerHttpListener(BurpExtender.this);
                         */
                         statusPanel.add(_mainPane_);
-
                     });
         }
         return statusPanel;
     }
 
-    // Questo è il codice Burp di partenza, sostituito dalla funzione hook
+    // This is the starting Burp code, replaced by the hook function
 
     //    public void registerExtenderCallbacks(IBurpExtenderCallbacks callbacks) {
     //        System.out.println("Initializing extension");
@@ -190,8 +186,6 @@ public class ZAPPrincipale extends ExtensionAdaptor implements ProxyListener {
 
         if (mainPane.INTERCEPT_ENABLED) {
 
-            //            //la porta viene prelevata dall'InterceptedProxyMessage, la porta che
-            // ottengo da un HttpMessage potrebbe andare bene?
             //
             //
             //            /* Check at which port of the proxy the message has been received
@@ -301,10 +295,10 @@ public class ZAPPrincipale extends ExtensionAdaptor implements ProxyListener {
                         msg.getHistoryRef().getHistoryId());
 
         if (mainPane.INTERCEPT_ENABLED) {
-            // TODO aggiungere controllo porta per separare sessioni, controllare se il
-            // funzionamento è corretto, return false dovrebbe impedire l'inoltro
-            //            per il momento evitiamo in controllo della porta, quindi possiamo gestire
-            // solo una sessione
+            // TODO       add port control to separate sessions, check if the
+            //            If this is not working, return false should prevent forwarding
+            //            For the time being we avoid in door control, so we can manage
+            //            only one session
             //
             //
             //            /* Check at which port of the proxy the message has been received
@@ -385,10 +379,10 @@ public class ZAPPrincipale extends ExtensionAdaptor implements ProxyListener {
     /**
      * @param msg_type the message type to be used // @param messageInfo the original intercepted
      *     messageInfo to being able to edit the message
-     * @param messageInfo a custom parsed message to be used in opeations
+     * @param messageInfo a custom parsed message to be used in operations
      */
     private void processMatchedMsg(MessageType msg_type, HTTPReqRes messageInfo) {
-        // TODO sistemare messageInfo.setHighlight("red");
+        // TODO fix messageInfo.setHighlight("red");
 
         mainPane.actual_operation.setAPI(
                 new Operation_API(messageInfo, msg_type.msg_to_process_is_request));

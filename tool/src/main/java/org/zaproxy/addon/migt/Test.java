@@ -383,7 +383,7 @@ public class Test {
 
             HashSet<Integer> logged_requests = new HashSet<Integer>();
 
-            // TODO HistoryID dovrebbe funzionare ma bisogna controllare
+            // TODO HistoryID should work but need to check
 
             // Save all messages seen by this operation
             if (o.log_messages != null) {

@@ -62,7 +62,7 @@ import org.zaproxy.addon.migt.samlraider.model.BurpCertificateExtension;
 import org.zaproxy.addon.migt.samlraider.model.BurpCertificateStore;
 import org.zaproxy.addon.migt.samlraider.model.ObjectIdentifier;
 
-public class CertificateTabController /*extends Observable implements ITab*/ {
+public class CertificateTabController {
     //
     private final CertificateTab certificateTab = new CertificateTab();
     private final BurpCertificateStore burpCertificateStore = new BurpCertificateStore();
@@ -924,26 +924,4 @@ public class CertificateTabController /*extends Observable implements ITab*/ {
         setStatus("Certificate removed.");
         setCertificateTree();
     }
-    //
-    //    /*
-    //     * Implement ITab for BurpExtender
-    //     */
-    //
-    //    @Override
-    //    public String getTabCaption() {
-    //        return "SAML Raider Certificates";
-    //    }
-    //
-    //    @Override
-    //    public Component getUiComponent() {
-    //        return certificateTab;
-    //    }
-    //
-    //    public String getSamlRequestParameterName() {
-    //        return certificateTab.getSamlRequestParameterName();
-    //    }
-    //
-    //    public String getSamlResponseParameterName() {
-    //        return certificateTab.getSamlResponseParameterName();
-    //    }
 }
