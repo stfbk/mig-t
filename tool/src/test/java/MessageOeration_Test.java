@@ -1,12 +1,31 @@
-import migt.HTTPReqRes;
-import migt.MessageOperation;
-import migt.Operation_API;
-import migt.ParsingException;
-import org.json.JSONObject;
-import org.junit.jupiter.api.Test;
-
+/*
+ * Zed Attack Proxy (ZAP) and its related class files.
+ *
+ * ZAP is an HTTP/HTTPS proxy for assessing web application security.
+ *
+ * Copyright 2024 The ZAP Development Team
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import org.json.JSONObject;
+import org.junit.jupiter.api.Test;
+import org.zaproxy.addon.migt.HTTPReqRes;
+import org.zaproxy.addon.migt.MessageOperation;
+import org.zaproxy.addon.migt.Operation_API;
+import org.zaproxy.addon.migt.ParsingException;
 
 public class MessageOeration_Test {
 
@@ -15,11 +34,11 @@ public class MessageOeration_Test {
         HTTPReqRes msg = HTTPReqRes_Test.initMessage_ok();
 
         String msg_op_txt =
-                "{\n" +
-                        "            \"from\": \"head\",\n" +
-                        "            \"save\": \"Host\",\n" +
-                        "            \"as\": \"var_name\"\n" +
-                        "        }";
+                "{\n"
+                        + "            \"from\": \"head\",\n"
+                        + "            \"save\": \"Host\",\n"
+                        + "            \"as\": \"var_name\"\n"
+                        + "        }";
 
         MessageOperation mop = new MessageOperation(new JSONObject(msg_op_txt));
         Operation_API op_api = new Operation_API(msg, true);
@@ -35,11 +54,11 @@ public class MessageOeration_Test {
         HTTPReqRes msg = HTTPReqRes_Test.initMessage_ok();
 
         String msg_op_txt =
-                "{\n" +
-                        "            \"from\": \"head\",\n" +
-                        "            \"save match\": \"Host:[^\\n\\r]*\",\n" +
-                        "            \"as\": \"var_name\"\n" +
-                        "        }";
+                "{\n"
+                        + "            \"from\": \"head\",\n"
+                        + "            \"save match\": \"Host:[^\\n\\r]*\",\n"
+                        + "            \"as\": \"var_name\"\n"
+                        + "        }";
 
         MessageOperation mop = new MessageOperation(new JSONObject(msg_op_txt));
         Operation_API op_api = new Operation_API(msg, true);
@@ -54,11 +73,11 @@ public class MessageOeration_Test {
     void test_save_url_param() throws ParsingException {
         HTTPReqRes msg = HTTPReqRes_Test.initMessage_ok();
         String msg_op_txt =
-                "{\n" +
-                        "            \"from\": \"url\",\n" +
-                        "            \"save\": \"format\",\n" +
-                        "            \"as\": \"var_name\"\n" +
-                        "        }";
+                "{\n"
+                        + "            \"from\": \"url\",\n"
+                        + "            \"save\": \"format\",\n"
+                        + "            \"as\": \"var_name\"\n"
+                        + "        }";
 
         MessageOperation mop = new MessageOperation(new JSONObject(msg_op_txt));
         Operation_API op_api = new Operation_API(msg, true);
@@ -73,12 +92,12 @@ public class MessageOeration_Test {
     void test_save_url_param_no_decode() throws ParsingException {
         HTTPReqRes msg = HTTPReqRes_Test.initMessage_ok();
         String msg_op_txt =
-                "{\n" +
-                        "            \"from\": \"url\",\n" +
-                        "            \"save\": \"paramwithspace\",\n" +
-                        "            \"as\": \"var_name\",\n" +
-                        "            \"url decode\": false" +
-                        "        }";
+                "{\n"
+                        + "            \"from\": \"url\",\n"
+                        + "            \"save\": \"paramwithspace\",\n"
+                        + "            \"as\": \"var_name\",\n"
+                        + "            \"url decode\": false"
+                        + "        }";
 
         MessageOperation mop = new MessageOperation(new JSONObject(msg_op_txt));
         Operation_API op_api = new Operation_API(msg, true);
@@ -93,11 +112,11 @@ public class MessageOeration_Test {
     void test_save_url_regex() throws ParsingException {
         HTTPReqRes msg = HTTPReqRes_Test.initMessage_ok();
         String msg_op_txt =
-                "{\n" +
-                        "            \"from\": \"url\",\n" +
-                        "            \"save match\": \"format=[^&\\n\\r]*\",\n" +
-                        "            \"as\": \"var_name\"\n" +
-                        "        }";
+                "{\n"
+                        + "            \"from\": \"url\",\n"
+                        + "            \"save match\": \"format=[^&\\n\\r]*\",\n"
+                        + "            \"as\": \"var_name\"\n"
+                        + "        }";
 
         MessageOperation mop = new MessageOperation(new JSONObject(msg_op_txt));
         Operation_API op_api = new Operation_API(msg, true);
@@ -113,11 +132,11 @@ public class MessageOeration_Test {
         HTTPReqRes msg = HTTPReqRes_Test.initMessage_ok();
         msg.setBody(true, "asdasdasd");
         String msg_op_txt =
-                "{\n" +
-                        "            \"from\": \"body\",\n" +
-                        "            \"save\": \"asdasdasd\"," +
-                        "            \"as\": \"var_name\"\n" +
-                        "        }";
+                "{\n"
+                        + "            \"from\": \"body\",\n"
+                        + "            \"save\": \"asdasdasd\","
+                        + "            \"as\": \"var_name\"\n"
+                        + "        }";
 
         MessageOperation mop = new MessageOperation(new JSONObject(msg_op_txt));
         Operation_API op_api = new Operation_API(msg, true);

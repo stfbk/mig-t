@@ -1,5 +1,4 @@
-Useful Maven commands:
+This project was built using the OWASP ZAP Dev Build in IntelliJ. Once the modules are loaded, the project will automatically recognize the build.gradle.kts file, 
+build the project, and provide the user with access to the related functions.
 
-- mvn versions:use-latest-versions updates all dependencies o lastest version
-
-- mvn versions:update-properties -> updates maven to match the pom
+For info about the ZAP Dev Build look at the official website under: Building ZAP with IntelliJ IDEA

@@ -1,24 +1,44 @@
-import migt.Marker;
-import migt.ParsingException;
-import migt.SessionTrackAction;
-import migt.Track;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Test;
+/*
+ * Zed Attack Proxy (ZAP) and its related class files.
+ *
+ * ZAP is an HTTP/HTTPS proxy for assessing web application security.
+ *
+ * Copyright 2024 The ZAP Development Team
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 
 import java.util.ArrayList;
 import java.util.List;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.zaproxy.addon.migt.Marker;
+import org.zaproxy.addon.migt.ParsingException;
+import org.zaproxy.addon.migt.SessionTrackAction;
+import org.zaproxy.addon.migt.Track;
 
 public class Track_Test {
 
     @Test
     @DisplayName("Test indexes")
     void testIndexes() throws ParsingException {
-        Track t = new Track("open | https://www.google.com/ |\n" +
-                "open | https://www.youtube.com/ |\n" +
-                "wait | 3000");
+        Track t =
+                new Track(
+                        "open | https://www.google.com/ |\n"
+                                + "open | https://www.youtube.com/ |\n"
+                                + "wait | 3000");
 
         int indx_0 = t.indexOfStaFromMarker("M0", false);
         int indx_L = t.indexOfStaFromMarker("ML", true);
@@ -37,13 +57,15 @@ public class Track_Test {
     @Test
     @DisplayName("Test first and last indexes")
     void testFirstAndLAstIndexes() throws ParsingException {
-        Track t = new Track("open | https://www.google.com/ |\n" +
-                "open | https://www.youtube.com/ |\n" +
-                "open | https://www.youtube.com/ |\n" +
-                "open | https://www.youtube.com/ |\n" +
-                "open | https://www.youtube.com/ |\n" +
-                "open | https://www.youtube.com/ |\n" +
-                "wait | 3000");
+        Track t =
+                new Track(
+                        "open | https://www.google.com/ |\n"
+                                + "open | https://www.youtube.com/ |\n"
+                                + "open | https://www.youtube.com/ |\n"
+                                + "open | https://www.youtube.com/ |\n"
+                                + "open | https://www.youtube.com/ |\n"
+                                + "open | https://www.youtube.com/ |\n"
+                                + "wait | 3000");
 
         int indx_0 = t.indexOfStaFromMarker("M0", false);
         int indx_L = t.indexOfStaFromMarker("ML", true);
@@ -56,13 +78,16 @@ public class Track_Test {
     @Test
     @DisplayName("Test insert")
     void testInsert() throws ParsingException {
-        Track t = new Track("open | https://www.google.com/ |\n" +
-                "open | https://www.youtube.com/ |\n" +
-                "wait | 3000");
+        Track t =
+                new Track(
+                        "open | https://www.google.com/ |\n"
+                                + "open | https://www.youtube.com/ |\n"
+                                + "wait | 3000");
 
         t.insert(new Marker("M0"), "wait | 3000");
 
-        assertEquals(t.getStasFromMarkers("M0", "M0", true, true).get(0).toString(),
+        assertEquals(
+                t.getStasFromMarkers("M0", "M0", true, true).get(0).toString(),
                 new SessionTrackAction("wait | 3000").toString());
 
         List<SessionTrackAction> l = new ArrayList<>();
@@ -78,31 +103,39 @@ public class Track_Test {
         t.insert(new Marker("ML"), "wait | 5000");
 
         t = new Track("");
-        String in = "open | https://www.google.com/ |\n" +
-                "open | https://www.youtube.com/ |\n" +
-                "wait | 3000 |";
+        String in =
+                "open | https://www.google.com/ |\n"
+                        + "open | https://www.youtube.com/ |\n"
+                        + "wait | 3000 |";
 
         t.insert(new Marker("M0"), in);
 
-        assertEquals("open | https://www.google.com/ |\nopen | https://www.youtube.com/ |\nwait | 3000 |\n",
+        assertEquals(
+                "open | https://www.google.com/ |\nopen | https://www.youtube.com/ |\nwait | 3000 |\n",
                 t.toString());
     }
 
     @Test
     @DisplayName("Track equals")
     void testTrackEquals() throws ParsingException {
-        Track t1 = new Track("open | https://www.google.com/ |\n" +
-                "open | https://www.youtube.com/ |\n" +
-                "wait | 3000");
-        Track t2 = new Track("open | https://www.google.com/ |\n" +
-                "open | https://www.youtube.com/ |\n" +
-                "wait | 3000");
+        Track t1 =
+                new Track(
+                        "open | https://www.google.com/ |\n"
+                                + "open | https://www.youtube.com/ |\n"
+                                + "wait | 3000");
+        Track t2 =
+                new Track(
+                        "open | https://www.google.com/ |\n"
+                                + "open | https://www.youtube.com/ |\n"
+                                + "wait | 3000");
 
         assertEquals(t1, t2);
         assertEquals(t2, t1);
 
-        t2 = new Track("open | https://www.google.com/ |\n" +
-                "open | https://www.youtube.com/ |\n");
+        t2 =
+                new Track(
+                        "open | https://www.google.com/ |\n"
+                                + "open | https://www.youtube.com/ |\n");
 
         assertNotEquals(t1, t2);
         assertNotEquals(t2, t1);
@@ -111,36 +144,44 @@ public class Track_Test {
     @Test
     @DisplayName("Track remove test")
     void testTrackRemove() throws ParsingException {
-        Track t = new Track("open | https://www.google.com/ |\n" +
-                "open | https://www.youtube.com/ |\n" +
-                "open | https://www.youtube.com/ |\n" +
-                "open | https://www.youtube.com/ |\n" +
-                "open | https://www.youtube.com/ |\n" +
-                "open | https://www.youtube.com/ |\n" +
-                "wait | 3000");
+        Track t =
+                new Track(
+                        "open | https://www.google.com/ |\n"
+                                + "open | https://www.youtube.com/ |\n"
+                                + "open | https://www.youtube.com/ |\n"
+                                + "open | https://www.youtube.com/ |\n"
+                                + "open | https://www.youtube.com/ |\n"
+                                + "open | https://www.youtube.com/ |\n"
+                                + "wait | 3000");
 
         t.remove(new Marker("ML"));
-        assertEquals("open | https://www.google.com/ |\n" +
-                "open | https://www.youtube.com/ |\n" +
-                "open | https://www.youtube.com/ |\n" +
-                "open | https://www.youtube.com/ |\n" +
-                "open | https://www.youtube.com/ |\n" +
-                "open | https://www.youtube.com/ |\n", t.toString());
+        assertEquals(
+                "open | https://www.google.com/ |\n"
+                        + "open | https://www.youtube.com/ |\n"
+                        + "open | https://www.youtube.com/ |\n"
+                        + "open | https://www.youtube.com/ |\n"
+                        + "open | https://www.youtube.com/ |\n"
+                        + "open | https://www.youtube.com/ |\n",
+                t.toString());
 
         t.remove(new Marker("M0"));
-        assertEquals("open | https://www.youtube.com/ |\n" +
-                "open | https://www.youtube.com/ |\n" +
-                "open | https://www.youtube.com/ |\n" +
-                "open | https://www.youtube.com/ |\n" +
-                "open | https://www.youtube.com/ |\n", t.toString());
+        assertEquals(
+                "open | https://www.youtube.com/ |\n"
+                        + "open | https://www.youtube.com/ |\n"
+                        + "open | https://www.youtube.com/ |\n"
+                        + "open | https://www.youtube.com/ |\n"
+                        + "open | https://www.youtube.com/ |\n",
+                t.toString());
     }
 
     @Test
     @DisplayName("Test range")
     void rangeTest() throws ParsingException {
-        Track t = new Track("open | https://www.google.com/ |\n" +
-                "open | https://www.youtube.com/ |\n" +
-                "wait | 3000");
+        Track t =
+                new Track(
+                        "open | https://www.google.com/ |\n"
+                                + "open | https://www.youtube.com/ |\n"
+                                + "wait | 3000");
         List<SessionTrackAction> sta = t.getStasFromMarkers("M0", "ML", false, true);
         assertEquals(t.getTrack().get(1), sta.get(0));
         assertEquals(t.getTrack().get(2), sta.get(1));
