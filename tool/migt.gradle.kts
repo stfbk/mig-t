@@ -1,5 +1,6 @@
 plugins {
     id("java")
+    id("com.diffplug.spotless")
 }
 
 version = "0.0.1"
@@ -50,6 +51,35 @@ dependencies {
 
 tasks.test {
     useJUnitPlatform()
+}
+
+spotless {
+    javaWith3rdPartyFormatted(
+        project,
+        listOf(
+            "src/**/ZAPextender.java",
+        ),
+        listOf(
+            "src/**/BurpCertificateBuilder.java",
+            "src/**/CertificateTabController.java",
+            "src/**/SamlTabController.java",
+            "src/**/CertificateTab.java",
+            "src/**/ImagePanel.java",
+            "src/**/SamlMain.java",
+            "src/**/SamlPanelAction.java",
+            "src/**/SamlPanelInfo.java",
+            "src/**/SignatureHelpWindow.java",
+            "src/**/XSWHelpWindow.java",
+            "src/**/CertificateHelper.java",
+            "src/**/FileHelper.java",
+            "src/**/Flags.java",
+            "src/**/XMLHelpers.java",
+            "src/**/BurpCertificate.java",
+            "src/**/BurpCertificateExtension.java",
+            "src/**/BurpCertificateStore.java",
+            "src/**/ObjectIdentifier.java",
+        ),
+    )
 }
 
 crowdin {
