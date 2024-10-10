@@ -54,6 +54,61 @@ public class ExecuteTrack implements Runnable {
     }
 
     /**
+     * Init the driver for the selected browser.
+     *
+     * @param chrome_selected True to select Chrome or False to select Firefox
+     * @param port            the port to be used
+     * @param driver_path     the absolute path to the driver executable to be used
+     * @return the driver object
+     */
+    public static WebDriver init_driver(
+            boolean chrome_selected,
+            String port,
+            String driver_path,
+            boolean headless) {
+
+        WebDriver driver = null;
+        if (chrome_selected) {
+            ChromeOptions options = new ChromeOptions();
+            options.addArguments("ignore-certificate-errors");
+            options.addArguments("window-size=1280,1400");
+            options.addArguments("--proxy-bypass-list=<-loopback>");
+            options.addArguments("--remote-allow-origins=*");
+            Proxy proxy = new Proxy();
+            proxy.setHttpProxy("localhost:" + port);
+            proxy.setSslProxy("localhost:" + port);
+            options.setCapability(CapabilityType.PROXY, proxy);
+            if (headless) options.addArguments("--headless");
+
+            System.setProperty("webdriver.chrome.driver", driver_path);
+            try {
+                driver = new ChromeDriver(options);
+            } catch (SessionNotCreatedException e) {
+                e.printStackTrace();
+            }
+
+        } else {
+            FirefoxOptions options = new FirefoxOptions();
+            options.addArguments("-width=1280");
+            options.addArguments("-height=1400");
+            Proxy proxy = new Proxy();
+            proxy.setHttpProxy("localhost:" + port);
+            proxy.setSslProxy("localhost:" + port);
+            options.setCapability(CapabilityType.PROXY, proxy);
+            if (headless) options.addArguments("--headless");
+
+            System.setProperty("webdriver.gecko.driver", driver_path);
+            try {
+                driver = new FirefoxDriver(options);
+            } catch (SessionNotCreatedException e) {
+                e.printStackTrace();
+            }
+        }
+
+        return driver;
+    }
+
+    /**
      * Registers the execute track listener, used to communicate with the ExecuteTrack thread
      *
      * @param listener the listener
@@ -70,44 +125,7 @@ public class ExecuteTrack implements Runnable {
         WebDriver driver;
         int TIMEOUT = 10;
 
-        if (chrome_selected) {
-            ChromeOptions options = new ChromeOptions();
-            options.addArguments("ignore-certificate-errors");
-            options.addArguments("window-size=1280,1400");
-            options.addArguments("--proxy-bypass-list=<-loopback>");
-            options.addArguments("--remote-allow-origins=*");
-            Proxy proxy = new Proxy();
-            proxy.setHttpProxy("localhost:" + port);
-            proxy.setSslProxy("localhost:" + port);
-            options.setCapability(CapabilityType.PROXY, proxy);
-            //options.setHeadless(isHeadless);
-
-            System.setProperty("webdriver.chrome.driver", driver_path);
-            try {
-                driver = new ChromeDriver(options);
-            } catch (SessionNotCreatedException e) {
-                e.printStackTrace();
-                return;
-            }
-
-        } else {
-            FirefoxOptions options = new FirefoxOptions();
-            options.addArguments("-width=1280");
-            options.addArguments("-height=1400");
-            Proxy proxy = new Proxy();
-            proxy.setHttpProxy("localhost:" + port);
-            proxy.setSslProxy("localhost:" + port);
-            options.setCapability(CapabilityType.PROXY, proxy);
-            //options.setHeadless(isHeadless);
-
-            System.setProperty("webdriver.gecko.driver", driver_path);
-            try {
-                driver = new FirefoxDriver(options);
-            } catch (SessionNotCreatedException e) {
-                e.printStackTrace();
-                return;
-            }
-        }
+        driver = init_driver(chrome_selected, port, driver_path, false);
 
         WebElement currentElement = null;
         int act_window_index = 0;

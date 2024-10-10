@@ -8,6 +8,7 @@ import com.google.gson.Gson;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.openqa.selenium.WebDriver;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableCellRenderer;
@@ -213,6 +214,24 @@ public class Main extends JSplitPane {
         bot_tabs_index = new HashMap<>();
         txt_out_debug_tab = new JTextArea();
         txt_err_debug_tab = new JTextArea();
+    }
+
+    public boolean is_driver_path_valid() {
+        WebDriver driver = ExecuteTrack.init_driver(
+                !btnselectChrome.isEnabled(),
+                Integer.toString(DEFAULT_PORT),
+                DRIVER_PATH,
+                true);
+
+        boolean res = driver != null;
+        if (!res) {
+            System.out.println("The selenium driver executable is not working");
+        } else {
+            driver.quit();
+        }
+
+        driver = null; // Free up
+        return res;
     }
 
     /**
@@ -869,10 +888,14 @@ public class Main extends JSplitPane {
             if (returnVal == JFileChooser.APPROVE_OPTION) {
                 File file = driverSelector.getSelectedFile();
                 DRIVER_PATH = file.getPath();
-                editConfigFile("last_driver_path", DRIVER_PATH);
-                lbldriver.setText("Driver Selected");
-                btndriverSelector.setBackground(Color.GREEN);
-                btnTestTrack.setEnabled(true);
+                if (is_driver_path_valid()) {
+                    editConfigFile("last_driver_path", DRIVER_PATH);
+                    lbldriver.setText("Driver Selected");
+                    btndriverSelector.setBackground(Color.GREEN);
+                    btnTestTrack.setEnabled(true);
+                } else {
+                    lbldriver.setText("Driver:selected executable seems to not work, check logs");
+                }
             } else if ((returnVal == JFileChooser.ERROR) || (returnVal == JFileChooser.ERROR_OPTION)) {
                 lbldriver.setText("Driver:error during file selection");
                 System.out.println("error during file selection");
