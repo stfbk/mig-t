@@ -134,9 +134,41 @@ Explore the API endpoints and documentation here: <https://app.swaggerhub.com/ap
 
 ### API Endpoints
 
-The APIs exposed by MIG-T have the following endpoints: `/users`, `/users/login`, `/messages`, and `/validation`. The first three APIs can be interacted with through the frontend exposed by MIG-T at the URL [http://localhost:3000](http://localhost:3000).
+MIG-T supports both GUI and API interaction. Two endpoints are available for API interaction:
 
-- **/users**: Allows the user to register the username and password in MIG-T.
-- **/users/login**: Allows the user to log in to MIG-T.
-- **/messages**: Allows the user to send session & test data to MIG-T so that MIG-T can execute them and return the output.
-- **/validation**: Allows the user to submit a test to MIG-T and check if it is valid.
+#### /execute [POST]
+
+Check the validity of the test and run the test. 
+
+Input: 
+```json
+{
+  "test": "test content",
+  "sessions": {
+    "session_name_1": "session content",
+    "session_name_2": "session content"
+  }
+}
+```
+
+Output:
+- HTTP status code 200 (ok)
+
+#### /result [GET]
+
+Checks whether the test is finished and returns the result.
+
+Output:
+- If the test is not finished:
+```json
+{
+  "finished": false
+}
+```
+- If the test if finished:
+```json
+{
+  "finished": false
+}
+```
+

@@ -89,6 +89,7 @@ public class Main extends JSplitPane {
     JButton btnExecuteTrack;
     JButton btnSaveToFile;
     JButton btndriverSelector;
+    JButton btnReadJSON;
     JTextArea txtScript;
     JTextArea txtSearch;
     JTextArea txtSessionConfig;
@@ -117,7 +118,7 @@ public class Main extends JSplitPane {
     private Integer DEFAULT_PORT = 8080;
     private String DRIVER_PATH;
     private List<Test> actives;
-    private Map<String, Component> sessions_text;
+    Map<String, JTextArea> sessions_text;
     private List<Test> passives;
     private Thread active_ex;
     private boolean active_ex_finished = false;
@@ -1394,7 +1395,7 @@ public class Main extends JSplitPane {
         gbc.gridheight = 3;
         inputContainer.add(scrollPane2, gbc);
 
-        JButton btnReadJSON = new JButton("Read JSON");
+        btnReadJSON = new JButton("Read JSON");
         gbc = new GridBagConstraints();
         gbc.anchor = GridBagConstraints.WEST;
         gbc.insets = new Insets(10, 10, 10, 10);
