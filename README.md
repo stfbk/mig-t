@@ -165,10 +165,41 @@ Output:
   "finished": false
 }
 ```
-- If the test if finished:
+- If the test is finished:
 ```json
 {
-  "finished": false
+  "finished": true,
+  "tests": [
+    {
+      "references": "",
+      "test name": "",
+      "description": "",
+      "type": "",
+      "mitigations": "",
+      "result": ""
+    }
+  ]
 }
 ```
-
+A verbose parameter is available (`/result?verbose=true`) to retrieve data from requests. For example:
+```json
+{
+  "finished": true,
+  "tests": [
+    {
+      "references": "",
+      "test name": "Does the OP release Access Tokens with the use of refresh tokens",
+      "description": "In this test the offline access flow is accomplished and a refresh token is obtained. After this, a new token request is done with \"grant_type\u003drefresh_token\" and the refresh token inserted in the \"refresh_token\" parameter. The response must include the Access Token",
+      "type": "active",
+      "mitigations": "",
+      "result": "success",
+      "details": [
+        {
+          "message type": "Authentication request",
+          "request": "base64_of_the_request"
+        }
+      ]
+    }
+  ]
+}
+```
