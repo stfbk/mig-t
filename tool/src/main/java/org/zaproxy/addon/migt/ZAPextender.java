@@ -1,32 +1,13 @@
-/*
- * Zed Attack Proxy (ZAP) and its related class files.
- *
- * ZAP is an HTTP/HTTPS proxy for assessing web application security.
- *
- * Copyright 2024 The ZAP Development Team
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
 package org.zaproxy.addon.migt;
 
 import java.awt.BorderLayout;
+import java.io.OutputStream;
 import java.io.PrintStream;
 import java.net.MalformedURLException;
 import java.net.URISyntaxException;
 import java.util.Arrays;
 import java.util.Objects;
 import javax.swing.ImageIcon;
-import javax.swing.SwingUtilities;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.parosproxy.paros.core.proxy.ProxyListener;
@@ -36,6 +17,8 @@ import org.parosproxy.paros.extension.ExtensionAdaptor;
 import org.parosproxy.paros.extension.ExtensionHook;
 import org.parosproxy.paros.model.HistoryReference;
 import org.parosproxy.paros.model.Model;
+import org.parosproxy.paros.network.HtmlParameter;
+import org.parosproxy.paros.network.HttpHeaderField;
 import org.parosproxy.paros.network.HttpMalformedHeaderException;
 import org.parosproxy.paros.network.HttpMessage;
 
@@ -45,7 +28,7 @@ public class ZAPextender extends ExtensionAdaptor implements ProxyListener {
     public static PrintStream printStream;
     public static PrintStream errorStream;
     private GUIclass mainPane; // The GUI
-    private AbstractPanel statusPanel = null; // wrap per OWASP ZAP
+    private AbstractPanel statusPanel; // wrap per OWASP ZAP
 
     public static final String NAME = "MIGT";
     protected static final String PREFIX = "migt";
@@ -74,41 +57,38 @@ public class ZAPextender extends ExtensionAdaptor implements ProxyListener {
 
     private AbstractPanel getStatusPanel(GUIclass _mainPane_) {
         if (statusPanel == null) {
-            SwingUtilities.invokeLater(
-                    () -> {
-                        statusPanel = new AbstractPanel();
-                        statusPanel.setLayout(new BorderLayout());
-                        statusPanel.setName("MIG-T");
-                        statusPanel.setIcon(
-                                new ImageIcon(getClass().getResource("resources/logo.png")));
+            statusPanel = new AbstractPanel();
+            statusPanel.setLayout(new BorderLayout());
+            statusPanel.setName("MIG-T");
+            statusPanel.setIcon(new ImageIcon(getClass().getResource("/resources/logofbk1.png")));
 
-                        //                        //setup output stream in Burp
-                        //                        OutputStream stdOut = callbacks.getStdout();
-                        //                        OutputStream stdErr = callbacks.getStderr();
-                        //                        printStream = new PrintStream(stdOut);
-                        //                        errorStream = new PrintStream(stdErr);
+            //                        //setup output stream in Burp
+            //                        OutputStream stdOut = callbacks.getStdout();
+            //                        OutputStream stdErr = callbacks.getStderr();
+            //                        printStream = new PrintStream(stdOut);
+            //                        errorStream = new PrintStream(stdErr);
 
-                        //this should allow you to test the operation but could
-                        //Imply redirection
-                        //of all ZAP stderr and stdout to our panel
+            // this should allow you to test the operation but could
+            // Imply redirection
+            // of all ZAP stderr and stdout to our panel
 
-                        //                OutputStream stdOut = System.out;
-                        //                OutputStream stdErr = System.err;
-                        //                printStream = new PrintStream(stdOut);
-                        //                errorStream = new PrintStream(stdErr);
+            // TODO: understand if this needs to exist or is useless
+            OutputStream stdOut = System.out;
+            OutputStream stdErr = System.err;
+            printStream = new PrintStream(stdOut);
+            errorStream = new PrintStream(stdErr);
 
-                        // TODO: check this code, before it created a separate instance
-                        mainPane = new GUIclass();
+            // TODO: this should not be needed, it's a duplicate
+            // mainPane = new GUIclass();
 
-                        _mainPane_.messageViewer = new ReqResPanel();
-                        _mainPane_.splitPane.setRightComponent(mainPane.messageViewer);
+            _mainPane_.messageViewer = new ReqResPanel();
+            _mainPane_.splitPane.setRightComponent(mainPane.messageViewer);
 
-                        /*             I should have replaced these elements in the hook method
-                                       callbacks.registerProxyListener(BurpExtender.this);
-                                       callbacks.registerHttpListener(BurpExtender.this);
-                        */
-                        statusPanel.add(_mainPane_);
-                    });
+            /*             I should have replaced these elements in the hook method
+                           callbacks.registerProxyListener(BurpExtender.this);
+                           callbacks.registerHttpListener(BurpExtender.this);
+            */
+            statusPanel.add(_mainPane_);
         }
         return statusPanel;
     }
@@ -169,11 +149,25 @@ public class ZAPextender extends ExtensionAdaptor implements ProxyListener {
 
     @Override
     public boolean onHttpRequestSend(HttpMessage msg) {
+
         boolean messageIsRequest;
         if (msg.getRequestHeader().isEmpty()) {
             messageIsRequest = false;
         } else {
             messageIsRequest = true;
+        }
+
+        try {
+            HistoryReference historyRef =
+                    new HistoryReference(
+                            Model.getSingleton().getSession(),
+                            HistoryReference.TYPE_TEMPORARY,
+                            msg);
+            msg.setHistoryRef(historyRef);
+        } catch (HttpMalformedHeaderException e) {
+            throw new RuntimeException(e);
+        } catch (DatabaseException e) {
+            throw new RuntimeException(e);
         }
 
         HTTPReqRes message =
@@ -184,10 +178,38 @@ public class ZAPextender extends ExtensionAdaptor implements ProxyListener {
                         // proxy_message.getMessageReference()
                         msg.getHistoryRef().getHistoryId());
 
-        if (mainPane.INTERCEPT_ENABLED) {
+        getView()
+                .getOutputPanel()
+                .append(
+                        "\n\n ////////////////////////////////////////////////////////// \n\n Processing message header --> "
+                                + msg.getRequestHeader()
+                                + "\n\n --------------------------------------------------------------- \n\n Single headers \n");
 
-            //
-            //
+        if (message.isRequest) {
+            getView()
+                    .getOutputPanel()
+                    .append(msg.getRequestHeader().getPrimeHeader() + "\n\n-------------------------------------\n");
+
+            for (HttpHeaderField s : msg.getRequestHeader().getHeaders()) {
+                getView()
+                        .getOutputPanel()
+                        .append(s.toString() + "\n\n-------------------------------------\n");
+            }
+        } else if (message.isResponse) {
+            getView()
+                    .getOutputPanel()
+                    .append(msg.getResponseHeader().getPrimeHeader() + "\n\n-------------------------------------\n");
+
+            for (HttpHeaderField s : msg.getResponseHeader().getHeaders()) {
+                getView()
+                        .getOutputPanel()
+                        .append(s.toString() + "\n\n-------------------------------------\n");
+            }
+        }
+
+        System.out.println("mainPane.INTERCEPT_ENABLED = " + mainPane.INTERCEPT_ENABLED);
+
+        if (mainPane.INTERCEPT_ENABLED) {
             //            /* Check at which port of the proxy the message has been received
             //               if it is different from the one of the session avoid message*/
             //            if (!port.equals(mainPane.actual_operation.session_port)) {
@@ -196,6 +218,7 @@ public class ZAPextender extends ExtensionAdaptor implements ProxyListener {
 
             // Log the received message by adding it to the list of received messages
             log_message(messageIsRequest, msg);
+            System.out.println("Logged a message");
 
             MessageType msg_type = null;
             try {
@@ -204,18 +227,23 @@ public class ZAPextender extends ExtensionAdaptor implements ProxyListener {
                                 mainPane.messageTypes, mainPane.actual_operation.getMessageType());
             } catch (Exception e) {
                 e.printStackTrace();
+                System.out.println("Error position is ZAPextender 0");
                 mainPane.actual_operation.applicable = false;
             }
 
+            System.out.println("Here it's going to try matched_msg_type");
+
             // Check that the given message matches the message type specified in the test
             boolean matchMessage = message.matches_msg_type(msg_type, messageIsRequest);
+
+            System.out.println("matched_msg_type = " + matchMessage);
 
             if (matchMessage) {
                 // If the operation's action is an intercept
                 if (Objects.requireNonNull(mainPane.actual_operation.getAction())
                         == Operation.Action.INTERCEPT) {
                     try {
-                        processMatchedMsg(msg_type, /*messageInfo,*/ message);
+                        processMatchedMsg(msg_type, message);
                         if (mainPane.actual_operation.then != null
                                 & mainPane.actual_operation.then == Operation.Then.DROP) {
                             return false; // IN ZAP A BOOL IS RETURNED STATING IF THE MESSAGE HAVE
@@ -223,6 +251,7 @@ public class ZAPextender extends ExtensionAdaptor implements ProxyListener {
                         }
                     } catch (Exception e) {
                         e.printStackTrace();
+                        System.out.println("Error position is ZAPextender 1");
                         mainPane.actual_operation.applicable = false;
                     }
                 }
@@ -256,23 +285,6 @@ public class ZAPextender extends ExtensionAdaptor implements ProxyListener {
             }
         }
 
-        /* This is the original code for the saveBuffer
-                       if (mainPane.recording) {
-                           if (!messageIsRequest) { // do not remove
-                               synchronized (mainPane.interceptedMessages) {
-                                   IHttpRequestResponsePersisted actual =
-        callbacks.saveBuffersToTempFiles(messageInfo);
-                                   mainPane.interceptedMessages.add(
-                                           new HTTPReqRes(actual)
-                                   );
-                                   if (mainPane.defaultSession != null) {
-                                       mainPane.defaultSession.addMessage(actual,
-        mainPane.FILTERING);
-                                   }
-                               }
-                           }
-                       }
-               */
         return true;
     }
 
@@ -284,6 +296,19 @@ public class ZAPextender extends ExtensionAdaptor implements ProxyListener {
             messageIsRequest = false;
         } else {
             messageIsRequest = true;
+        }
+
+        try {
+            HistoryReference historyRef =
+                    new HistoryReference(
+                            Model.getSingleton().getSession(),
+                            HistoryReference.TYPE_TEMPORARY,
+                            msg);
+            msg.setHistoryRef(historyRef);
+        } catch (HttpMalformedHeaderException e) {
+            throw new RuntimeException(e);
+        } catch (DatabaseException e) {
+            throw new RuntimeException(e);
         }
 
         HTTPReqRes message =
@@ -309,6 +334,7 @@ public class ZAPextender extends ExtensionAdaptor implements ProxyListener {
 
             // Log the received message by adding it to the list of received messages
             log_message(messageIsRequest, msg);
+            System.out.println("Logged a message");
 
             MessageType msg_type = null;
             try {
@@ -317,6 +343,7 @@ public class ZAPextender extends ExtensionAdaptor implements ProxyListener {
                                 mainPane.messageTypes, mainPane.actual_operation.getMessageType());
             } catch (Exception e) {
                 e.printStackTrace();
+                System.out.println("Error position is ZAPextender 2");
                 mainPane.actual_operation.applicable = false;
             }
 
@@ -336,6 +363,7 @@ public class ZAPextender extends ExtensionAdaptor implements ProxyListener {
                         }
                     } catch (Exception e) {
                         e.printStackTrace();
+                        System.out.println("Error position is ZAPextender 3");
                         mainPane.actual_operation.applicable = false;
                     }
                 }

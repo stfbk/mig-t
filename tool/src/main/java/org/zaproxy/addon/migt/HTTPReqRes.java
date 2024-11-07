@@ -1,22 +1,3 @@
-/*
- * Zed Attack Proxy (ZAP) and its related class files.
- *
- * ZAP is an HTTP/HTTPS proxy for assessing web application security.
- *
- * Copyright 2024 The ZAP Development Team
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
 package org.zaproxy.addon.migt;
 
 import java.net.MalformedURLException;
@@ -40,6 +21,7 @@ import org.apache.http.util.Args;
 import org.apache.http.util.CharArrayBuffer;
 import org.parosproxy.paros.db.DatabaseException;
 import org.parosproxy.paros.model.HistoryReference;
+import org.parosproxy.paros.network.HtmlParameter;
 import org.parosproxy.paros.network.HttpHeaderField;
 import org.parosproxy.paros.network.HttpMalformedHeaderException;
 import org.parosproxy.paros.network.HttpMessage;
@@ -164,10 +146,13 @@ public class HTTPReqRes implements Cloneable {
         this.body_offset_req = message.getRequestHeader().toString().length();
         this.body_offset_resp = message.getResponseHeader().toString().length();
 
-        // da ottimizzare ma per il momento ok
+        this.headers_req.add(message.getRequestHeader().getPrimeHeader());
+        this.headers_req.addAll(toStringList(message.getRequestHeader().getHeaders()));
+//        this.headers_req = toStringList(message.getRequestHeader().getHeaders());
 
-        this.headers_req = toStringList(message.getRequestHeader().getHeaders());
-        this.headers_resp = toStringList(message.getResponseHeader().getHeaders());
+        this.headers_resp.add(message.getResponseHeader().getPrimeHeader());
+        this.headers_resp.addAll(toStringList(message.getResponseHeader().getHeaders()));
+//        this.headers_resp = toStringList(message.getResponseHeader().getHeaders());
 
         instances++;
     }
@@ -212,6 +197,12 @@ public class HTTPReqRes implements Cloneable {
         this.setRequest_url(message.getRequestHeader().getURI().toString());
 
         this.headers_req = toStringList(message.getRequestHeader().getHeaders());
+
+        // changed this by adding
+//        for (HtmlParameter p : message.getUrlParams()) {
+//            this.headers_req.add(p.toString());
+//        }
+
         this.request_url = message.getRequestHeader().getURI().toString();
         this.body_offset_req = message.getRequestHeader().toString().length();
 
@@ -270,53 +261,44 @@ public class HTTPReqRes implements Cloneable {
         return list;
     }
 
-    /**
-     * Function used to replace an IHttpRequestResponse message with the values contained in this
-     * object
-     *
-     * <p>// @param message the message to be replaced // @param helpers the burp helpers // @return
-     * the edited message with the request and/or response replaced
-     */
-
-    /*
-    public HttpMessage replaceBurpMessage(HttpMessage message) throws HttpMalformedHeaderException, URIException {
-        if (isRequest) {
-            message.setRequestHeader(Req_header);
-            message.setRequestBody(Req_body);
-
-        }
-        if (isResponse) {
-            message.setResponseHeader(Res_header);
-            message.setResponseBody(Res_body);
-        }
-        if (host != null && port != 0 && protocol != null) {
-            if (protocol == "https"){
-                message.getRequestHeader().setSecure(true);
-            } else {
-                message.getRequestHeader().setSecure(false);
-            }
-
-            //TODO: check that the changes to the URI in this way are fine
-            org.apache.commons.httpclient.URI origialURI = new org.apache.commons.httpclient.URI(request_url, true);
-
-            org.apache.commons.httpclient.URI newURI = new org.apache.commons.httpclient.URI(
-                    origialURI.getScheme(),
-                    null,
-                    host,
-                    port,
-                    origialURI.getPath(),
-                    origialURI.getQuery(),
-                    origialURI.getFragment()
-            );
-
-            //set host and port values by changing the URI
-            message.getRequestHeader().setURI(newURI);
-
-
-        }
-        return message;
-    }
-    */
+    //    public HttpMessage replaceBurpMessage(HttpMessage message) throws
+    // HttpMalformedHeaderException, URIException {
+    //        if (isRequest) {
+    //            message.setRequestHeader(Req_header);
+    //            message.setRequestBody(Req_body);
+    //
+    //        }
+    //        if (isResponse) {
+    //            message.setResponseHeader(Res_header);
+    //            message.setResponseBody(Res_body);
+    //        }
+    //        if (host != null && port != 0 && protocol != null) {
+    //            if (protocol == "https"){
+    //                message.getRequestHeader().setSecure(true);
+    //            } else {
+    //                message.getRequestHeader().setSecure(false);
+    //            }
+    //
+    //            org.apache.commons.httpclient.URI origialURI = new
+    // org.apache.commons.httpclient.URI(request_url, true);
+    //
+    //            org.apache.commons.httpclient.URI newURI = new org.apache.commons.httpclient.URI(
+    //                    origialURI.getScheme(),
+    //                    null,
+    //                    host,
+    //                    port,
+    //                    origialURI.getPath(),
+    //                    origialURI.getQuery(),
+    //                    origialURI.getFragment()
+    //            );
+    //
+    //            //set host and port values by changing the URI
+    //            message.getRequestHeader().setURI(newURI);
+    //
+    //
+    //        }
+    //        return message;
+    //    }
 
     public String getUrlHeader() {
         if (!isRequest) throw new RuntimeException("called getUrlHeader on a response message");
@@ -672,7 +654,7 @@ public class HTTPReqRes implements Cloneable {
 
         request_url =
                 request_url.replaceAll(
-                        "\\Q" + java.util.regex.Matcher.quoteReplacement(url.getQuery()) + "\\E",
+                        "\\Q" + Matcher.quoteReplacement(url.getQuery()) + "\\E",
                         new_query);
 
         updateHeadersWHurl();
@@ -722,7 +704,7 @@ public class HTTPReqRes implements Cloneable {
 
         request_url =
                 request_url.replaceAll(
-                        "\\Q" + java.util.regex.Matcher.quoteReplacement(url.getQuery()) + "\\E",
+                        "\\Q" + Matcher.quoteReplacement(url.getQuery()) + "\\E",
                         new_query);
 
         updateHeadersWHurl();
@@ -777,7 +759,7 @@ public class HTTPReqRes implements Cloneable {
 
         request_url =
                 request_url.replaceAll(
-                        "\\Q" + java.util.regex.Matcher.quoteReplacement(url.getQuery()) + "\\E",
+                        "\\Q" + Matcher.quoteReplacement(url.getQuery()) + "\\E",
                         new_query);
 
         updateHeadersWHurl();
@@ -1037,6 +1019,7 @@ public class HTTPReqRes implements Cloneable {
      * @return true or false, if matched or not respectively
      */
     public boolean matches_msg_type(MessageType msg_type, boolean is_request) {
+        System.out.println("eseguito matches_msg_type");
         boolean matchedMessage = false;
         try {
             /* If the response message name is searched, the getByResponse will be true.
@@ -1071,6 +1054,7 @@ public class HTTPReqRes implements Cloneable {
         } catch (Exception e) {
             e.printStackTrace();
         }
+        System.out.println("return di matches_msg_type is " + matchedMessage);
         return matchedMessage;
     }
 
