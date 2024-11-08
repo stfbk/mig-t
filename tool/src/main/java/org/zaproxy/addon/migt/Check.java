@@ -1,22 +1,3 @@
-/*
- * Zed Attack Proxy (ZAP) and its related class files.
- *
- * ZAP is an HTTP/HTTPS proxy for assessing web application security.
- *
- * Copyright 2024 The ZAP Development Team
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
 package org.zaproxy.addon.migt;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -255,6 +236,7 @@ public class Check extends Module {
         Pattern p = Pattern.compile(regex);
         Matcher m = p.matcher(input);
         applicable = true;
+        System.out.println("Set true 1");
 
         String val = "";
         if (m.find()) {
@@ -312,6 +294,7 @@ public class Check extends Module {
 
         if (msg_str.isEmpty()) {
             applicable = true;
+            System.out.println("Set true 2");
             return this.op != null && op == CheckOps.IS_NOT_PRESENT;
         }
 
@@ -324,6 +307,7 @@ public class Check extends Module {
 
         if (this.isParamCheck) {
             if (in == CheckIn.BODY) {
+                System.out.println("Error position is Check 1");
                 applicable = false;
                 throw new ParsingException(
                         "Invalid check operation, cannot do \"check param\" over body, "
@@ -340,6 +324,7 @@ public class Check extends Module {
             Matcher m = p.matcher(msg_str);
 
             applicable = true;
+            System.out.println("Set true 3 <--");
 
             String val = "";
             if (m.find()) {
@@ -350,6 +335,7 @@ public class Check extends Module {
             return do_check(val);
         } else {
             applicable = true;
+            System.out.println("Set true 4");
             if (!msg_str.contains(this.what)) {
                 if (this.op != null) {
                     return this.op == CheckOps.IS_NOT_PRESENT;
@@ -452,6 +438,7 @@ public class Check extends Module {
             if (op == CheckOps.IS_PRESENT | op == CheckOps.IS_NOT_PRESENT) {
                 // whatever is the type of the value, if it is found return the result
                 applicable = true;
+                System.out.println("Set true 5");
                 return op == CheckOps.IS_PRESENT;
             }
 
@@ -494,12 +481,14 @@ public class Check extends Module {
 
         } catch (com.jayway.jsonpath.PathNotFoundException e) {
             applicable = true;
+            System.out.println("Set true 6");
             return op == CheckOps.IS_NOT_PRESENT;
         } catch (ClassCastException e) {
             throw new ParsingException("Error in check, json matched value cast exception: " + e);
         }
 
         applicable = true; // at this point the path has been found so the check is applicable
+        System.out.println("Set true 7");
 
         switch (op) {
             case IS:
@@ -675,6 +664,7 @@ public class Check extends Module {
     public boolean execute(HTTPReqRes message, boolean isRequest, List<Var> vars)
             throws ParsingException {
 
+        System.out.println("entrato in execute senza API");
         result = execute_http(message, isRequest, vars);
         return result;
     }
@@ -685,6 +675,7 @@ public class Check extends Module {
      * @param vars the variables of the actual operation (test)
      */
     public void execute(List<Var> vars) throws ParsingException {
+        System.out.println("entrato in execute con API");
         if (imported_api instanceof Operation_API) {
             // If is inside a standard Operation
             result =

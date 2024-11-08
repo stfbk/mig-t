@@ -1,22 +1,3 @@
-/*
- * Zed Attack Proxy (ZAP) and its related class files.
- *
- * ZAP is an HTTP/HTTPS proxy for assessing web application security.
- *
- * Copyright 2024 The ZAP Development Team
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
 package org.zaproxy.addon.migt;
 
 import java.util.HashMap;
@@ -149,6 +130,8 @@ public class ExecuteActives implements Runnable {
                                                             || actual_test.resultSession.equals(
                                                                     sessionName)) {
                                                         actual_test.applicable = false;
+                                                        System.out.println(
+                                                                "Error position is ExecuteActives 1");
                                                     }
                                                     synchronized (waiting) {
                                                         waiting.notify();
@@ -275,6 +258,8 @@ public class ExecuteActives implements Runnable {
                             op.api.vars = actual_test.vars;
                         }
 
+
+                        //TODO niccolo lech
                         listener.onNewProcessOperation(op);
 
                         synchronized (this.waiting) {
@@ -301,6 +286,7 @@ public class ExecuteActives implements Runnable {
                             }
                         } else {
                             actual_test.applicable = false;
+                            System.out.println("Error position is ExecuteActives 2");
                             for (String key : executions.keySet()) {
                                 executions.get(key).interrupt();
                             }
@@ -311,6 +297,7 @@ public class ExecuteActives implements Runnable {
                     e.printStackTrace();
                     listener.onError(actual_test);
                     actual_test.applicable = false;
+                    System.out.println("Error position is ExecuteActives 3");
                     for (String key : executions.keySet()) {
                         executions.get(key).interrupt();
                     }

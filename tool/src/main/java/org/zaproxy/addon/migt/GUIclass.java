@@ -1,22 +1,3 @@
-/*
- * Zed Attack Proxy (ZAP) and its related class files.
- *
- * ZAP is an HTTP/HTTPS proxy for assessing web application security.
- *
- * Copyright 2024 The ZAP Development Team
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
 package org.zaproxy.addon.migt;
 
 import com.google.gson.Gson;
@@ -55,7 +36,9 @@ import javax.swing.ListSelectionModel;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
 import org.json.JSONArray;
+import org.json.JSONException;
 import org.json.JSONObject;
+import org.parosproxy.paros.Constant;
 import org.parosproxy.paros.network.HttpMalformedHeaderException;
 
 /**
@@ -89,7 +72,7 @@ public class GUIclass extends JSplitPane {
     private static DefaultTableModel resultTableModel;
     private static DefaultTableModel testTableModel;
     final transient Object waiting = new Object();
-    final String LOG_FOLDER = "logs/";
+    final String LOG_FOLDER = Constant.getZapHome() + File.separator + "logs/";
     private final String[] foundTableColNames = {
         "Op. num", "Message Type", "message section", "check/regex", "index", "result"
     };
@@ -108,8 +91,8 @@ public class GUIclass extends JSplitPane {
     String SAVE_FILE_PATH = "";
     String RECORD_FILE_PATH = "";
     boolean FILTERING = true;
-    String MSG_DEF_PATH = "msg_def.json";
-    String CONFIG_FILE_PATH = "config.json";
+    String MSG_DEF_PATH = Constant.getZapHome() + File.separator + "templates/msg_def.json";
+    String CONFIG_FILE_PATH = Constant.getZapHome() + File.separator + "templates/config.json";
     // GUI
     JTable resultTable;
     JTable testTable;
@@ -289,7 +272,6 @@ public class GUIclass extends JSplitPane {
             }
             myReader.close();
             messageTypes = Tools.readMsgTypesFromJson(content.toString()); // load message types
-
         } catch (ParsingException e) {
             lblOutput.setText("Invalid message type in message type definition file");
             e.printStackTrace();
@@ -345,11 +327,9 @@ public class GUIclass extends JSplitPane {
             }
         } catch (IOException e) {
             lblOutput.setText("cannot create message definition file: " + e);
+        } catch (JSONException e) {
+            lblOutput.setText("Invalid config file: " + e);
         }
-        // TODO fix, commented since there was an error
-        //        catch (JSONException e) {
-        //            lblOutput.setText("Invalid config file: " + e);
-        //        }
     }
 
     /**
@@ -384,12 +364,9 @@ public class GUIclass extends JSplitPane {
             w.close();
         } catch (IOException e) {
             lblOutput.setText("cannot create message definition file: " + e);
+        } catch (JSONException e) {
+            lblOutput.setText("Invalid config file: " + e);
         }
-
-        // TODO fix, commented since there was an error
-//                catch (JSONException e) {
-//                    lblOutput.setText("Invalid config file: " + e);
-//                }
     }
 
     /**
@@ -401,6 +378,7 @@ public class GUIclass extends JSplitPane {
      * @param jsonInput the json input
      */
     private void readJSONinput(String jsonInput) {
+
         sessions_names.clear();
         txtSearch.setBorder(BorderFactory.createEmptyBorder());
         setJSONError(false, "");
