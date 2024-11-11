@@ -98,6 +98,10 @@ public class ExecuteWebServer implements Runnable {
             response.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
 
             if("/execute".equals(target) && baseRequest.getMethod().equals("POST")) {
+                // read param onlyValidate
+                String onlyValidateStr = request.getParameter("onlyValidate");
+                boolean onlyValidate = Boolean.parseBoolean(onlyValidateStr);
+
                 // read content
                 JsonObject body = new Gson().fromJson(request.getReader(), TypeToken.get(JsonObject.class));
 
@@ -126,7 +130,9 @@ public class ExecuteWebServer implements Runnable {
                     result.addProperty("success", true);
                 }
 
-                mainPane.btnExecuteSuite.doClick();
+                if(!onlyValidate) {
+                    mainPane.btnExecuteSuite.doClick();
+                }
 
                 writeOutputJson(result, response.getWriter());
                 baseRequest.setHandled(true);
@@ -150,7 +156,7 @@ public class ExecuteWebServer implements Runnable {
                         record.addProperty("description", t.getDescription());
                         record.addProperty("type", t.isActive ? "active" : "passive");
                         record.addProperty("mitigations", t.mitigations);
-                        record.addProperty("result", t.applicable ? (t.success ? "success" : "failed") : "not applicable");
+                        record.addProperty("result", t.applicable ? (t.success ? "passed" : "failed") : "not applicable");
                         /* record.addProperty("statements", "");
                         System.out.println("Affected entity: " + t.affected_entity);
                         record.add("affected entity", JsonNull.INSTANCE); */
