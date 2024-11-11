@@ -1,1 +1,5 @@
 .DS_Store
+
+# dev env
+**/*.http
+tool/.devcontainer/*
