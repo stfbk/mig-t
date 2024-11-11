@@ -132,3 +132,79 @@ Some parts of the tool that manages SAML certificates has been built by using po
 
 Parts of the tool that manage JWTs has been built using nimbus-jose-jwt
 <https://connect2id.com/products/nimbus-jose-jwt>
+
+# MIG-T API Documentation
+
+Explore the API endpoints and documentation here: <https://app.swaggerhub.com/apis-docs/PGSENO02/MIG-TAPIs/1.0.0#/>
+
+### API Endpoints
+
+MIG-T supports both GUI and API interaction. Two endpoints are available for API interaction:
+
+#### /execute [POST]
+
+Check the validity of the test and run the test. 
+
+Input: 
+```json
+{
+  "test": "test content",
+  "sessions": {
+    "session_name_1": "session content",
+    "session_name_2": "session content"
+  }
+}
+```
+
+Output:
+- HTTP status code 200 (ok)
+
+#### /result [GET]
+
+Checks whether the test is finished and returns the result.
+
+Output:
+- If the test is not finished:
+```json
+{
+  "finished": false
+}
+```
+- If the test is finished:
+```json
+{
+  "finished": true,
+  "tests": [
+    {
+      "references": "",
+      "test name": "",
+      "description": "",
+      "type": "",
+      "mitigations": "",
+      "result": ""
+    }
+  ]
+}
+```
+A verbose parameter is available (`/result?verbose=true`) to retrieve data from requests. For example:
+```json
+{
+  "finished": true,
+  "tests": [
+    {
+      "references": "",
+      "test name": "Does the OP release Access Tokens with the use of refresh tokens",
+      "description": "In this test the offline access flow is accomplished and a refresh token is obtained. After this, a new token request is done with \"grant_type\u003drefresh_token\" and the refresh token inserted in the \"refresh_token\" parameter. The response must include the Access Token",
+      "type": "active",
+      "mitigations": "",
+      "result": "success",
+      "details": [
+        {
+          "message type": "Authentication request",
+          "request": "base64_of_the_request"
+        }
+      ]
+    }
+  ]
+}
+```
