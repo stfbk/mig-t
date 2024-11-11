@@ -1,9 +1,0 @@
-{
-	"name": "Mig-T dev container",
-    "dockerComposeFile": "docker-compose.yml",
-    "service": "burpsuite",
-    "forwardPorts": [
-        "8443:8443",
-        "9095:9095"
-    ]
-}
