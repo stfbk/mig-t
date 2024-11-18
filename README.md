@@ -85,54 +85,6 @@ You have to use the jar that has "-with-dependencies" in its name, the other wil
 
 Documentation about MIG-T and the language can be found in this repo's [wiki](https://github.com/stfbk/mig-t/wiki)
 
-# Contributors
-
-Following is the list of students that contributed to the evolution of the tool, and their corresponding thesis.
-
-- Matteo Bitussi (Bachelor's Thesis, University of Trento, 2022) Declarative Specification of Pentesting Strategies for Browser-based Security Protocols: the Case Studies of SAML and OAuth/OIDC
-- Wendy Barreto (Bachelor's Thesis, University of Trento, 2021) Design and implementation of an attack pattern language for the automated pentesting of OAuth/OIDC deployments
-- Stefano Facchini (Bachelor's Thesis, University of Trento, 2020) Design and implementation of an automated tool for checking SAML SSO vulnerabilities and SPID compliance
-- Claudio Grisenti (Bachelor's Thesis, University of Trento, 2020) A pentesting tool for OAuth and OIDC deployments
-- Ivan Martini (Bachelor's Thesis, University of Trento, 2018) An automated security testing framework for SAML SSO deployments
-- Valentina Odorizzi (Bachelor's Thesis, University of Trento, 2018) Progettazione e sviluppo di uno strumento per l'analisi automatica di vulnerabilità "Missing XML Validation" in SAML SSO
-- Giulio Pellizzari (Bachelor's Thesis, University of Trento, 2018) Design and implementation of a tool to detect Login Cross-Site Request Forgery in SAML SSO: G Suite case study
-
-# References
-- [CSRFing the SSO Waves: Security Testing of SSO-Based Account Linking Process
-](https://doi.org/10.1109/EuroSP60621.2024.00016) @ 2024 IEEE 9th European Symposium on Security and Privacy (EuroS&P)
-- [Enhancing Security Testing for Identity Management Implementations: Introducing Micro-Id-Gym Language and Micro-Id-Gym Testing Tool](https://doi.org/10.1109/MSEC.2024.3450277) @ IEEE Security & Privacy
-
-# License
-
-```
-Copyright 2023, Fondazione Bruno Kessler
-
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-```
-
-Developed within [Security & Trust](https://st.fbk.eu/) Research Unit at [Fondazione Bruno Kessler](https://www.fbk.eu/en/) (Italy) in collaboration with [Istituto Poligrafico e Zecca dello Stato](https://www.ipzs.it/) (Italy) and Futuro & Conoscenza.
-
-## Other software
-
-### SAMLRaider
-
-Some parts of the tool that manages SAML certificates has been built by using portions of SAMLRaider code (<https://github.com/CompassSecurity/SAMLRaider>).
-
-### nimbus-jose-jwt
-
-Parts of the tool that manage JWTs has been built using nimbus-jose-jwt
-<https://connect2id.com/products/nimbus-jose-jwt>
-
 # MIG-T API Documentation
 
 Explore the API endpoints and documentation here: <https://app.swaggerhub.com/apis-docs/PGSENO02/MIG-TAPIs/1.0.0#/>
@@ -140,6 +92,9 @@ Explore the API endpoints and documentation here: <https://app.swaggerhub.com/ap
 ### API Endpoints
 
 MIG-T supports both GUI and API interaction. Two endpoints are available for API interaction:
+
+<details>
+  <summary>Details</summary>
 
 #### /execute [POST]
 
@@ -208,3 +163,60 @@ A verbose parameter is available (`/result?verbose=true`) to retrieve data from 
   ]
 }
 ```
+</details><br>
+
+# Contributors
+
+The following is a list of FBK employees and collaborators who have contributed to the development of the tool:
+
+- [Andrea Bisegna](https://st.fbk.eu/people/andrea-bisegna)
+- [Matteo Bitussi](https://st.fbk.eu/people/matteo-bitussi)
+- [Simone Brunello](https://st.fbk.eu/people/simone-brunello)
+- [Roberto Carbone](https://st.fbk.eu/people/roberto-carbone)
+- [Laura Cristiano](https://cs.fbk.eu/people/laura-cristiano)
+- [Pietro De Matteis](https://rising.fbk.eu/people/pietro-de-matteis) (FBK & DedaGroup)
+- [Eleonora Marchesini](https://st.fbk.eu/people/eleonora-marchesini)
+- [Silvio Ranise](https://cs.fbk.eu/people/silvio-ranise)
+
+
+Following is the list of students that contributed to the evolution of the tool, and their corresponding thesis.
+
+- Pier Guido Seno (Bachelor's Thesis, University of Trento, 2024) From Local to Remote: Enhancing MIG-T Pentesting Tool with SaaS for Securing Digital Identity
+- Matteo Bitussi (Bachelor's Thesis, University of Trento, 2022) Declarative Specification of Pentesting Strategies for Browser-based Security Protocols: the Case Studies of SAML and OAuth/OIDC
+- Wendy Barreto (Bachelor's Thesis, University of Trento, 2021) Design and implementation of an attack pattern language for the automated pentesting of OAuth/OIDC deployments
+- Stefano Facchini (Bachelor's Thesis, University of Trento, 2020) Design and implementation of an automated tool for checking SAML SSO vulnerabilities and SPID compliance
+- Claudio Grisenti (Bachelor's Thesis, University of Trento, 2020) A pentesting tool for OAuth and OIDC deployments
+- Ivan Martini (Bachelor's Thesis, University of Trento, 2018) An automated security testing framework for SAML SSO deployments
+- Valentina Odorizzi (Bachelor's Thesis, University of Trento, 2018) Progettazione e sviluppo di uno strumento per l'analisi automatica di vulnerabilità "Missing XML Validation" in SAML SSO
+- Giulio Pellizzari (Bachelor's Thesis, University of Trento, 2018) Design and implementation of a tool to detect Login Cross-Site Request Forgery in SAML SSO: G Suite case study
+
+# License
+
+```
+Copyright 2024, Fondazione Bruno Kessler
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+```
+
+Developed within [Security & Trust](https://st.fbk.eu/) Research Unit at [Fondazione Bruno Kessler](https://www.fbk.eu/en/) (Italy) in collaboration with [Istituto Poligrafico e Zecca dello Stato](https://www.ipzs.it/) (Italy) and Futuro & Conoscenza.
+
+## Other software
+
+### SAMLRaider
+
+Some parts of the tool that manages SAML certificates has been built by using portions of SAMLRaider code (<https://github.com/CompassSecurity/SAMLRaider>).
+
+### nimbus-jose-jwt
+
+Parts of the tool that manage JWTs has been built using nimbus-jose-jwt
+<https://connect2id.com/products/nimbus-jose-jwt>
