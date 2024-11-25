@@ -4,30 +4,22 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.jayway.jsonpath.JsonPath;
-import com.networknt.schema.JsonSchema;
-import com.networknt.schema.JsonSchemaException;
-import com.networknt.schema.JsonSchemaFactory;
-import com.networknt.schema.SpecVersion;
-import com.networknt.schema.ValidationMessage;
-import java.net.URLDecoder;
-import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Set;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+import com.networknt.schema.*;
 import org.apache.commons.text.StringEscapeUtils;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
+import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+import static org.zaproxy.addon.migt.Check.CheckOps.*;
+
 /**
- * Check Object class. This object is used in Operations to check that a parameter or some text is
- * in as specified.
+ * Check Object class. This object is used in Operations to check that a parameter or some text is in as specified.
  */
 public class Check extends Module {
     String what; // what to search
@@ -112,14 +104,10 @@ public class Check extends Module {
                         }
                         break;
                     case "is present":
-                        this.op =
-                                json_check.getBoolean("is present")
-                                        ? CheckOps.IS_PRESENT
-                                        : CheckOps.IS_NOT_PRESENT;
-                        this.op_val =
-                                json_check.getBoolean("is present")
-                                        ? "is present"
-                                        : "is not present";
+                        this.op = json_check.getBoolean("is present") ? CheckOps.IS_PRESENT :
+                                IS_NOT_PRESENT;
+                        this.op_val = json_check.getBoolean("is present") ?
+                                "is present" : "is not present";
                         break;
                     case "is in":
                         this.op = CheckOps.IS_IN;
@@ -153,7 +141,7 @@ public class Check extends Module {
                         }
                         break;
                     case "is subset of":
-                        this.op = CheckOps.IS_SUBSET_OF;
+                        this.op = IS_SUBSET_OF;
                         if (json_check.has("use variable")) {
                             // inside "is subset of" a string with the name of the var is expected
                             this.op_val = json_check.getString("is subset of");
@@ -168,31 +156,30 @@ public class Check extends Module {
                         }
                         break;
                     case "json schema compliant":
-                        this.op = CheckOps.JSON_SCHEMA_COMPLIANT;
+                        this.op = JSON_SCHEMA_COMPLIANT;
                         this.op_val = json_check.getString("json schema compliant");
                         break;
                     case "matches regex":
-                        this.op = CheckOps.MATCHES_REGEX;
+                        this.op = MATCHES_REGEX;
                         this.op_val = json_check.getString("matches regex");
                         break;
                     case "not matches regex":
-                        this.op = CheckOps.NOT_MATCHES_REGEX;
+                        this.op = NOT_MATCHES_REGEX;
                         this.op_val = json_check.getString("not matches regex");
                         break;
                     case "url decode":
                         url_decode = json_check.getBoolean("url decode");
                         break;
                     default:
-                        throw new ParsingException(
-                                "Invalid key:\"" + key + "\" used in Check Operation");
+                        throw new ParsingException("Invalid key:\"" + key + "\" used in Check Operation");
                 }
             } catch (JSONException e) {
                 throw new ParsingException("error in parsing check: " + e);
             } catch (ClassCastException e) {
-                throw new ParsingException(
-                        "Only allowed values in arrays are Strings, if you are using integers or "
-                                + "floats, please convert them as strings");
+                throw new ParsingException("Only allowed values in arrays are Strings, if you are using integers or " +
+                        "floats, please convert them as strings");
             }
+
         }
 
         if (regex.equals("") && what.equals(""))
@@ -236,7 +223,6 @@ public class Check extends Module {
         Pattern p = Pattern.compile(regex);
         Matcher m = p.matcher(input);
         applicable = true;
-        System.out.println("Set true 1");
 
         String val = "";
         if (m.find()) {
@@ -255,13 +241,14 @@ public class Check extends Module {
     /**
      * Execute the check over a message (in an Operation)
      *
-     * @param message the message to check
+     * @param message   the message to check
      * @param isRequest tells if the message is a request or a response
      * @return the result of the check
      * @throws ParsingException if something wrong is found wrt the language
      */
-    private boolean execute_http(HTTPReqRes message, boolean isRequest, List<Var> vars)
-            throws ParsingException {
+    private boolean execute_http(HTTPReqRes message,
+                                 boolean isRequest,
+                                 List<Var> vars) throws ParsingException {
 
         if (use_variable) {
             // if use_variable is set, substitute the value to check with the variable value
@@ -294,8 +281,7 @@ public class Check extends Module {
 
         if (msg_str.isEmpty()) {
             applicable = true;
-            System.out.println("Set true 2");
-            return this.op != null && op == CheckOps.IS_NOT_PRESENT;
+            return this.op != null && op == IS_NOT_PRESENT;
         }
 
         msg_str = url_decode(msg_str);
@@ -307,24 +293,18 @@ public class Check extends Module {
 
         if (this.isParamCheck) {
             if (in == CheckIn.BODY) {
-                System.out.println("Error position is Check 1");
                 applicable = false;
-                throw new ParsingException(
-                        "Invalid check operation, cannot do \"check param\" over body, "
-                                + "use \"check_regex instead\"");
+                throw new ParsingException("Invalid check operation, cannot do \"check param\" over body, " +
+                        "use \"check_regex instead\"");
             }
 
-            Pattern p =
-                    this.in == CheckIn.URL
-                            ? Pattern.compile(
-                                    "(?<=[?&]" + Pattern.quote(this.what) + "=)[^\\r\\n&]*")
-                            : Pattern.compile(
-                                    "(?<=" + Pattern.quote(this.what) + ":\\s?)[^\\r\\n]*");
+            Pattern p = this.in == CheckIn.URL ?
+                    Pattern.compile("(?<=[?&]" + Pattern.quote(this.what) + "=)[^\\r\\n&]*") :
+                    Pattern.compile("(?<=" + Pattern.quote(this.what) + ":\\s?)[^\\r\\n]*");
             // TODO: this could be done better by using message methods
             Matcher m = p.matcher(msg_str);
 
             applicable = true;
-            System.out.println("Set true 3 <--");
 
             String val = "";
             if (m.find()) {
@@ -335,16 +315,15 @@ public class Check extends Module {
             return do_check(val);
         } else {
             applicable = true;
-            System.out.println("Set true 4");
             if (!msg_str.contains(this.what)) {
                 if (this.op != null) {
-                    return this.op == CheckOps.IS_NOT_PRESENT;
+                    return this.op == IS_NOT_PRESENT;
                 } else {
                     return false;
                 }
             } else {
                 if (this.op != null) {
-                    return this.op != CheckOps.IS_NOT_PRESENT;
+                    return this.op != IS_NOT_PRESENT;
                 }
             }
         }
@@ -354,12 +333,11 @@ public class Check extends Module {
     private String url_decode(String string) {
         if (url_decode) {
             if (string.contains("+")) {
-                System.err.println(
-                        "Warning! During a check on the value\""
-                                + ((string.length() > 10) ? string.substring(0, 9) + "..." : string)
-                                + "\" a '+' symbol has been"
-                                + "converted to a space, as it has been interpreted as url-encoded character. If you want to avoid"
-                                + "this behaviour use 'url decode' tag set to false inside the check to disable url-decoding");
+                System.err.println("Warning! During a check on the value\"" +
+                        ((string.length() > 10) ? string.substring(0, 9) + "..." : string) +
+                        "\" a '+' symbol has been" +
+                        "converted to a space, as it has been interpreted as url-encoded character. If you want to avoid" +
+                        "this behaviour use 'url decode' tag set to false inside the check to disable url-decoding");
             }
             try {
                 string = URLDecoder.decode(string, StandardCharsets.UTF_8);
@@ -380,8 +358,7 @@ public class Check extends Module {
         DecodeOperation_API tmp = ((DecodeOperation_API) this.imported_api);
 
         if (isParamCheck) {
-            throw new ParsingException(
-                    "Cannot execute a 'check param' in a json, please use 'check'");
+            throw new ParsingException("Cannot execute a 'check param' in a json, please use 'check'");
         }
 
         Var v = null;
@@ -406,21 +383,18 @@ public class Check extends Module {
         String j = "";
 
         switch (in) {
-            case JWT_HEADER:
-                {
-                    j = tmp.jwt.header;
-                    break;
-                }
-            case JWT_PAYLOAD:
-                {
-                    j = tmp.jwt.payload;
-                    break;
-                }
-            case JWT_SIGNATURE:
-                {
-                    j = tmp.jwt.signature;
-                    break;
-                }
+            case JWT_HEADER: {
+                j = tmp.jwt.header;
+                break;
+            }
+            case JWT_PAYLOAD: {
+                j = tmp.jwt.payload;
+                break;
+            }
+            case JWT_SIGNATURE: {
+                j = tmp.jwt.signature;
+                break;
+            }
         }
 
         // if a regex is present, execute it
@@ -435,20 +409,16 @@ public class Check extends Module {
         try {
             Object found_obj = JsonPath.read(j, what);
 
-            if (op == CheckOps.IS_PRESENT | op == CheckOps.IS_NOT_PRESENT) {
+            if (op == IS_PRESENT | op == IS_NOT_PRESENT) {
                 // whatever is the type of the value, if it is found return the result
                 applicable = true;
-                System.out.println("Set true 5");
-                return op == CheckOps.IS_PRESENT;
+                return op == IS_PRESENT;
             }
 
             if (found_obj instanceof net.minidev.json.JSONArray) {
                 // the value is a list, allowed ops are: contains/not-contains
-                if (!(op == CheckOps.CONTAINS
-                        | op == CheckOps.NOT_CONTAINS
-                        | op == CheckOps.IS_SUBSET_OF)) {
-                    throw new ParsingException(
-                            "Check error, used " + op.toString() + " over a matched list");
+                if (!(op == CONTAINS | op == NOT_CONTAINS | op == IS_SUBSET_OF)) {
+                    throw new ParsingException("Check error, used " + op.toString() + " over a matched list");
                 }
 
                 Iterator<Object> i = ((net.minidev.json.JSONArray) found_obj).iterator();
@@ -458,19 +428,19 @@ public class Check extends Module {
                     try {
                         String elem = String.valueOf(i.next());
                         new_array.add(elem);
-                    } catch (ClassCastException e) {
-                        throw new ParsingException(
-                                "Cannot convert element in jwt matched array to string");
+                    } catch (java.lang.ClassCastException e) {
+                        throw new ParsingException("Cannot convert element in jwt matched array to string");
                     }
                 }
                 found_array = new_array;
                 value_is_array = true;
 
-            } else if (found_obj instanceof String) {
+            } else if (found_obj instanceof java.lang.String) {
                 // the value is a string, can do all ops
                 found = (String) found_obj;
 
-            } else if (found_obj instanceof Double | found_obj instanceof Integer) {
+            } else if (found_obj instanceof java.lang.Double |
+                    found_obj instanceof java.lang.Integer) {
                 // the value is an double or integer, convert to string
                 found = String.valueOf(found_obj);
             } else if (found_obj instanceof LinkedHashMap) {
@@ -481,14 +451,12 @@ public class Check extends Module {
 
         } catch (com.jayway.jsonpath.PathNotFoundException e) {
             applicable = true;
-            System.out.println("Set true 6");
-            return op == CheckOps.IS_NOT_PRESENT;
-        } catch (ClassCastException e) {
+            return op == IS_NOT_PRESENT;
+        } catch (java.lang.ClassCastException e) {
             throw new ParsingException("Error in check, json matched value cast exception: " + e);
         }
 
         applicable = true; // at this point the path has been found so the check is applicable
-        System.out.println("Set true 7");
 
         switch (op) {
             case IS:
@@ -496,7 +464,8 @@ public class Check extends Module {
             case IS_NOT:
                 return !op_val.equals(found);
             case CONTAINS:
-                if (!value_is_array) return found.contains(op_val);
+                if (!value_is_array)
+                    return found.contains(op_val);
                 else {
                     // the matched value is an array
                     if (!value_list.isEmpty()) {
@@ -513,9 +482,10 @@ public class Check extends Module {
                     }
                 }
             case NOT_CONTAINS:
-                if (!value_is_array) return !found.contains(op_val);
+                if (!value_is_array)
+                    return !found.contains(op_val);
                 else {
-                    // the matched value is an array
+                    //the matched value is an array
                     if (!value_list.isEmpty()) {
                         // check against a value array
                         for (String elem : value_list) {
@@ -539,44 +509,36 @@ public class Check extends Module {
                 return !value_list.contains(found);
             case IS_SUBSET_OF:
                 if (!value_is_array)
-                    throw new ParsingException(
-                            "Matched single element in jwt, but should be an array when using IS SUBSET OF");
+                    throw new ParsingException("Matched single element in jwt, but should be an array when using IS SUBSET OF");
 
                 return value_list.containsAll(found_array);
-            case MATCHES_REGEX:
-                {
-                    if (value_is_array)
-                        throw new ParsingException(
-                                "Check error: cannot execute a regex over a list");
-                    Pattern p = Pattern.compile(op_val);
-                    Matcher m = p.matcher(found);
-                    return m.find();
+            case MATCHES_REGEX: {
+                if (value_is_array) throw new ParsingException("Check error: cannot execute a regex over a list");
+                Pattern p = Pattern.compile(op_val);
+                Matcher m = p.matcher(found);
+                return m.find();
+            }
+            case NOT_MATCHES_REGEX: {
+                if (value_is_array) throw new ParsingException("Check error: cannot execute a regex over a list");
+                Pattern p = Pattern.compile(op_val);
+                Matcher m = p.matcher(found);
+                return !m.find();
+            }
+            case JSON_SCHEMA_COMPLIANT: {
+                JsonSchema schema = null;
+                JsonNode node = null;
+                try {
+                    // parse the schema
+                    schema = getJsonSchemaFromStringContent(op_val);
+                    ObjectMapper mapper = new ObjectMapper();
+                    node = mapper.readTree(found);
+                } catch (JsonProcessingException e) {
+                    throw new ParsingException(e.getMessage());
                 }
-            case NOT_MATCHES_REGEX:
-                {
-                    if (value_is_array)
-                        throw new ParsingException(
-                                "Check error: cannot execute a regex over a list");
-                    Pattern p = Pattern.compile(op_val);
-                    Matcher m = p.matcher(found);
-                    return !m.find();
-                }
-            case JSON_SCHEMA_COMPLIANT:
-                {
-                    JsonSchema schema = null;
-                    JsonNode node = null;
-                    try {
-                        // parse the schema
-                        schema = getJsonSchemaFromStringContent(op_val);
-                        ObjectMapper mapper = new ObjectMapper();
-                        node = mapper.readTree(found);
-                    } catch (JsonProcessingException e) {
-                        throw new ParsingException(e.getMessage());
-                    }
 
-                    Set<ValidationMessage> errors = schema.validate(node);
-                    return errors.isEmpty();
-                }
+                Set<ValidationMessage> errors = schema.validate(node);
+                return errors.isEmpty();
+            }
         }
 
         return false;
@@ -591,8 +553,7 @@ public class Check extends Module {
     public boolean do_check(String val_to_check) throws ParsingException {
         try {
             if (this.op == null && val_to_check.length() != 0) {
-                // if it passed all the splits without errors, the param is present, but no checks
-                // are specified
+                // if it passed all the splits without errors, the param is present, but no checks are specified
                 // so result is true
                 return true;
             }
@@ -618,33 +579,30 @@ public class Check extends Module {
                     }
                     break;
                 case IS_PRESENT:
-                    return !val_to_check
-                            .isEmpty(); // if it gets to this, the searched param is already found
+                    return !val_to_check.isEmpty(); // if it gets to this, the searched param is already found
                 case IS_NOT_PRESENT:
                     return val_to_check.isEmpty();
                 case IS_IN:
                     return value_list.contains(val_to_check);
                 case IS_NOT_IN:
                     return !value_list.contains(val_to_check);
-                case MATCHES_REGEX:
-                    {
-                        Pattern p = Pattern.compile(op_val);
-                        Matcher m = p.matcher(val_to_check);
-                        return m.find();
-                    }
-                case NOT_MATCHES_REGEX:
-                    {
-                        Pattern p = Pattern.compile(op_val);
-                        Matcher m = p.matcher(val_to_check);
-                        return !m.find();
-                    }
+                case MATCHES_REGEX: {
+                    Pattern p = Pattern.compile(op_val);
+                    Matcher m = p.matcher(val_to_check);
+                    return m.find();
+                }
+                case NOT_MATCHES_REGEX: {
+                    Pattern p = Pattern.compile(op_val);
+                    Matcher m = p.matcher(val_to_check);
+                    return !m.find();
+                }
                 default:
                     throw new ParsingException("Unsupported operand for Check in a message: " + op);
             }
         } catch (ArrayIndexOutOfBoundsException e) {
-            // e.printStackTrace();
+            //e.printStackTrace();
             if (this.op != null) {
-                if (this.op != CheckOps.IS_NOT_PRESENT) {
+                if (this.op != IS_NOT_PRESENT) {
                     return false;
                 }
             } else {
@@ -657,14 +615,15 @@ public class Check extends Module {
     /**
      * Executes the given check (without API). Used to match messages with msg_types usually.
      *
-     * @param message the message to check
+     * @param message   the message to check
      * @param isRequest if the message is a request or a response
      * @return the result of the check (passed or not passed)
      */
-    public boolean execute(HTTPReqRes message, boolean isRequest, List<Var> vars)
-            throws ParsingException {
+    public boolean execute(HTTPReqRes message,
+                           boolean isRequest,
+                           List<Var> vars) throws ParsingException {
 
-        System.out.println("entrato in execute senza API");
+
         result = execute_http(message, isRequest, vars);
         return result;
     }
@@ -675,14 +634,13 @@ public class Check extends Module {
      * @param vars the variables of the actual operation (test)
      */
     public void execute(List<Var> vars) throws ParsingException {
-        System.out.println("entrato in execute con API");
         if (imported_api instanceof Operation_API) {
             // If is inside a standard Operation
-            result =
-                    execute_http(
-                            ((Operation_API) imported_api).message,
-                            ((Operation_API) imported_api).is_request,
-                            vars);
+            result = execute_http(
+                    ((Operation_API) imported_api).message,
+                    ((Operation_API) imported_api).is_request,
+                    vars
+            );
         } else if (imported_api instanceof DecodeOperation_API) {
             // if inside a decode operation
             switch (((DecodeOperation_API) imported_api).type) {
@@ -690,10 +648,10 @@ public class Check extends Module {
                     result = execute_json(vars);
                     break;
                 case NONE:
-                    // TODO
+                    //TODO
                     break;
                 case XML:
-                    // TODO
+                    //TODO
                     break;
             }
         }
@@ -713,20 +671,18 @@ public class Check extends Module {
     }
 
     public String toStringExtended() {
-        String template =
-                "Check:\n"
-                        + "\tWhat: %s\n"
-                        + "\tIs it a param check? %b\n"
-                        + "\tregex: %s\n"
-                        + "\tWhere: %s\n"
-                        + "\tOp: %s\n"
-                        + "\tOp val: %s\n"
-                        + "\tValue list: %s\n"
-                        + "\tUse variable: %b\n"
-                        + "\tUrl decode: %b\n";
+        String template = "Check:\n" +
+                "\tWhat: %s\n" +
+                "\tIs it a param check? %b\n" +
+                "\tregex: %s\n" +
+                "\tWhere: %s\n" +
+                "\tOp: %s\n" +
+                "\tOp val: %s\n" +
+                "\tValue list: %s\n" +
+                "\tUse variable: %b\n" +
+                "\tUrl decode: %b\n";
 
-        return String.format(
-                template,
+        return String.format(template,
                 StringEscapeUtils.escapeJava(what),
                 isParamCheck,
                 StringEscapeUtils.escapeJava(regex),
@@ -738,8 +694,7 @@ public class Check extends Module {
                 url_decode);
     }
 
-    protected JsonSchema getJsonSchemaFromStringContent(String schemaContent)
-            throws ParsingException {
+    protected JsonSchema getJsonSchemaFromStringContent(String schemaContent) throws ParsingException {
         JsonSchema res = null;
         try {
             JsonSchemaFactory factory = JsonSchemaFactory.getInstance(SpecVersion.VersionFlag.V4);
@@ -750,7 +705,9 @@ public class Check extends Module {
         return res;
     }
 
-    /** enum containing all the possible check operations */
+    /**
+     * enum containing all the possible check operations
+     */
     public enum CheckOps {
         IS,
         IS_NOT,
@@ -770,8 +727,7 @@ public class Check extends Module {
          *
          * @param input the input string
          * @return the CheckOps enum value
-         * @throws ParsingException if the input string does not correspond to any of the possible
-         *     check operations
+         * @throws ParsingException if the input string does not correspond to any of the possible check operations
          */
         public static CheckOps fromString(String input) throws ParsingException {
             if (input != null) {
@@ -803,7 +759,9 @@ public class Check extends Module {
         }
     }
 
-    /** Used in the Check operation, to specify where is the content to check. */
+    /**
+     * Used in the Check operation, to specify where is the content to check.
+     */
     public enum CheckIn {
         // standard message
         HEAD,

@@ -101,21 +101,22 @@ public class Session {
      * the message is checked against some common file extension and if it is matched it is
      * discarded
      *
-     * @param hmsg the message to be added
+     * @param msg the message to be added
      * @param filter specify if filtering is enabled
      * @return the added message
      */
-    public HTTPReqRes addMessage(HistoryReference hmsg, boolean filter)
+    public HTTPReqRes addMessage(HttpMessage msg, boolean filter)
             throws URISyntaxException,
                     MalformedURLException,
                     HttpMalformedHeaderException,
                     DatabaseException {
         HTTPReqRes res = null;
-        HttpMessage message = hmsg.getHttpMessage();
+
         if (filter) {
-            String forURI = message.getRequestHeader().getURI().toString();
-            URI uri = new URI(forURI);
-            String url = uri.toURL().toString();
+//            String forURI = message.getRequestHeader().getURI().toString();
+//            URI uri = new URI(forURI);
+//            String url = uri.toURL().toString();
+            String url = msg.getRequestHeader().getPrimeHeader();
             url = url.split("\\sHTTP")[0];
             Pattern pattern =
                     Pattern.compile(
@@ -124,11 +125,11 @@ public class Session {
             Matcher matcher = pattern.matcher(url);
 
             if (!matcher.find()) {
-                res = new HTTPReqRes(hmsg);
+                res = new HTTPReqRes(msg);
                 messages.add(res);
             }
         } else {
-            res = new HTTPReqRes(hmsg);
+            res = new HTTPReqRes(msg);
             messages.add(res);
         }
         return res;

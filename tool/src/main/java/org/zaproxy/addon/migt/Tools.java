@@ -34,9 +34,11 @@ public class Tools {
         System.out.println("eseguito executeChecks");
         for (Check c : checks) {
             if (!c.execute(message, isRequest, vars)) {
+                System.out.println("executeChecks will return false");
                 return false;
             }
         }
+        System.out.println("executeChecks will return true");
         return true;
     }
 

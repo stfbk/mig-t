@@ -1,12 +1,13 @@
 package org.zaproxy.addon.migt;
 
-import static org.zaproxy.addon.migt.Tools.buildStringWithVars;
-import static org.zaproxy.addon.migt.Tools.executeChecks;
-import static org.zaproxy.addon.migt.Tools.executeDecodeOps;
-import static org.zaproxy.addon.migt.Tools.executeEditOps;
-import static org.zaproxy.addon.migt.Tools.executeMessageOperations;
-import static org.zaproxy.addon.migt.Tools.findParentDiv;
-import static org.zaproxy.addon.migt.Tools.getVariableByName;
+import static org.zaproxy.addon.migt.Tools.*;
+//import static org.zaproxy.addon.migt.Tools.buildStringWithVars;
+//import static org.zaproxy.addon.migt.Tools.executeChecks;
+//import static org.zaproxy.addon.migt.Tools.executeDecodeOps;
+//import static org.zaproxy.addon.migt.Tools.executeEditOps;
+//import static org.zaproxy.addon.migt.Tools.executeMessageOperations;
+//import static org.zaproxy.addon.migt.Tools.findParentDiv;
+//import static org.zaproxy.addon.migt.Tools.getVariableByName;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -439,6 +440,9 @@ public class Operation extends Module {
     }
 
     public void execute() {
+
+        System.out.println("Entrato in execute");
+
         if (!preconditions.isEmpty()) {
             try {
                 applicable =
@@ -485,6 +489,7 @@ public class Operation extends Module {
         // The order of execution is very important
         try {
             applicable = true;
+            System.out.println("Set true 22");
             executeMessageOperations(this);
             if (!applicable | !result) return;
             executeEditOps(this, api.vars);
