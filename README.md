@@ -87,8 +87,6 @@ Documentation about MIG-T and the language can be found in this repo's [wiki](ht
 
 # MIG-T API Documentation
 
-Explore the API endpoints and documentation here: <https://app.swaggerhub.com/apis-docs/PGSENO02/MIG-TAPIs/1.0.0#/>
-
 ### API Endpoints
 
 MIG-T supports both GUI and API interaction. Two endpoints are available for API interaction:
@@ -98,7 +96,7 @@ MIG-T supports both GUI and API interaction. Two endpoints are available for API
 
 #### /execute [POST]
 
-Check the validity of the test and run the test. 
+Check the validity of the test and run the test. The *onlyValidate* parameter is available, if enabled the test will only be validated but not executed (e.g., `/execute?onlyValidate=true`)
 
 Input: 
 ```json
@@ -113,6 +111,14 @@ Input:
 
 Output:
 - HTTP status code 200 (ok)
+
+If the validation of the test fails, the output is:
+```json
+{
+  "success": false,
+  "error": "the error"
+}
+```
 
 #### /result [GET]
 

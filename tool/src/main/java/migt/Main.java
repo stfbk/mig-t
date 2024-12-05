@@ -190,6 +190,7 @@ public class Main extends JSplitPane {
         //--------------------------------------
         //DRIVER_PATH = Main.class.getClassLoader().getResource("driver/geckodriver").getPath();
         //DRIVER_PATH = JOptionPane.showInputDialog(null, "enter the driver path:");
+        DRIVER_PATH = "";
         //--------------------------------------
 
         if (!DRIVER_PATH.equals("")) {
