@@ -10,6 +10,7 @@ import org.eclipse.jetty.server.handler.ResourceHandler;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpServletRequest;
 import javax.swing.table.DefaultTableModel;
+import java.awt.*;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.nio.charset.StandardCharsets;
@@ -111,8 +112,8 @@ public class ExecuteWebServer implements Runnable {
 
                 // verify errors
                 JsonObject result = new JsonObject();
-                String error = mainPane.lblOutput.getText();
-                if (false) {
+                if (mainPane.bot_tabbed.getBackgroundAt(mainPane.bot_tabs_index.get("Input JSON")) == Color.RED) {
+                    String error = mainPane.txt_err_debug_tab.getText();
                     result.addProperty("success", false);
                     result.addProperty("error", error);
                 } else {
