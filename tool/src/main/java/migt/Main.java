@@ -1520,9 +1520,9 @@ public class Main extends JSplitPane {
                 if (value == null) return c;
                 if (value.equals("failed")) {
                     c.setBackground(Color.RED);
-                } /*else {
-                    c.setBackground(Color.WHITE);
-                }*/
+                } else {
+                    c.setBackground(null);
+                }
                 return c;
             }
         });
