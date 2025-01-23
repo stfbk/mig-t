@@ -1518,11 +1518,11 @@ public class Main extends JSplitPane {
                         row,
                         column);
                 if (value == null) return c;
-                if (value.equals("failed")) {
+                /*if (value.equals("failed")) {
                     c.setBackground(Color.RED);
                 } else {
                     c.setBackground(null);
-                }
+                }*/
                 return c;
             }
         });
