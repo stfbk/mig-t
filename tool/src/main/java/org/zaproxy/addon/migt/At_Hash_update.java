@@ -114,7 +114,6 @@ public class At_Hash_update extends Module {
             j.private_key_pem = sign_key;
             new_id_token = j.build();
         } catch (ParsingException e) {
-            System.out.println("Error position is At_Hash_update 1");
             applicable = false;
             return;
         }

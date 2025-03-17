@@ -183,7 +183,7 @@ public class Operation extends Module {
     }
 
     public String getMessageType() {
-        return messageType;
+        return this.messageType;
     }
 
     /**
@@ -200,6 +200,8 @@ public class Operation extends Module {
             throw new ParsingException("Message type not found");
         }
         this.messageType = messageType;
+
+        System.err.println("Message Type set to -------> " + messageType);
     }
 
     public List<MessageOperation> getMessageOperations() {
@@ -440,8 +442,8 @@ public class Operation extends Module {
     }
 
     public void execute() {
+        System.err.println("Entrato execute");
 
-        System.out.println("Entrato in execute");
 
         if (!preconditions.isEmpty()) {
             try {
@@ -450,7 +452,6 @@ public class Operation extends Module {
                 if (!applicable) return;
             } catch (ParsingException e) {
                 applicable = false;
-                System.out.println("Error position is Operation 1");
                 e.printStackTrace();
                 return;
             }
@@ -466,7 +467,6 @@ public class Operation extends Module {
                 } catch (ParsingException e) {
                     e.printStackTrace();
                     applicable = false;
-                    System.out.println("Error position is Operation 1");
                     return;
                 }
             }
@@ -479,7 +479,6 @@ public class Operation extends Module {
                 } catch (ParsingException e) {
                     e.printStackTrace();
                     applicable = false;
-                    System.out.println("Error position is Operation 1");
                     return;
                 }
             }
@@ -526,7 +525,6 @@ public class Operation extends Module {
 
         } catch (ParsingException | PatternSyntaxException e) {
             applicable = false;
-            System.out.println("Error position is Operation 1");
             e.printStackTrace();
             return;
         }

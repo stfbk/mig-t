@@ -1,36 +1,7 @@
 package org.zaproxy.addon.migt.samlraider.application;
 
-import java.beans.PropertyChangeListener;
-import java.beans.PropertyChangeSupport;
-import java.io.BufferedReader;
-import java.io.ByteArrayInputStream;
-import java.io.DataInputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileReader;
-import java.io.IOException;
-import java.security.InvalidKeyException;
-import java.security.KeyFactory;
-import java.security.KeyPair;
-import java.security.NoSuchAlgorithmException;
-import java.security.NoSuchProviderException;
-import java.security.PrivateKey;
-import java.security.SignatureException;
-import java.security.cert.Certificate;
-import java.security.cert.CertificateEncodingException;
-import java.security.cert.CertificateException;
-import java.security.cert.CertificateFactory;
-import java.security.cert.X509Certificate;
-import java.security.spec.InvalidKeySpecException;
-import java.security.spec.PKCS8EncodedKeySpec;
-import java.text.ParseException;
-import java.util.Base64;
-import java.util.Collections;
-import java.util.LinkedList;
-import java.util.List;
-import org.bouncycastle.openssl.PEMKeyPair;
-import org.bouncycastle.openssl.PEMParser;
-import org.bouncycastle.openssl.jcajce.JcaPEMKeyConverter;
+import com.sun.org.apache.xml.internal.security.exceptions.Base64DecodingException;
+import com.sun.org.apache.xml.internal.security.utils.Base64;
 import org.zaproxy.addon.migt.samlraider.gui.CertificateTab;
 import org.zaproxy.addon.migt.samlraider.helpers.FileHelper;
 import org.zaproxy.addon.migt.samlraider.helpers.Flags;
@@ -38,65 +9,50 @@ import org.zaproxy.addon.migt.samlraider.model.BurpCertificate;
 import org.zaproxy.addon.migt.samlraider.model.BurpCertificateExtension;
 import org.zaproxy.addon.migt.samlraider.model.BurpCertificateStore;
 import org.zaproxy.addon.migt.samlraider.model.ObjectIdentifier;
+import org.bouncycastle.openssl.PEMKeyPair;
+import org.bouncycastle.openssl.PEMParser;
+import org.bouncycastle.openssl.jcajce.JcaPEMKeyConverter;
 
-public class CertificateTabController {
-    //
-    private final CertificateTab certificateTab = new CertificateTab();
-    private final BurpCertificateStore burpCertificateStore = new BurpCertificateStore();
-    private final FileHelper fileHelper = new FileHelper();
+import java.awt.*;
+import java.io.*;
+import java.security.*;
+import java.security.cert.Certificate;
+import java.security.cert.*;
+import java.security.spec.InvalidKeySpecException;
+import java.security.spec.PKCS8EncodedKeySpec;
+import java.text.ParseException;
+import java.util.Collections;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Observable;
 
-    private final PropertyChangeSupport changeSupport = new PropertyChangeSupport(this);
+public class CertificateTabController extends Observable {
 
-    // Metodo per aggiungere un osservatore
-    public void addObserver(PropertyChangeListener listener) {
-        changeSupport.addPropertyChangeListener(listener);
+    private final CertificateTab certificateTab;
+    private final BurpCertificateStore burpCertificateStore;
+    private final FileHelper fileHelper;
+
+    public CertificateTabController(CertificateTab certificateTab) {
+        this.certificateTab = certificateTab;
+        burpCertificateStore = new BurpCertificateStore();
+        fileHelper = new FileHelper();
+        if (Flags.DEBUG) {
+            importExampleCertificates();
+            setCertificateTree();
+        }
     }
 
-    // Metodo per rimuovere un osservatore
-    public void removeObserver(PropertyChangeListener listener) {
-        changeSupport.removePropertyChangeListener(listener);
-    }
+    /*
+     * Control GUI
+     */
 
-    /** Update top view with all certificates. */
-    public void setCertificateTree() {
-        certificateTab.setCertificateRootNode(burpCertificateStore.getRootNode());
-        changeSupport.firePropertyChange(
-                "certificateTreeUpdated", null, burpCertificateStore.getRootNode());
-    }
-
-    //    /**
-    //     * Original, Observable is deprecated
-    //     */
-    //    public void setCertificateTree() {
-    //        certificateTab.setCertificateRootNode(burpCertificateStore.getRootNode());
-    //        setChanged();
-    //        notifyObservers();
-    //    }
-
-    //    public CertificateTabController(CertificateTab certificateTab) {
-    //        this.certificateTab = certificateTab;
-    //        burpCertificateStore = new BurpCertificateStore();
-    //        fileHelper = new FileHelper();
-    //        if (Flags.DEBUG) {
-    //            importExampleCertificates();
-    //            setCertificateTree();
-    //        }
-    //    }
-    //
-    //    /*
-    //     * Control GUI
-    //     */
-    //
-
-    /** Import preloaded certificates as examples */
-    public static BurpCertificate importExampleCertificates_edit(
-            String path_certificate, String path_private) {
-        BurpCertificate c1 =
-                importCertificate_edit(
-                        path_certificate); // "src/main/resources/examples/certificate.pem");
-        importPrivateKey_edit(
-                c1, path_private); // "src/main/resources/examples/private_key_rsa.pem"
-        // importCertificateChain_edit("src/main/resources/examples/example.org_chain.pem");
+    /**
+     * Import preloaded certificates as examples
+     */
+    public static BurpCertificate importExampleCertificates_edit(String path_certificate, String path_private) {
+        BurpCertificate c1 = importCertificate_edit(path_certificate); //"src/main/resources/examples/certificate.pem");
+        importPrivateKey_edit(c1, path_private); //"src/main/resources/examples/private_key_rsa.pem"
+        //importCertificateChain_edit("src/main/resources/examples/example.org_chain.pem");
         return c1;
     }
 
@@ -115,17 +71,16 @@ public class CertificateTabController {
             ByteArrayInputStream bais = new ByteArrayInputStream(value);
             fis.close();
             CertificateFactory certFactory = CertificateFactory.getInstance("X.509");
-            X509Certificate x509certificate =
-                    (X509Certificate) certFactory.generateCertificate(bais);
+            X509Certificate x509certificate = (X509Certificate) certFactory.generateCertificate(bais);
             BurpCertificate certificate = new BurpCertificate(x509certificate);
             certificate.setPublicKey(x509certificate.getPublicKey());
             certificate.setSource("Imported");
             return certificate;
         } catch (IOException | CertificateException e) {
-            // setStatus("Error reading file. (" + e.getMessage() + ")");
+            //setStatus("Error reading file. (" + e.getMessage() + ")");
             e.printStackTrace();
         } catch (Exception e) {
-            // setStatus("Error (" + e.getMessage() + ")");
+            //setStatus("Error (" + e.getMessage() + ")");
             e.printStackTrace();
         }
         return null;
@@ -141,16 +96,14 @@ public class CertificateTabController {
         CertificateFactory certFactory;
         try {
             certFactory = CertificateFactory.getInstance("X.509");
-            ByteArrayInputStream bais =
-                    new ByteArrayInputStream(Base64.getDecoder().decode(inputString));
-            X509Certificate x509certificate =
-                    (X509Certificate) certFactory.generateCertificate(bais);
+            ByteArrayInputStream bais = new ByteArrayInputStream(Base64.decode(inputString));
+            X509Certificate x509certificate = (X509Certificate) certFactory.generateCertificate(bais);
             BurpCertificate certificate = new BurpCertificate(x509certificate);
             certificate.setPublicKey(x509certificate.getPublicKey());
             certificate.setSource("Imported");
 
             return certificate;
-        } catch (CertificateException | IllegalArgumentException e) {
+        } catch (CertificateException | Base64DecodingException e) {
             e.printStackTrace();
         } catch (Exception e) {
             e.printStackTrace();
@@ -158,16 +111,15 @@ public class CertificateTabController {
         return null;
     }
 
-    //
-    //    /*
-    //     * Import
-    //     */
-    //
+    /*
+     * Import
+     */
+
     /**
      * Read and import an X.509v3 certificate chain.
      *
-     * @param filename X.509v3 certificate chain (get with <code>
-     *     openssl s_client -connect example.org -showcerts</code>)
+     * @param filename X.509v3 certificate chain (get with
+     *                 <code>openssl s_client -connect example.org -showcerts</code>)
      * @return List with all certificates in chain
      */
     public static List<BurpCertificate> importCertificateChain_edit(String filename) {
@@ -192,20 +144,21 @@ public class CertificateTabController {
 
             return certificateChain;
         } catch (IOException | CertificateException e) {
-            // setStatus("Error reading certificate chain. (" + e.getMessage() + ")");
+            //setStatus("Error reading certificate chain. (" + e.getMessage() + ")");
             e.printStackTrace();
         } catch (Exception e) {
-            // setStatus("Error (" + e.getMessage() + ")");
+            //setStatus("Error (" + e.getMessage() + ")");
             e.printStackTrace();
         }
         return null;
     }
 
     /**
-     * Import a private RSA key in PEM format from a file and add it to the selected certificate.
+     * Import a private RSA key in PEM format from a file and add it to the
+     * selected certificate.
      *
      * @param certificate which the private key is for.
-     * @param filename of the private RSA key in PEM format
+     * @param filename    of the private RSA key in PEM format
      */
     public static void importPrivateKey_edit(BurpCertificate certificate, String filename) {
         BufferedReader br;
@@ -217,23 +170,22 @@ public class CertificateTabController {
             pp.close();
             certificate.setPrivateKey(kp.getPrivate());
         } catch (IOException e) {
-            // setStatus("Error importing private key. (" + e.getMessage() + ")");
+            //setStatus("Error importing private key. (" + e.getMessage() + ")");
             e.printStackTrace();
         } catch (Exception e) {
-            // setStatus("Error (" + e.getMessage() + ")");
+            //setStatus("Error (" + e.getMessage() + ")");
             e.printStackTrace();
         }
     }
 
     /**
-     * Copy all X.509v3 general information and all extensions 1:1 from one source certificat to one
-     * destination certificate.
+     * Copy all X.509v3 general information and all extensions 1:1 from one
+     * source certificat to one destination certificate.
      *
-     * @param certificate with the original information
+     * @param certificate            with the original information
      * @param burpCertificateBuilder for generating the destination certificate
      */
-    private static void cloneProperties(
-            BurpCertificate certificate, BurpCertificateBuilder burpCertificateBuilder) {
+    private static void cloneProperties(BurpCertificate certificate, BurpCertificateBuilder burpCertificateBuilder) {
         burpCertificateBuilder.setVersion(certificate.getVersionNumber());
         burpCertificateBuilder.setSerial(certificate.getSerialNumberBigInteger());
         if (certificate.getPublicKeyAlgorithm().equals("RSA")) {
@@ -251,7 +203,6 @@ public class CertificateTabController {
         }
     }
 
-    //
     /**
      * Clone a certificate and sign it with another private key from an issuer.
      *
@@ -259,8 +210,7 @@ public class CertificateTabController {
      * @return cloned certificate
      */
     public static BurpCertificate cloneAndSignCertificate_edit(BurpCertificate certificate) {
-        BurpCertificateBuilder burpCertificateBuilder =
-                new BurpCertificateBuilder(certificate.getSubject());
+        BurpCertificateBuilder burpCertificateBuilder = new BurpCertificateBuilder(certificate.getSubject());
         cloneProperties(certificate, burpCertificateBuilder);
 
         BurpCertificate burpCertificate;
@@ -275,7 +225,17 @@ public class CertificateTabController {
     }
 
     /**
-     * Setting the status line in GUI or print to STDOUT if no GUI and DEBUG Flag is set.
+     * Update top view with all certificates.
+     */
+    public void setCertificateTree() {
+        certificateTab.setCertificateRootNode(burpCertificateStore.getRootNode());
+        setChanged();
+        notifyObservers();
+    }
+
+    /**
+     * Setting the status line in GUI or print to STDOUT if no GUI and DEBUG
+     * Flag is set.
      *
      * @param status message to display
      */
@@ -287,7 +247,9 @@ public class CertificateTabController {
         }
     }
 
-    /** Updates the bottom view with detailed certificate information */
+    /**
+     * Updates the bottom view with detailed certificate information
+     */
     public void setCertificateDetails(BurpCertificate burpCertificate) {
         // Plugin Specific
         certificateTab.setTxtSource(burpCertificate.getSource());
@@ -366,8 +328,7 @@ public class CertificateTabController {
             for (BurpCertificateExtension extension : burpCertificate.getAllExtensions()) {
                 if (!ObjectIdentifier.extensionsIsSupported(extension.getOid())) {
                     if (ObjectIdentifier.getExtension(extension.getOid()) != null) {
-                        unsupportedExtensions.add(
-                                ObjectIdentifier.getExtension(extension.getOid()));
+                        unsupportedExtensions.add(ObjectIdentifier.getExtension(extension.getOid()));
                     } else {
                         // display OID number if extension name is unknown
                         unsupportedExtensions.add(extension.getOid());
@@ -378,17 +339,15 @@ public class CertificateTabController {
         }
     }
 
-    /** Import preloaded certificates as examples */
+    /**
+     * Import preloaded certificates as examples
+     */
     private void importExampleCertificates() {
         if (fileHelper.startedFromJar()) {
             try {
-                BurpCertificate c1 =
-                        importCertificate(
-                                fileHelper.exportRessourceFromJar("examples/certificate.pem"));
-                importPrivateKey(
-                        c1, fileHelper.exportRessourceFromJar("examples/private_key_rsa.pem"));
-                importCertificateChain(
-                        fileHelper.exportRessourceFromJar("examples/example.org_chain.pem"));
+                BurpCertificate c1 = importCertificate(fileHelper.exportRessourceFromJar("examples/certificate.pem"));
+                importPrivateKey(c1, fileHelper.exportRessourceFromJar("examples/private_key_rsa.pem"));
+                importCertificateChain(fileHelper.exportRessourceFromJar("examples/example.org_chain.pem"));
                 setCertificateDetails(c1);
             } catch (IOException e) {
                 setStatus("Error importing example certificates (" + e.getMessage() + ")");
@@ -419,8 +378,7 @@ public class CertificateTabController {
             ByteArrayInputStream bais = new ByteArrayInputStream(value);
             fis.close();
             CertificateFactory certFactory = CertificateFactory.getInstance("X.509");
-            X509Certificate x509certificate =
-                    (X509Certificate) certFactory.generateCertificate(bais);
+            X509Certificate x509certificate = (X509Certificate) certFactory.generateCertificate(bais);
             BurpCertificate certificate = new BurpCertificate(x509certificate);
             certificate.setPublicKey(x509certificate.getPublicKey());
             certificate.setSource("Imported");
@@ -439,42 +397,41 @@ public class CertificateTabController {
         return null;
     }
 
-    //    /**
-    //     * Read an PEM encoded X.509v3 certificate
-    //     *
-    //     * @param inputString PEM encoded X.509 certificate
-    //     * @return certificate
-    //     */
-    //    public BurpCertificate importCertificateFromString(String inputString) {
-    //        setStatus("Importing certificate...");
-    //        CertificateFactory certFactory;
-    //        try {
-    //            certFactory = CertificateFactory.getInstance("X.509");
-    //            ByteArrayInputStream bais = new ByteArrayInputStream(Base64.decode(inputString));
-    //            X509Certificate x509certificate = (X509Certificate)
-    // certFactory.generateCertificate(bais);
-    //            BurpCertificate certificate = new BurpCertificate(x509certificate);
-    //            certificate.setPublicKey(x509certificate.getPublicKey());
-    //            certificate.setSource("Imported");
-    //            burpCertificateStore.addCertificate(certificate);
-    //            setCertificateTree();
-    //            setStatus("Certificate imported");
-    //            return certificate;
-    //        } catch (CertificateException | Base64DecodingException e) {
-    //            setStatus("Error reading input certificate. (" + e.getMessage() + ")");
-    //            e.printStackTrace();
-    //        } catch (Exception e) {
-    //            setStatus("Error. (" + e.getMessage() + ")");
-    //            e.printStackTrace();
-    //        }
-    //        return null;
-    //    }
-    //
+    /**
+     * Read an PEM encoded X.509v3 certificate
+     *
+     * @param inputString PEM encoded X.509 certificate
+     * @return certificate
+     */
+    public BurpCertificate importCertificateFromString(String inputString) {
+        setStatus("Importing certificate...");
+        CertificateFactory certFactory;
+        try {
+            certFactory = CertificateFactory.getInstance("X.509");
+            ByteArrayInputStream bais = new ByteArrayInputStream(Base64.decode(inputString));
+            X509Certificate x509certificate = (X509Certificate) certFactory.generateCertificate(bais);
+            BurpCertificate certificate = new BurpCertificate(x509certificate);
+            certificate.setPublicKey(x509certificate.getPublicKey());
+            certificate.setSource("Imported");
+            burpCertificateStore.addCertificate(certificate);
+            setCertificateTree();
+            setStatus("Certificate imported");
+            return certificate;
+        } catch (CertificateException | Base64DecodingException e) {
+            setStatus("Error reading input certificate. (" + e.getMessage() + ")");
+            e.printStackTrace();
+        } catch (Exception e) {
+            setStatus("Error. (" + e.getMessage() + ")");
+            e.printStackTrace();
+        }
+        return null;
+    }
+
     /**
      * Read and import an X.509v3 certificate chain.
      *
-     * @param filename X.509v3 certificate chain (get with <code>
-     *     openssl s_client -connect example.org -showcerts</code>)
+     * @param filename X.509v3 certificate chain (get with
+     *                 <code>openssl s_client -connect example.org -showcerts</code>)
      * @return List with all certificates in chain
      */
     public List<BurpCertificate> importCertificateChain(String filename) {
@@ -511,15 +468,16 @@ public class CertificateTabController {
         return null;
     }
 
-    //    /*
-    //     * Export
-    //     */
-    //
+    /*
+     * Export
+     */
+
     /**
-     * Import a private RSA key in PEM format from a file and add it to the selected certificate.
+     * Import a private RSA key in PEM format from a file and add it to the
+     * selected certificate.
      *
      * @param certificate which the private key is for.
-     * @param filename of the private RSA key in PEM format
+     * @param filename    of the private RSA key in PEM format
      */
     public void importPrivateKey(BurpCertificate certificate, String filename) {
         setStatus("Importing private key...");
@@ -544,10 +502,10 @@ public class CertificateTabController {
     /**
      * Import a private Key in PKCS8 format in DER format.
      *
-     * @param certificate which the private key is for. Possible way to convert to PKCS8: <code>
-     *     openssl pkcs8 -topk8 -inform PEM -outform DER -in privatekey.pem -out private_key_pkcs8.pem -nocrypt
-     *     </code>
-     * @param filename of the PKCS8 key
+     * @param certificate which the private key is for. Possible way to convert to
+     *                    PKCS8:
+     *                    <code>openssl pkcs8 -topk8 -inform PEM -outform DER -in privatekey.pem -out private_key_pkcs8.pem -nocrypt</code>
+     * @param filename    of the PKCS8 key
      */
     public void importPKCS8(BurpCertificate certificate, String filename) {
         setStatus("Importing private key...");
@@ -575,15 +533,15 @@ public class CertificateTabController {
         }
     }
 
-    //    /*
-    //     * Clone
-    //     */
-    //
+    /*
+     * Clone
+     */
+
     /**
      * Export the certificate to a file.
      *
      * @param certificate to export
-     * @param filename for the exported certificate
+     * @param filename    for the exported certificate
      */
     public void exportCertificate(BurpCertificate certificate, String filename) {
         try {
@@ -601,7 +559,7 @@ public class CertificateTabController {
      * Export Private RSA Key in PEM format.
      *
      * @param certificate to export
-     * @param filename for the exported private RSA key
+     * @param filename    for the exported private RSA key
      */
     public void exportPrivateKey(BurpCertificate certificate, String filename) {
         setStatus("Exporting private key...");
@@ -617,14 +575,14 @@ public class CertificateTabController {
     }
 
     /**
-     * Clone a certificate from one source certificate. New private key material is generated.
+     * Clone a certificate from one source certificate. New private key material
+     * is generated.
      *
-     * @param certificate to clone
+     * @param certificate            to clone
      * @param burpCertificateBuilder for generating the new cloned certificate
      * @return cloned certificate
      */
-    public BurpCertificate cloneCertificate(
-            BurpCertificate certificate, BurpCertificateBuilder burpCertificateBuilder) {
+    public BurpCertificate cloneCertificate(BurpCertificate certificate, BurpCertificateBuilder burpCertificateBuilder) {
         cloneProperties(certificate, burpCertificateBuilder);
         setStatus("Cloning certificate...");
 
@@ -666,15 +624,12 @@ public class CertificateTabController {
     /**
      * Clone a certificate and sign it with another private key from an issuer.
      *
-     * @param certificate to clone
+     * @param certificate            to clone
      * @param burpCertificateBuilder for the cloned certificate
-     * @param issuerCertificate for signing the new certificate
+     * @param issuerCertificate      for signing the new certificate
      * @return cloned certificate
      */
-    public BurpCertificate cloneAndSignCertificate(
-            BurpCertificate certificate,
-            BurpCertificateBuilder burpCertificateBuilder,
-            BurpCertificate issuerCertificate) {
+    public BurpCertificate cloneAndSignCertificate(BurpCertificate certificate, BurpCertificateBuilder burpCertificateBuilder, BurpCertificate issuerCertificate) {
         cloneProperties(certificate, burpCertificateBuilder);
 
         try {
@@ -689,20 +644,13 @@ public class CertificateTabController {
         BurpCertificate burpCertificate;
         try {
             burpCertificate = burpCertificateBuilder.generateCertificate(issuerCertificate);
-            burpCertificate.setSource(
-                    "Cloned and signed by cloned " + issuerCertificate.getSubject());
+            burpCertificate.setSource("Cloned and signed by cloned " + issuerCertificate.getSubject());
             burpCertificateStore.addCertificate(burpCertificate);
             setCertificateTree();
             setStatus("Certificate cloned and signed.");
             return burpCertificate;
-        } catch (CertificateEncodingException
-                | InvalidKeyException
-                | IllegalStateException
-                | NoSuchAlgorithmException
-                | SignatureException
-                | NoSuchProviderException
-                | InvalidKeySpecException
-                | IOException e) {
+        } catch (CertificateEncodingException | InvalidKeyException | IllegalStateException | NoSuchAlgorithmException | SignatureException | NoSuchProviderException | InvalidKeySpecException
+                 | IOException e) {
             setStatus("Error cloning certificate. (" + e.getMessage() + ")");
             e.printStackTrace();
         } catch (Exception e) {
@@ -715,8 +663,8 @@ public class CertificateTabController {
      * Clone whole certificate chain
      *
      * @param certificateChain to clone
-     * @return List of cloned certificates. According to RFC 5246: Next Certificate must sign
-     *     previous.
+     * @return List of cloned certificates. According to RFC 5246: Next
+     * Certificate must sign previous.
      */
     public List<BurpCertificate> cloneCertificateChain(List<BurpCertificate> certificateChain) {
         List<BurpCertificate> certificates = new LinkedList<>();
@@ -727,12 +675,9 @@ public class CertificateTabController {
         BurpCertificate previousCertificate = null;
         for (BurpCertificate c : certificateChain) {
             if (previousCertificate == null) { // self-sign
-                currentCertificate =
-                        cloneCertificate(c, new BurpCertificateBuilder(c.getSubject()));
+                currentCertificate = cloneCertificate(c, new BurpCertificateBuilder(c.getSubject()));
             } else {
-                currentCertificate =
-                        cloneAndSignCertificate(
-                                c, new BurpCertificateBuilder(c.getSubject()), previousCertificate);
+                currentCertificate = cloneAndSignCertificate(c, new BurpCertificateBuilder(c.getSubject()), previousCertificate);
             }
             // remove b/c already added in called methods above
             burpCertificateStore.removeCertificate(currentCertificate);
@@ -746,14 +691,14 @@ public class CertificateTabController {
         return certificates;
     }
 
-    //    /*
-    //     * Create new
-    //     */
-    //
+    /*
+     * Create new
+     */
+
     /**
-     * Create a new X.509v3 certificate from certificate tab form. All entered fields are applied
-     * and the unsupported extensions are cloned from burpCertificate parameter if this option is
-     * activated.
+     * Create a new X.509v3 certificate from certificate tab form. All entered
+     * fields are applied and the unsupported extensions are cloned from
+     * burpCertificate parameter if this option is activated.
      *
      * @param burpCertificate Unsupported extensions to clone.
      */
@@ -763,8 +708,7 @@ public class CertificateTabController {
 
             // X.509 General
 
-            BurpCertificateBuilder burpCertificateBuilder =
-                    new BurpCertificateBuilder(certificateTab.getTxtSubject());
+            BurpCertificateBuilder burpCertificateBuilder = new BurpCertificateBuilder(certificateTab.getTxtSubject());
             burpCertificateBuilder.setVersion(3);
             burpCertificateBuilder.setSerial(certificateTab.getTxtSerialNumber());
             burpCertificateBuilder.setSignatureAlgorithm(certificateTab.getTxtSignatureAlgorithm());
@@ -814,15 +758,13 @@ public class CertificateTabController {
             if (certificateTab.isAutoSubjectKeyIdentifier()) {
                 burpCertificateBuilder.setSubjectKeyIdentifier(true);
             } else if (certificateTab.getSubjectKeyIdentifier().length() > 0) {
-                burpCertificateBuilder.setSubjectKeyIdentifier(
-                        certificateTab.getSubjectKeyIdentifier());
+                burpCertificateBuilder.setSubjectKeyIdentifier(certificateTab.getSubjectKeyIdentifier());
             }
 
             if (certificateTab.isAutoAuthorityKeyIdentifier()) {
                 burpCertificateBuilder.setAuthorityKeyIdentifier(true);
             } else if (certificateTab.getAuthorityKeyIdentifier().length() > 0) {
-                burpCertificateBuilder.setAuthorityKeyIdentifier(
-                        certificateTab.getAuthorityKeyIdentifier());
+                burpCertificateBuilder.setAuthorityKeyIdentifier(certificateTab.getAuthorityKeyIdentifier());
             }
 
             // Unsupported Extensions - copy only unsupported ones which are not
@@ -873,24 +815,23 @@ public class CertificateTabController {
         }
     }
 
-    //
-    //    /*
-    //     * Read
-    //     */
-    //
-    //    /**
-    //     * Get all certificates which have a private key.
-    //     *
-    //     * @return List of certificates with private key.
-    //     */
-    //    public List<BurpCertificate> getCertificatesWithPrivateKey() {
-    //        return burpCertificateStore.getBurpCertificatesWithPrivateKey();
-    //    }
-    //
-    //    /*
-    //     * Remove
-    //     */
-    //
+    /*
+     * Read
+     */
+
+    /**
+     * Get all certificates which have a private key.
+     *
+     * @return List of certificates with private key.
+     */
+    public List<BurpCertificate> getCertificatesWithPrivateKey() {
+        return burpCertificateStore.getBurpCertificatesWithPrivateKey();
+    }
+
+    /*
+     * Remove
+     */
+
     /**
      * Removes a certifiate from the certificate tree.
      *
@@ -900,5 +841,14 @@ public class CertificateTabController {
         burpCertificateStore.removeCertificate(burpCertificate);
         setStatus("Certificate removed.");
         setCertificateTree();
+    }
+
+
+    public String getSamlRequestParameterName() {
+        return certificateTab.getSamlRequestParameterName();
+    }
+
+    public String getSamlResponseParameterName() {
+        return certificateTab.getSamlResponseParameterName();
     }
 }

@@ -93,7 +93,6 @@ public class ExecutePassives implements Runnable {
                     res = actual_test.execute(executedSession.messages, messageTypes);
                 } catch (ParsingException e) {
                     actual_test.applicable = false;
-                    System.out.println("Error position is ExecutePassives");
                 }
 
                 System.out.println("Actual test result: " + res);

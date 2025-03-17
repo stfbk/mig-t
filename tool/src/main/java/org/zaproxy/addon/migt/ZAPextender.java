@@ -17,8 +17,6 @@ import org.parosproxy.paros.extension.ExtensionAdaptor;
 import org.parosproxy.paros.extension.ExtensionHook;
 import org.parosproxy.paros.model.HistoryReference;
 import org.parosproxy.paros.model.Model;
-import org.parosproxy.paros.network.HtmlParameter;
-import org.parosproxy.paros.network.HttpHeaderField;
 import org.parosproxy.paros.network.HttpMalformedHeaderException;
 import org.parosproxy.paros.network.HttpMessage;
 
@@ -27,7 +25,7 @@ public class ZAPextender extends ExtensionAdaptor implements ProxyListener {
 
     public static PrintStream printStream;
     public static PrintStream errorStream;
-    private GUIclass mainPane; // The GUI
+    private Main mainPane; // The GUI
     private AbstractPanel statusPanel; // wrap per OWASP ZAP
 
     public static final String NAME = "MIGT";
@@ -47,7 +45,7 @@ public class ZAPextender extends ExtensionAdaptor implements ProxyListener {
         super.hook(extensionHook);
 
         extensionHook.addProxyListener(this);
-        mainPane = new GUIclass();
+        mainPane = new Main();
 
         // As long as we're not running as a daemon
         if (hasView()) {
@@ -55,7 +53,7 @@ public class ZAPextender extends ExtensionAdaptor implements ProxyListener {
         }
     }
 
-    private AbstractPanel getStatusPanel(GUIclass _mainPane_) {
+    private AbstractPanel getStatusPanel(Main _mainPane_) {
         if (statusPanel == null) {
             statusPanel = new AbstractPanel();
             statusPanel.setLayout(new BorderLayout());
@@ -123,13 +121,17 @@ public class ZAPextender extends ExtensionAdaptor implements ProxyListener {
             throw new RuntimeException(e);
         }
 
-        HTTPReqRes message =
-                new HTTPReqRes(
-                        // messageInfo,
-                        msg,
-                        messageIsRequest,
-                        // proxy_message.getMessageReference()
-                        msg.getHistoryRef().getHistoryId());
+        HTTPReqRes message = null;
+        try {
+            message = new HTTPReqRes(
+                    // messageInfo,
+                    msg,
+                    messageIsRequest,
+                    // proxy_message.getMessageReference()
+                    msg.getHistoryRef().getHistoryId());
+        } catch (MalformedURLException e) {
+            throw new RuntimeException(e);
+        }
 
 
         if (mainPane.INTERCEPT_ENABLED) {
@@ -214,8 +216,8 @@ public class ZAPextender extends ExtensionAdaptor implements ProxyListener {
         boolean messageIsRequest = false;
 
 
-        getView().getOutputPanel().append("\nInside ResponseReceive \n msg.getRequestHeader = " + msg.getRequestHeader() +
-                "\nmsg.getResponseHeader = " + msg.getResponseHeader());
+       // getView().getOutputPanel().append("\nInside ResponseReceive \n msg.getRequestHeader = " + msg.getRequestHeader() +
+        //        "\nmsg.getResponseHeader = " + msg.getResponseHeader());
 
         try {
             HistoryReference historyRef =
@@ -230,13 +232,17 @@ public class ZAPextender extends ExtensionAdaptor implements ProxyListener {
             throw new RuntimeException(e);
         }
 
-        HTTPReqRes message =
-                new HTTPReqRes(
-                        // messageInfo,
-                        msg,
-                        messageIsRequest,
-                        // proxy_message.getMessageReference()
-                        msg.getHistoryRef().getHistoryId());
+        HTTPReqRes message = null;
+        try {
+            message = new HTTPReqRes(
+                    // messageInfo,
+                    msg,
+                    messageIsRequest,
+                    // proxy_message.getMessageReference()
+                    msg.getHistoryRef().getHistoryId());
+        } catch (MalformedURLException e) {
+            throw new RuntimeException(e);
+        }
 
         if (mainPane.INTERCEPT_ENABLED) {
             // TODO       add port control to separate sessions, check if the
