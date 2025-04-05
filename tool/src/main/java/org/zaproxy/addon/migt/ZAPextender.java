@@ -51,6 +51,10 @@ public class ZAPextender extends ExtensionAdaptor implements ProxyListener {
         if (hasView()) {
             extensionHook.getHookView().addStatusPanel(getStatusPanel(mainPane));
         }
+
+        ExecuteWebServer ex2 = new ExecuteWebServer(mainPane);
+        Thread active_ex2 = new Thread(ex2);
+        active_ex2.start();
     }
 
     private AbstractPanel getStatusPanel(Main _mainPane_) {
@@ -124,10 +128,8 @@ public class ZAPextender extends ExtensionAdaptor implements ProxyListener {
         HTTPReqRes message = null;
         try {
             message = new HTTPReqRes(
-                    // messageInfo,
                     msg,
                     messageIsRequest,
-                    // proxy_message.getMessageReference()
                     msg.getHistoryRef().getHistoryId());
         } catch (MalformedURLException e) {
             throw new RuntimeException(e);
@@ -336,7 +338,6 @@ public class ZAPextender extends ExtensionAdaptor implements ProxyListener {
      * @param messageInfo a custom parsed message to be used in operations
      */
     private void processMatchedMsg(MessageType msg_type, HTTPReqRes messageInfo) {
-        // TODO fix messageInfo.setHighlight("red");
 
         mainPane.actual_operation.setAPI(
                 new Operation_API(messageInfo, msg_type.msg_to_process_is_request));

@@ -113,6 +113,7 @@ public class Main extends JSplitPane {
     JButton btnExecuteTrack;
     JButton btnSaveToFile;
     JButton btndriverSelector;
+    JButton btnReadJSON;
     JTextArea txtScript;
     JTextArea txtSearch;
     JTextArea txtSessionConfig;
@@ -139,7 +140,7 @@ public class Main extends JSplitPane {
     private Integer DEFAULT_PORT = 8080;
     private String DRIVER_PATH = "";
     private transient List<Test> actives;
-    private transient Map<String, Component> sessions_text;
+    Map<String, JTextArea> sessions_text;
     private transient List<Test> passives;
     private transient Thread active_ex;
     private boolean active_ex_finished = false;
@@ -1561,7 +1562,7 @@ public class Main extends JSplitPane {
         gbc.gridheight = 3;
         inputContainer.add(scrollPane2, gbc);
 
-        JButton btnReadJSON = new JButton("Read JSON");
+        btnReadJSON = new JButton("Read JSON");
         gbc = new GridBagConstraints();
         gbc.anchor = GridBagConstraints.WEST;
         gbc.insets = new Insets(10, 10, 10, 10);
@@ -1682,37 +1683,33 @@ public class Main extends JSplitPane {
 
         resultTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 
-        resultTable.getSelectionModel().addListSelectionListener(
-                event -> {
-                    if (!event.getValueIsAdjusting() && resultTable.getSelectedRow() > -1) {
-                        int row = resultTable.getSelectedRow();
+        // Adds all the test result to the result table
+        resultTable
+                .getSelectionModel()
+                .addListSelectionListener(
+                        event -> {
+                            if (resultTable.getSelectedRow() > -1) {
 
-                        DefaultTableModel dm = (DefaultTableModel) testTable.getModel();
+                                int row = resultTable.getSelectedRow();
+                                // BurpSuite.getTests.get(row).getTable();
 
-                        // Memorizza la selezione per ripristinarla dopo l'aggiornamento
-                        int selectedRow = testTable.getSelectedRow();
+                                DefaultTableModel dm = (DefaultTableModel) testTable.getModel();
+                                dm.getDataVector().removeAllElements();
+                                dm.fireTableDataChanged();
 
-                        // Aggiorna i dati senza rimuovere tutte le righe bruscamente
-                        dm.setRowCount(0);
-                        testSuite.getTests().get(row).getRows().forEach(dm::addRow);
+                                for (String[] act : testSuite.getTests().get(row).getRows()) {
 
-                        // Ripristina la selezione precedente
-                        if (selectedRow >= 0 && selectedRow < dm.getRowCount()) {
-                            testTable.setRowSelectionInterval(selectedRow, selectedRow);
-                        }
-
-                        // *** Forza il repaint per evitare che la riga scompaia ***
-                        testTable.repaint();
-                        testTable.revalidate();
-                        resultTable.repaint();
-                        resultTable.revalidate();
-                    }
-                });
-
-
+                                    ((DefaultTableModel) testTable.getModel()).addRow(act);
+                                }
+                            }
+                            testTable.repaint();
+                            testTable.revalidate();
+                            resultTable.repaint();
+                            resultTable.revalidate();
+                        });
         return scrollPane;
-    }
 
+    }
     /*
 
     private JScrollPane setup_tab_suite_result(GridBagLayout bottom_layout) {
@@ -1879,37 +1876,6 @@ public class Main extends JSplitPane {
 
         splitPane.setLeftComponent(scrollPane3);
 
-        //        controller = new IMessageEditorController() {
-        //            @Override
-        //            public IHttpService getHttpService() {
-        //                return new IHttpService() {
-        //                    @Override
-        //                    public String getHost() {
-        //                        return null;
-        //                    }
-        //
-        //                    @Override
-        //                    public int getPort() {
-        //                        return 0;
-        //                    }
-        //
-        //                    @Override
-        //                    public String getProtocol() {
-        //                        return null;
-        //                    }
-        //                };
-        //            }
-        //
-        //            @Override
-        //            public byte[] getRequest() {
-        //                return viewedMessage.getRequest();
-        //            }
-        //
-        //            @Override
-        //            public byte[] getResponse() {
-        //                return viewedMessage.getResponse();
-        //            }
-        //        };
         return splitPane;
     }
 

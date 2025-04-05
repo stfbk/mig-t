@@ -1,2 +1,1 @@
-rootProject.name = "MIG-T_indipendent"
-
+rootProject.name = "MIG-T"

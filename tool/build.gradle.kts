@@ -1,5 +1,4 @@
-//import org.zaproxy.gradle.addon.AddOnPlugin
-//import org.zaproxy.gradle.addon.AddOnStatus
+import org.zaproxy.gradle.addon.AddOnStatus
 
 plugins {
     id("java")
@@ -7,14 +6,15 @@ plugins {
 }
 
 version = "0.0.1"
-description = "A new description."
+description = "Security testing tool"
 
 zapAddOn {
-    addOnName.set("migt")
-    zapVersion.set("2.15.0")
+    addOnName.set("MIG-T")
+    zapVersion.set("2.16.0")
+    addOnStatus.set(AddOnStatus.BETA)
 
     manifest {
-        author.set("FBK")
+        author.set("Security&Trust FBK")
     }
 }
 
@@ -23,6 +23,9 @@ repositories {
 }
 
 dependencies {
+    implementation("org.eclipse.jetty:jetty-server:11.0.15")
+    implementation("org.eclipse.jetty:jetty-servlet:11.0.15")
+    implementation("jakarta.servlet:jakarta.servlet-api:5.0.0")
     implementation("org.json:json:20240303")
     implementation("com.nimbusds:nimbus-jose-jwt:9.31")
     implementation("org.bouncycastle:bcpkix-jdk15on:1.70")
@@ -36,9 +39,12 @@ dependencies {
     implementation("org.apache.httpcomponents:httpcore:4.4.16")
     implementation("com.networknt:json-schema-validator:1.0.78")
     implementation("org.apache.commons:commons-text:1.10.0")
-    implementation("commons-codec:commons-codec:1.16.0")
+    implementation("commons-codec:commons-codec:1.17.1")
     testImplementation(platform("org.junit:junit-bom:5.10.0"))
     testImplementation("org.junit.jupiter:junit-jupiter")
+
+    implementation("org.apache.httpcomponents.core5:httpcore5:5.2")
+
 }
 
 tasks.test {

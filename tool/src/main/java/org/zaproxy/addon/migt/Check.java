@@ -227,7 +227,7 @@ public class Check extends Module {
     private boolean execute_regex(String input) throws ParsingException {
         System.err.println("1");
         Pattern p = Pattern.compile(regex);
-        System.err.println("2");
+        System.err.println("2 --> " + regex + " --> " + p);
         Matcher m = p.matcher(input);
         System.err.println("3");
         applicable = true;
@@ -321,7 +321,9 @@ public class Check extends Module {
             //Pattern p = this.in == CheckIn.URL ?
                     //Pattern.compile("(?<=[?&]" + Pattern.quote(this.what) + "=)[^\\r\\n&]*") :
 
-            Pattern p = Pattern.compile("(?<=\\bName=Location, Value=)[^\\r\\n\\]]*");
+            Pattern p = this.in == CheckIn.URL ?
+                    Pattern.compile("(?<=\\bName=Location, Value=)[^\\r\\n\\]]*"):
+                    Pattern.compile("(?<=\\bName=" + Pattern.quote(this.what) + ", Value=)[^\\r\\n\\]]*");
 
 
             System.err.println("Pattern regex: " + p.pattern());

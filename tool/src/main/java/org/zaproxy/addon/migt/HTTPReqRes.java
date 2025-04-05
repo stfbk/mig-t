@@ -31,6 +31,8 @@ import org.parosproxy.paros.network.HttpRequestHeader;
  * serialization support
  */
 public class HTTPReqRes implements Cloneable {
+    HttpMessage startingMessage;
+
     public static int instances;
     public Integer index = -1; // index of the message wrt the burp proxy
     public boolean isRequest = false;
@@ -113,6 +115,8 @@ public class HTTPReqRes implements Cloneable {
             throws MalformedURLException, HttpMalformedHeaderException, DatabaseException {
         this.isRequest = true;
         this.isResponse = true;
+
+        startingMessage = message;
 
         // --------------------------------------------------------------------------------------------//
         this.setRequest(
@@ -968,6 +972,8 @@ public class HTTPReqRes implements Cloneable {
         String new_header_1 = "Host: " + url.getHost();
 
         port = url.getPort();
+
+        System.out.println("La porta è settata a --> " + url.getPort());
 
         if (port != -1) {
             new_header_1 += ":" + port;
