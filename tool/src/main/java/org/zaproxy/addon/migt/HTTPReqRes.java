@@ -149,14 +149,10 @@ public class HTTPReqRes implements Cloneable {
         this.body_offset_resp = message.getResponseHeader().toString().length();
 
         this.headers_req.add(message.getRequestHeader().getPrimeHeader());
-        System.out.println("Prime req header === " + headers_req.get(0));
         this.headers_req.addAll(toStringList(message.getRequestHeader().getHeaders()));
-//        this.headers_req = toStringList(message.getRequestHeader().getHeaders());
 
         this.headers_resp.add(message.getResponseHeader().getPrimeHeader());
-        System.out.println("Prime res header === " + headers_resp.get(0));
         this.headers_resp.addAll(toStringList(message.getResponseHeader().getHeaders()));
-//        this.headers_resp = toStringList(message.getResponseHeader().getHeaders());
 
         instances++;
     }
@@ -188,7 +184,6 @@ public class HTTPReqRes implements Cloneable {
                             message.getResponseBody().getBytes()));
             this.headers_resp = new ArrayList<>();
             this.headers_resp.add(message.getResponseHeader().getPrimeHeader());
-            System.out.println("Prime res header === " + headers_resp.get(0));
             this.headers_resp.addAll(toStringList(message.getResponseHeader().getHeaders()));
 
 
@@ -207,7 +202,6 @@ public class HTTPReqRes implements Cloneable {
 
         this.headers_req = new ArrayList<>();
         this.headers_req.add(message.getRequestHeader().getPrimeHeader());
-        System.out.println("Prime req header === " + headers_req.get(0));
         this.headers_req.addAll(toStringList(message.getRequestHeader().getHeaders()));
 
         // Qua dovrei prendere un URL, più passaggi per convertire da java.net.URI a
@@ -215,7 +209,6 @@ public class HTTPReqRes implements Cloneable {
         String readURI = message.getRequestHeader().getURI().toString();
         URL url = new URL(readURI);
         this.setRequest_url(url.toString());
-        System.out.println("URL is " + url.toString());
 
         this.body_offset_req = message.getRequestHeader().toString().length();
 
@@ -973,8 +966,6 @@ public class HTTPReqRes implements Cloneable {
 
         port = url.getPort();
 
-        System.out.println("La porta è settata a --> " + url.getPort());
-
         if (port != -1) {
             new_header_1 += ":" + port;
         }
@@ -991,20 +982,6 @@ public class HTTPReqRes implements Cloneable {
             throw new RuntimeException("could not find Host header in header");
         }
 
-
-/*
-        for (int i = 0; i < headers_req.size(); i++) {
-            if (headers_req.get(i).contains("Host")) {
-                System.err.println("TROVATO Host header in header --> " + i);
-                break;
-            }
-        }
-
-        if (!headers_req.get(1).contains("Host")) {
-            throw new RuntimeException("could not find Host header in header");
-        }
-
- */
 
         headers_req.set(0, new_header_0);
         headers_req.set(1, new_header_1);
@@ -1024,26 +1001,13 @@ public class HTTPReqRes implements Cloneable {
         boolean matchedMessage = false;
         try {
 
-            /*
-            System.err.println("------------------------------------------");
-            for (Check c : msg_type.checks){
-                System.err.println(c.toStringExtended());
-            }
-            System.err.println(msg_type.getByRequest);
-
-            System.err.println("------------------------------------------");
-            */
-
-
             /* If the response message name is searched, the getByResponse will be true.
              * so messageIndex have to search for the request, and then evaluate the response
              */
             if (msg_type.getByResponse) {
                 if (!isResponse){
-                    System.err.println("Uscito subito da matches_msg_type");
                     return false; // both request and response have to be present
                 }
-                System.err.println("-------------------------------------------> matches_msg_type 2");
                 matchedMessage =
                         Tools.executeChecks(
                                 msg_type.checks, this, true, new ArrayList<>() // TODO: fix
@@ -1051,8 +1015,6 @@ public class HTTPReqRes implements Cloneable {
             } else if (msg_type.getByRequest) {
                 if (!isResponse){
                     return false; // both request and response have to be present
-                }
-                System.err.println("-------------------------------------------> matches_msg_type 3");
                 matchedMessage =
                         Tools.executeChecks(
                                 msg_type.checks, this, false, new ArrayList<>() // TODO: fix
@@ -1064,15 +1026,8 @@ public class HTTPReqRes implements Cloneable {
                     return false;
                 }
                 if (!msg_type.isRequest && !isResponse){
-                    System.err.println("-------------------------------------------> matches_msg_type 4");
                     return false; // this message is not containing a response
                 }
-
-                System.err.println("-------------------------------------------> matches_msg_type 5");
-
-                System.err.println(this);
-                System.err.println("-------------------------------------------");
-
 
                 matchedMessage =
                         Tools.executeChecks(
@@ -1083,10 +1038,8 @@ public class HTTPReqRes implements Cloneable {
                                 );
             }
         } catch (Exception e) {
-            System.err.println("errore in matched_messages ha causato un eccezione");
             System.err.println(e.getMessage());
         }
-        System.err.println("return di matches_msg_type is " + matchedMessage);
         return matchedMessage;
     }
 
