@@ -26,7 +26,7 @@ public class ZAPextender extends ExtensionAdaptor implements ProxyListener {
     public static PrintStream printStream;
     public static PrintStream errorStream;
     private Main mainPane; // The GUI
-    private AbstractPanel statusPanel; // wrap per OWASP ZAP
+    private AbstractPanel statusPanel; // wrap for OWASP ZAP
 
     public static final String NAME = "MIGT";
     protected static final String PREFIX = "migt";
@@ -64,11 +64,6 @@ public class ZAPextender extends ExtensionAdaptor implements ProxyListener {
             statusPanel.setName("MIG-T");
             statusPanel.setIcon(new ImageIcon(getClass().getResource("/resources/logofbk1.png")));
 
-            // this should allow you to test the operation but could
-            // Imply redirection
-            // of all ZAP stderr and stdout to our panel
-
-            // TODO: understand if this needs to exist or is useless
             OutputStream stdOut = System.out;
             OutputStream stdErr = System.err;
             printStream = new PrintStream(stdOut);
@@ -110,9 +105,6 @@ public class ZAPextender extends ExtensionAdaptor implements ProxyListener {
 
         boolean messageIsRequest = true;
 
-//        getView().getOutputPanel().append("\nInside RequestSent \n msg.getRequestHeader = " + msg.getRequestHeader() +
-//                "\nmsg.getResponseHeader = " + msg.getResponseHeader());
-
         try {
             HistoryReference historyRef =
                     new HistoryReference(
@@ -145,7 +137,6 @@ public class ZAPextender extends ExtensionAdaptor implements ProxyListener {
 
             // Log the received message by adding it to the list of received messages
             log_message(messageIsRequest, msg);
-            System.out.println("Logged a message");
 
             MessageType msg_type = null;
             try {
@@ -153,16 +144,13 @@ public class ZAPextender extends ExtensionAdaptor implements ProxyListener {
                         MessageType.getFromList(
                                 mainPane.messageTypes, mainPane.actual_operation.getMessageType());
             } catch (Exception e) {
-                System.err.println("error ZapExtender 1: \n" + e.getMessage());
                 mainPane.actual_operation.applicable = false;
             }
 
-            System.out.println("Here it's going to try matched_msg_type");
 
             // Check that the given message matches the message type specified in the test
             boolean matchMessage = message.matches_msg_type(msg_type, messageIsRequest);
 
-            System.out.println("matched_msg_type = " + matchMessage);
 
             if (matchMessage) {
                 // If the operation's action is an intercept
@@ -172,38 +160,33 @@ public class ZAPextender extends ExtensionAdaptor implements ProxyListener {
                         processMatchedMsg(msg_type, message);
                         if (mainPane.actual_operation.then != null
                                 & mainPane.actual_operation.then == Operation.Then.DROP) {
-                            return false; // IN ZAP A BOOL IS RETURNED STATING IF THE MESSAGE HAVE
-                            // TO BE SENT
+                            return false; // IN ZAP A BOOL IS RETURNED STATING IF THE MESSAGE HAS TO BE SENT
                         }
                     } catch (Exception e) {
-                        System.err.println("error ZapExtender 2: \n" + e.getMessage());
                         mainPane.actual_operation.applicable = false;
                     }
                 }
             }
         }
 
-
-        //questo pezzo in teoria non viene mai eseguito visto che messageIsRequest è true
         if (mainPane.recording) {
             if (!messageIsRequest) { // do not remove
                 synchronized (mainPane.interceptedMessages) {
 
                     try {
+                        getView().getOutputPanel().append(
+                                "\n\n" + mainPane.interceptedMessages.get(mainPane.interceptedMessages.size() - 1).getHeadersString(true) +
+                                        "\n\n" + new String(mainPane.interceptedMessages.get(mainPane.interceptedMessages.size() - 1).getBody(true)));
+
 
                         mainPane.interceptedMessages.add(new HTTPReqRes(msg, messageIsRequest, msg.getHistoryRef().getHistoryId()));
-//                        getView().getOutputPanel().append(
-//                                "The intercepted messages list is long = " + mainPane.interceptedMessages.size() + "and contains:\n\n" +
-//                                        mainPane.interceptedMessages.get(mainPane.interceptedMessages.size()-1).getUrl() + "\n\n" +
-//                                        mainPane.interceptedMessages.get(mainPane.interceptedMessages.size()-1).Res_header + "\n\n" +
-//                                        mainPane.interceptedMessages.get(mainPane.interceptedMessages.size()-1).Req_header + "\n\n -------------------------------------- \n");
-//                        System.out.println("interceptedMessages size after add = " + mainPane.interceptedMessages.size());
+
+
                         if (mainPane.defaultSession != null) {
                             mainPane.defaultSession.addMessage(msg, mainPane.FILTERING);
                         }
                     } catch (MalformedURLException | DatabaseException | URISyntaxException |
                              HttpMalformedHeaderException e) {
-                        System.err.println("error ZapExtender 5: \n" + e.getMessage());
                         throw new RuntimeException(e);
                     }
                 }
@@ -217,10 +200,6 @@ public class ZAPextender extends ExtensionAdaptor implements ProxyListener {
 
         boolean messageIsRequest = false;
 
-
-       // getView().getOutputPanel().append("\nInside ResponseReceive \n msg.getRequestHeader = " + msg.getRequestHeader() +
-        //        "\nmsg.getResponseHeader = " + msg.getResponseHeader());
-
         try {
             HistoryReference historyRef =
                     new HistoryReference(
@@ -228,9 +207,7 @@ public class ZAPextender extends ExtensionAdaptor implements ProxyListener {
                             HistoryReference.TYPE_TEMPORARY,
                             msg);
             msg.setHistoryRef(historyRef);
-        } catch (HttpMalformedHeaderException e) {
-            throw new RuntimeException(e);
-        } catch (DatabaseException e) {
+        } catch (HttpMalformedHeaderException | DatabaseException e) {
             throw new RuntimeException(e);
         }
 
@@ -261,7 +238,6 @@ public class ZAPextender extends ExtensionAdaptor implements ProxyListener {
 
             // Log the received message by adding it to the list of received messages
             log_message(messageIsRequest, msg);
-            System.out.println("Logged a message");
 
             MessageType msg_type = null;
             try {
@@ -269,7 +245,6 @@ public class ZAPextender extends ExtensionAdaptor implements ProxyListener {
                         MessageType.getFromList(
                                 mainPane.messageTypes, mainPane.actual_operation.getMessageType());
             } catch (Exception e) {
-                System.err.println("error ZapExtender 3: \n" + e.getMessage());
                 mainPane.actual_operation.applicable = false;
             }
 
@@ -284,11 +259,9 @@ public class ZAPextender extends ExtensionAdaptor implements ProxyListener {
                         processMatchedMsg(msg_type, /*messageInfo,*/ message);
                         if (mainPane.actual_operation.then != null
                                 & mainPane.actual_operation.then == Operation.Then.DROP) {
-                            return false; // IN ZAP A BOOL IS RETURNED STATING IF THE MESSAGE HAVE
-                            // TO BE SENT
+                            return false; // IN ZAP A BOOL IS RETURNED STATING IF THE MESSAGE HAS TO BE SENT
                         }
                     } catch (Exception e) {
-                        System.err.println("error ZapExtender 4: \n" + e.getMessage());
                         mainPane.actual_operation.applicable = false;
                     }
                 }
@@ -297,7 +270,6 @@ public class ZAPextender extends ExtensionAdaptor implements ProxyListener {
 
 
         if (mainPane.recording) {
-            //questo check viene superato -- rimuovi questo commento
             if (!messageIsRequest) { // do not remove
                 synchronized (mainPane.interceptedMessages) {
 
@@ -306,19 +278,12 @@ public class ZAPextender extends ExtensionAdaptor implements ProxyListener {
                         mainPane.interceptedMessages.add(new HTTPReqRes(msg, messageIsRequest, msg.getHistoryRef().getHistoryId()));
                         getView().getOutputPanel().append(
                                 "\n\n" + mainPane.interceptedMessages.get(mainPane.interceptedMessages.size() - 1).getHeadersString(false) +
-                                        "\n\n");
-//                        getView().getOutputPanel().append(
-//                                "The intercepted messages list is long = " + mainPane.interceptedMessages.size() + "and contains:\n\n" +
-//                                        mainPane.interceptedMessages.get(mainPane.interceptedMessages.size()-1).getUrl() + "\n\n" +
-//                                        mainPane.interceptedMessages.get(mainPane.interceptedMessages.size()-1).Res_header + "\n\n" +
-//                                        mainPane.interceptedMessages.get(mainPane.interceptedMessages.size()-1).Req_header + "\n\n -------------------------------------- \n");
-//                        System.out.println("interceptedMessages size after add = " + mainPane.interceptedMessages.size());
+                                        "\n\n" + new String(mainPane.interceptedMessages.get(mainPane.interceptedMessages.size() - 1).getBody(true)));
                         if (mainPane.defaultSession != null) {
                             mainPane.defaultSession.addMessage(msg, mainPane.FILTERING);
                         }
                     } catch (MalformedURLException | DatabaseException | URISyntaxException |
                              HttpMalformedHeaderException e) {
-                        System.err.println("error ZapExtender 5: \n" + e.getMessage());
                         throw new RuntimeException(e);
                     }
                 }
@@ -341,9 +306,6 @@ public class ZAPextender extends ExtensionAdaptor implements ProxyListener {
 
         mainPane.actual_operation.setAPI(
                 new Operation_API(messageInfo, msg_type.msg_to_process_is_request));
-
-
-        System.out.println("Just before execute in processMatchedMsg");
 
 
         mainPane.actual_operation.execute();

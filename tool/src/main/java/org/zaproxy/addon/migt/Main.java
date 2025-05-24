@@ -902,7 +902,7 @@ public class Main extends JSplitPane {
                 "type | id=id_password | oidcuser\n" +
                 "click | xpath=/html/body/div[2]/div/div/div/div/div/div/div/div/div/div[2]/div[2]/div[1]/form/fieldset/div/div/div/div[3]/button/span[2] |\n" +
                 "click | id=agree |\n" +
-                "click | xpath=/html/body/div[2]/div/div/div/div/div/div/div/div/div[1]/a[2] |\n" +
+                "click | xpath=/html/body/div[2]/div/div/div/div/div/div/div/div/div/a |\n" +
                 "wait | 1000");
 
         gbc = new GridBagConstraints();
@@ -1470,7 +1470,8 @@ public class Main extends JSplitPane {
         txtSearch = new JTextArea();
 
         //remove once done
-        txtSearch.setText("{\n" +
+        txtSearch.setText("\n" +
+                "{\n" +
                 "  \"test suite\": {\n" +
                 "    \"name\": \"Single test\",\n" +
                 "    \"description\": \"One test only\",\n" +
@@ -1479,8 +1480,8 @@ public class Main extends JSplitPane {
                 "  \"tests\": [\n" +
                 "    {\n" +
                 "      \"test\": {\n" +
-                "        \"name\": \"Does the OP accept GET requests and the Query String serialization method\",\n" +
-                "        \"description\": \"An authentication request is sent with the GET method and the parameters (scope, code_challenge, code_challenge_method and request) are set as query components of the request, using the application/x-www-form-urlencoded format\",\n" +
+                "        \"name\": \"Does the OP refuse Authentication Requests without the prompt parameter\",\n" +
+                "        \"description\": \"An Authenticaton request is sent without the prompt parameter in the JWT and the response is analyzed\",\n" +
                 "        \"type\": \"active\",\n" +
                 "        \"sessions\": [\n" +
                 "          \"s1\"\n" +
@@ -1495,26 +1496,21 @@ public class Main extends JSplitPane {
                 "            \"from session\": \"s1\",\n" +
                 "            \"then\": \"forward\",\n" +
                 "            \"message type\": \"Authentication request\",\n" +
-                "            \"checks\": [\n" +
+                "            \"decode operations\": [\n" +
                 "              {\n" +
-                "                \"in\": \"url\",\n" +
-                "                \"check\": \"scope\",\n" +
-                "                \"is present\": \"true\"\n" +
-                "              },\n" +
-                "              {\n" +
-                "                \"in\": \"url\",\n" +
-                "                \"check\": \"code_challenge\",\n" +
-                "                \"is present\": \"true\"\n" +
-                "              },\n" +
-                "              {\n" +
-                "                \"in\": \"url\",\n" +
-                "                \"check\": \"code_challenge_method\",\n" +
-                "                \"is present\": \"true\"\n" +
-                "              },\n" +
-                "              {\n" +
-                "                \"in\": \"url\",\n" +
-                "                \"check\": \"request\",\n" +
-                "                \"is present\": \"true\"\n" +
+                "                \"from\": \"url\",\n" +
+                "                \"decode param\": \"request\",\n" +
+                "                \"type\": \"jwt\",\n" +
+                "                \"edits\": [\n" +
+                "                  {\n" +
+                "                    \"jwt from\": \"payload\",\n" +
+                "                    \"jwt edit\": \"$.prompt\",\n" +
+                "                    \"value\": \"\"\n" +
+                "                  },\n" +
+                "                  {\n" +
+                "                    \"jwt sign\": \"-----BEGIN PRIVATE KEY-----\\nMIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQDpIOSxrrgiMGTs\\nc1ALvHkL2cwBEZpqd9pSbfALZa6XAb/xrlojLgITBc3YsQ2QLLKk4OpZlxMDALNa\\nyKKFU32QNwSztQ275fVaiQrbnYPv8NFj4VcjwAHc/QLFOeCzST46NyZvGpVbZTwb\\nnqskWngb8JgDi/MGgA//myQUG37hrmVgmUF8naAmUTS+Hj/jqjI25RP2SYpq5Hue\\nlVIeMFRLFjIMQvOho+a9HtKRfiwl7Qwrf0cRLqziej0bsGtounvl47ARCYeASERJ\\naxxI5/8KYLkAufNYncVwWHGCy4yR2OhTtsfT3Lyl0qzriRHbOfGz7Ihas8VbyEkq\\nfJJzZ+TzAgMBAAECggEANpw19klvaNLdUWZRwe4MjPIgD8AH5BjfU5/dM05Gb6lB\\nRWQKSWNlqP8bET+oZbWSw3zMaOAy2+k2GnYVXBYKu9WnjFFFPlbH+sVPfdKQLYzE\\nABmxR/aaeSHrnDfKozTtFsYEgtI/WoGEaxPoE0P+Ds11Tp9h9ovZM48sDGnEdyjo\\npnLPEZBR6VinP/yF1kfDg0kcIPmM1ZchIqJrnQpoKWeVTXtFFGrVqOAYmm4xBfP4\\nU8TEimbeJJuYkJ9gLNnRDg/FC+ZPUiBIXigWZsEeJyevymP+NH4lq3osLgFOq0sq\\nPxS3zkDwx9tWfT5UyqrCCortiQd2dxKzxZlEEvlQAQKBgQD7Ulx1xPYV3Bq+Y+q1\\n84QoVQYEz2GG/CBfsrILCXy2at6wlDPyk0OQgsx4ol/xkINVTu/j+LgL8/yh7jV/\\nb9IOy/0AhiHT3O7+1Cwwx0f+Wo3HRg/xi/bk3ko7GdI4E7zftKJ4VnbGRuiVdchX\\ntYget0WLIA4w5JaURMQ7ok278wKBgQDtd9W3gCtIwuZG+9KXXXIMXbm3VpHfKVSb\\nBmAsAlM2jvqP7OjxDZPLsZ8IhCYs6E5lOTCqetubAQEwQGyiZZkWH+P3QIszKfVx\\nxhSOJMjgIck5MswDythVZ4CtiSp6TWMLhND17U+RGs9wS+rZNqTwYWwGGeE4LN6M\\nmswOCqRzAQKBgE63kkw039si8KF3jDlnR5qWXuc8yVBNQhqXTtrUIuLEAHIQSWEO\\nLRhjT4XtXd28pNYgflTKP2NHDXbutITw0jteOyVh3dCNH7JjZF/22x7Y4BVtZWsD\\nqtYupdNzF/wGep8a5dSJSHR8GzdNB+4o5rSwNLEJ3kgEIQHZtBj1kiFvAoGBALpd\\n9CLBujauj19iP1KACgPeguR6Up1bqITKKiwf3wLQj6DpA6A7UaTpT7C1VeikoPIc\\nQi9poHQ0A6TEyv1g0xZkDNt9kkGjSnfyRyuPfv84RN5ZGXhYeBP+2SRYpDe8CGF/\\n6Sc5CdsNuYOecT/r/OKS8t6O7QzTWg3rZv4WKB4BAoGAZuGvxQjflWRjfKbqpz2q\\n9uHwzMS3iYjzlsWaiEk3DYRt+BsZVM77nOBSjpd7ZaEJUJjooWglRpK67BMHOrzZ\\nukh2lp+6wAg3nXND4DXOae6PlhgpvsbgMKAQHwcNzcSZ4wqHIiH7mFX5sGcrs9Ul\\n2sjDsDEOoAEp046jUXu/FwU=\\n-----END PRIVATE KEY-----\\n\"\n" +
+                "                  }\n" +
+                "                ]\n" +
                 "              }\n" +
                 "            ]\n" +
                 "          },\n" +
@@ -1522,26 +1518,20 @@ public class Main extends JSplitPane {
                 "            \"action\": \"intercept\",\n" +
                 "            \"from session\": \"s1\",\n" +
                 "            \"then\": \"forward\",\n" +
-                "            \"message type\": \"Authentication response\",\n" +
+                "            \"message type\": \"Authentication error response\",\n" +
                 "            \"checks\": [\n" +
                 "              {\n" +
                 "                \"in\": \"head\",\n" +
-                "                \"is present\": \"true\",\n" +
-                "                \"check\": \"code\"\n" +
+                "                \"check regex\": \"HTTP/?\\\\d?\\\\.?\\\\d?\\\\s302\"\n" +
                 "              },\n" +
                 "              {\n" +
                 "                \"in\": \"head\",\n" +
-                "                \"is present\": \"true\",\n" +
-                "                \"check\": \"state\"\n" +
-                "              },\n" +
-                "              {\n" +
-                "                \"in\": \"head\",\n" +
-                "                \"is present\": \"true\",\n" +
-                "                \"check\": \"iss\"\n" +
+                "                \"check\": \"invalid_request\"\n" +
                 "              }\n" +
                 "            ]\n" +
                 "          }\n" +
-                "        ]\n" +
+                "        ],\n" +
+                "        \"result\": \"assert_only\"\n" +
                 "      }\n" +
                 "    }\n" +
                 "  ]\n" +

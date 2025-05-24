@@ -130,8 +130,6 @@ public class ExecuteActives implements Runnable {
                                                             || actual_test.resultSession.equals(
                                                                     sessionName)) {
                                                         actual_test.applicable = false;
-                                                        System.out.println(
-                                                                "Error position is ExecuteActives 1");
                                                     }
                                                     synchronized (waiting) {
                                                         waiting.notify();

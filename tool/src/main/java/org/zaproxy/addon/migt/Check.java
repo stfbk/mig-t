@@ -61,7 +61,6 @@ public class Check extends Module {
                         break;
                     case "check regex":
                         regex = json_check.getString("check regex");
-                        System.err.println("Regex set to --> " + regex + "\n");
                         break;
                     case "use variable":
                         use_variable = json_check.getBoolean("use variable");
@@ -175,10 +174,8 @@ public class Check extends Module {
                         throw new ParsingException("Invalid key:\"" + key + "\" used in Check Operation");
                 }
             } catch (JSONException e) {
-                System.err.println("\n\n\n\n\n Errore \n\n\n\n\n");
                 throw new ParsingException("error in parsing check: " + e);
             } catch (ClassCastException e) {
-                System.err.println("\n\n\n\n\n Errore \n\n\n\n\n");
                 throw new ParsingException("Only allowed values in arrays are Strings, if you are using integers or " +
                         "floats, please convert them as strings");
             }
@@ -186,7 +183,6 @@ public class Check extends Module {
         }
 
         if (regex.equals("") && what.equals("")){
-            System.err.println("\n\n\n\n\n Errore \n\n\n\n\n");
             throw new ParsingException("Error in parsing check");
         }
     }
@@ -225,26 +221,19 @@ public class Check extends Module {
      * @return the result of the check
      */
     private boolean execute_regex(String input) throws ParsingException {
-        System.err.println("1");
         Pattern p = Pattern.compile(regex);
-        System.err.println("2 --> " + regex + " --> " + p);
         Matcher m = p.matcher(input);
-        System.err.println("3");
         applicable = true;
 
-        System.err.println("4");
         String val = "";
         if (m.find()) {
             val = m.group();
         }
-        System.err.println("5");
 
         if (this.op == null) {
-            System.err.println("OP == null");
             // Return result based on matched or not
             return (val.length() > 0);
         } else {
-            System.err.println("EXECUTES DO_CHECK");
             // execute op against matched value
             return do_check(val);
         }
@@ -263,12 +252,9 @@ public class Check extends Module {
                                  boolean isRequest,
                                  List<Var> vars) throws ParsingException {
 
-        System.err.println("Arrivato a execute_http");
-
         if (use_variable) {
             Var v = Tools.getVariableByName(op_val, vars);
             op_val = v.get_value_string();
-            System.err.println("use_variable attivo, op_val aggiornato: " + op_val);
         }
 
         String msg_str = "";
@@ -294,18 +280,14 @@ public class Check extends Module {
                 return false;
         }
 
-        System.err.println("msg_str ricevuto: [" + msg_str + "]");
-
         if (msg_str.isEmpty()) {
             applicable = true;
             return this.op != null && op == IS_NOT_PRESENT;
         }
 
         msg_str = url_decode(msg_str);
-        System.err.println("msg_str decodificato: [" + msg_str + "]");
 
         if (!regex.isEmpty()) {
-            System.err.println("Regex non vuota, eseguo regex check...");
             return execute_regex(msg_str);
         }
 
@@ -316,50 +298,35 @@ public class Check extends Module {
                         "use \"check_regex instead\"");
             }
 
-            //TODO this may not always get what we want, for now it always gets Location
-
-            //Pattern p = this.in == CheckIn.URL ?
-                    //Pattern.compile("(?<=[?&]" + Pattern.quote(this.what) + "=)[^\\r\\n&]*") :
 
             Pattern p = this.in == CheckIn.URL ?
                     Pattern.compile("(?<=\\bName=Location, Value=)[^\\r\\n\\]]*"):
                     Pattern.compile("(?<=\\bName=" + Pattern.quote(this.what) + ", Value=)[^\\r\\n\\]]*");
 
-
-            System.err.println("Pattern regex: " + p.pattern());
             Matcher m = p.matcher(msg_str);
 
             applicable = true;
 
             String val = "";
-            System.err.println("Stringa analizzata: " + msg_str);
-            System.err.println("Regex usata: " + p.pattern());
 
             boolean found = m.find();
-            System.err.println("Match trovato: " + found);
 
             if (found) {
                 val = m.group().trim();
             }
 
-            System.err.println("Valore estratto dopo trim: [" + val + "]");
-
             return do_check(val);
         } else {
 
-            System.err.println("XXC " + msg_str);
             applicable = true;
             if (!msg_str.contains(this.what)) {
                 if (this.op != null) {
-                    System.err.println("XCX will return1 " + (this.op == IS_NOT_PRESENT));
                     return this.op == IS_NOT_PRESENT;
                 } else {
-                    System.err.println("XCX will return false2");
                     return false;
                 }
             } else {
                 if (this.op != null) {
-                    System.err.println("XCX will return3 " + (this.op == IS_NOT_PRESENT));
                     return this.op != IS_NOT_PRESENT;
                 }
             }
@@ -435,7 +402,6 @@ public class Check extends Module {
             }
         }
 
-        System.err.println("Regex punto 2 --> " + regex + "\n");
         // if a regex is present, execute it
         if (!regex.equals("")) {
             return execute_regex(j);
@@ -618,7 +584,6 @@ public class Check extends Module {
                     }
                     break;
                 case IS_PRESENT:
-                    System.err.println("do check uscito con --> " + !val_to_check.isEmpty());
                     return !val_to_check.isEmpty(); // if it gets to this, the searched param is already found
                 case IS_NOT_PRESENT:
                     return val_to_check.isEmpty();

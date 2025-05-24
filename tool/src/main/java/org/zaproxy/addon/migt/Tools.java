@@ -31,15 +31,11 @@ public class Tools {
     public static boolean executeChecks(
             List<Check> checks, HTTPReqRes message, boolean isRequest, List<Var> vars)
             throws ParsingException {
-        System.out.println("eseguito executeChecks");
         for (Check c : checks) {
-            //TODO ----------------> IL PROBLEMA E' QUA
             if (!c.execute(message, isRequest, vars)) {
-                System.out.println("executeChecks will return false");
                 return false;
             }
         }
-        System.out.println("executeChecks will return true");
         return true;
     }
 
@@ -682,8 +678,6 @@ public class Tools {
                     throw new ParsingException("Encoding URL in response");
                 }
                 String url_header = messageInfo.getUrlHeader();
-                System.err.println("ZZZZZZZZZZZZZZZZZ" + url_header);
-
                 pattern = Pattern.compile(Pattern.quote(param_name) + "=[^& ]*((?=&)|(?= ))");
                 matcher = pattern.matcher(url_header);
 

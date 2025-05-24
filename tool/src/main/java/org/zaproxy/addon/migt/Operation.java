@@ -200,8 +200,6 @@ public class Operation extends Module {
             throw new ParsingException("Message type not found");
         }
         this.messageType = messageType;
-
-        System.err.println("Message Type set to -------> " + messageType);
     }
 
     public List<MessageOperation> getMessageOperations() {
@@ -442,9 +440,6 @@ public class Operation extends Module {
     }
 
     public void execute() {
-        System.err.println("Entrato execute");
-
-
         if (!preconditions.isEmpty()) {
             try {
                 applicable =
@@ -488,7 +483,6 @@ public class Operation extends Module {
         // The order of execution is very important
         try {
             applicable = true;
-            System.out.println("Set true 22");
             executeMessageOperations(this);
             if (!applicable | !result) return;
             executeEditOps(this, api.vars);

@@ -114,8 +114,6 @@ public class ExecutePassives implements Runnable {
     public Session executePassiveTestSession(Session session) {
         // FIXME: session's track is assumed to be present
 
-        System.out.println("Eseguito executePassiveTestSession");
-
         synchronized (lock) {
             finished = false;
         }

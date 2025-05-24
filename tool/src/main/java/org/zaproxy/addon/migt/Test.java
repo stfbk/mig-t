@@ -447,9 +447,6 @@ public class Test {
     public boolean execute(List<HTTPReqRes> messageList, List<MessageType> msg_types)
             throws ParsingException {
 
-        System.out.println("Entrato in execute di Test");
-
-
         int i, j;
         boolean res = true;
 
@@ -468,16 +465,7 @@ public class Test {
                     currentOP.api.vars = vars;
                 }
 
-
-                System.err.println("Risultato per IF --------------------> " + messageList.get(i).matches_msg_type(msg_type, msg_type.msg_to_process_is_request));
-
-                for (Check c : msg_type.checks){
-                    System.err.println(c.regex);
-                }
-
                 if (messageList.get(i).matches_msg_type(msg_type, msg_type.msg_to_process_is_request)) {
-
-                    System.out.println("Punto di richiamo di execute");
 
                     currentOP.setAPI(
                             new Operation_API(
@@ -498,8 +486,6 @@ public class Test {
                 break;
             }
         }
-
-        System.out.println("About to return --> " + res);
 
         return res;
     }
