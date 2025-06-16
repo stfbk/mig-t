@@ -93,7 +93,6 @@ public class ExecutePassives implements Runnable {
                     res = actual_test.execute(executedSession.messages, messageTypes);
                 } catch (ParsingException e) {
                     actual_test.applicable = false;
-                    System.out.println("Error position is ExecutePassives");
                 }
 
                 System.out.println("Actual test result: " + res);
@@ -114,8 +113,6 @@ public class ExecutePassives implements Runnable {
      */
     public Session executePassiveTestSession(Session session) {
         // FIXME: session's track is assumed to be present
-
-        System.out.println("Eseguito executePassiveTestSession");
 
         synchronized (lock) {
             finished = false;

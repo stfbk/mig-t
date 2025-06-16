@@ -372,7 +372,7 @@ public class EditOperation extends Module {
                         }
                     } catch (PathNotFoundException e) {
                         this.applicable = false;
-                        System.out.println("Error position is EditOperation 1");
+
                         this.result = false;
                         return;
                     }

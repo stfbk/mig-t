@@ -1,5 +1,6 @@
 package org.zaproxy.addon.migt;
 
+import java.io.ByteArrayOutputStream;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -31,6 +32,8 @@ import org.parosproxy.paros.network.HttpRequestHeader;
  * serialization support
  */
 public class HTTPReqRes implements Cloneable {
+    HttpMessage startingMessage;
+
     public static int instances;
     public Integer index = -1; // index of the message wrt the burp proxy
     public boolean isRequest = false;
@@ -114,23 +117,24 @@ public class HTTPReqRes implements Cloneable {
         this.isRequest = true;
         this.isResponse = true;
 
-        // --------------------------------------------------------------------------------------------//
+        this.headers_req = new ArrayList<>();
+        this.headers_resp = new ArrayList<>();
+
+        startingMessage = message;
+
         this.setRequest(
                 concat_Request(
-                        message.getRequestHeader().toString().getBytes(),
+                        message.getRequestHeader().toString().getBytes(StandardCharsets.UTF_8),
                         message.getRequestBody().getBytes()));
         this.setResponse(
                 concat_Response(
-                        message.getResponseHeader().toString().getBytes(),
+                        message.getResponseHeader().toString().getBytes(StandardCharsets.UTF_8),
                         message.getResponseBody().getBytes()));
 
-        // Qua dovrei prendere un URL, più passaggi per convertire da java.net.URI a
-        // org.apache.commons.httpclient.URI
+
         String readURI = message.getRequestHeader().getURI().toString();
         URL url = new URL(readURI);
         this.setRequest_url(url.toString());
-
-        // utilizzo HttpRequestHeader perchè sembra che httpmessage consenga sempre il RequestHeader
         HttpRequestHeader service = message.getRequestHeader();
         this.setHost(service.getHostName());
         this.setPort(service.getHostPort());
@@ -140,17 +144,14 @@ public class HTTPReqRes implements Cloneable {
             this.setProtocol("http");
         }
 
-        // Verificare che sia ciò che voglio
-        this.body_offset_req = message.getRequestHeader().toString().length();
-        this.body_offset_resp = message.getResponseHeader().toString().length();
+        this.body_offset_req = message.getRequestHeader().toString().getBytes(StandardCharsets.UTF_8).length;
+        this.body_offset_resp = message.getResponseHeader().toString().getBytes(StandardCharsets.UTF_8).length;
 
         this.headers_req.add(message.getRequestHeader().getPrimeHeader());
         this.headers_req.addAll(toStringList(message.getRequestHeader().getHeaders()));
-//        this.headers_req = toStringList(message.getRequestHeader().getHeaders());
 
         this.headers_resp.add(message.getResponseHeader().getPrimeHeader());
         this.headers_resp.addAll(toStringList(message.getResponseHeader().getHeaders()));
-//        this.headers_resp = toStringList(message.getResponseHeader().getHeaders());
 
         instances++;
     }
@@ -173,15 +174,20 @@ public class HTTPReqRes implements Cloneable {
      * @param isRequest true if the message is a request, false otherwise
      * @param index indice
      */
-    public HTTPReqRes(HttpMessage message, boolean isRequest, int index) {
+    public HTTPReqRes(HttpMessage message, boolean isRequest, int index) throws MalformedURLException {
         if (!isRequest) {
             this.isResponse = true;
             this.setResponse(
                     concat_Response(
-                            message.getResponseHeader().toString().getBytes(),
+                            message.getResponseHeader().toString().getBytes(StandardCharsets.UTF_8),
                             message.getResponseBody().getBytes()));
-            this.headers_resp = toStringList(message.getResponseHeader().getHeaders());
-            this.body_offset_resp = message.getResponseHeader().toString().length();
+            this.headers_resp = new ArrayList<>();
+            this.headers_resp.add(message.getResponseHeader().getPrimeHeader());
+            this.headers_resp.addAll(toStringList(message.getResponseHeader().getHeaders()));
+
+
+            this.body_offset_resp = message.getResponseHeader().toString().getBytes(StandardCharsets.UTF_8).length;
+
         }
 
         this.index = index;
@@ -190,14 +196,20 @@ public class HTTPReqRes implements Cloneable {
         this.isRequest = true;
         this.setRequest(
                 concat_Request(
-                        message.getRequestHeader().toString().getBytes(),
+                        message.getRequestHeader().toString().getBytes(StandardCharsets.UTF_8),
                         message.getRequestBody().getBytes()));
         this.setRequest_url(message.getRequestHeader().getURI().toString());
 
-        this.headers_req = toStringList(message.getRequestHeader().getHeaders());
+        this.headers_req = new ArrayList<>();
+        this.headers_req.add(message.getRequestHeader().getPrimeHeader());
+        this.headers_req.addAll(toStringList(message.getRequestHeader().getHeaders()));
 
-        this.request_url = message.getRequestHeader().getURI().toString();
-        this.body_offset_req = message.getRequestHeader().toString().length();
+        String readURI = message.getRequestHeader().getURI().toString();
+        URL url = new URL(readURI);
+        this.setRequest_url(url.toString());
+
+        this.body_offset_req = message.getRequestHeader().toString().getBytes(StandardCharsets.UTF_8).length;
+
 
         // set host info getHttpService
         HttpRequestHeader service = message.getRequestHeader();
@@ -280,26 +292,21 @@ public class HTTPReqRes implements Cloneable {
     }
 
     public byte[] getBody(boolean isRequest) {
-        if (isRequest
-                && (!this.hasBody(isRequest) | this.request == null | this.request.length == 0)) {
+        if (isRequest && (!this.hasBody(isRequest) | this.request == null | this.request.length == 0)) {
             throw new RuntimeException("called getBody, but class is not properly initialized");
         }
-        if (!isRequest
-                && (!this.hasBody(isRequest) | this.response == null | this.response.length == 0)) {
+        if (!isRequest && (!this.hasBody(isRequest) | this.response == null | this.response.length == 0)) {
             throw new RuntimeException("called getBody, but class is not properly initialized");
         }
 
         if (isRequest) {
             // if asking for the first time, take the body from the message
             if (this.body_req == null)
-                this.body_req =
-                        Arrays.copyOfRange(this.request, this.body_offset_req, this.request.length);
+                this.body_req = Arrays.copyOfRange(this.request, this.body_offset_req, this.request.length);
             return this.body_req;
         } else {
             if (this.body_resp == null)
-                this.body_resp =
-                        Arrays.copyOfRange(
-                                this.response, this.body_offset_resp, this.response.length);
+                this.body_resp = Arrays.copyOfRange(this.response, this.body_offset_resp, this.response.length);
             return this.body_resp;
         }
     }
@@ -314,35 +321,32 @@ public class HTTPReqRes implements Cloneable {
      * @param isRequest true if message is a request message
      */
     public byte[] build_message(boolean isRequest) {
-        String builded = "";
+        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
         byte[] body = getBody(isRequest);
-
         List<String> headers = getHeaders(isRequest);
-        String content_header = "Content-Length: " + body.length;
-        boolean content_hearder_found = false;
+        String contentHeader = "Content-Length: " + body.length;
+        boolean contentLengthFound = false;
 
         for (String header : headers) {
-            if (header.contains("Content-Length:")) {
-                content_hearder_found = true;
-                if (body.length == 0)
-                    continue; // if Content-Length header found, but message has no body, remove.
-                builded += content_header;
+            if (header.toLowerCase().startsWith("content-length:")) {
+                contentLengthFound = true;
+                if (body.length == 0) continue;
+                outputStream.writeBytes((contentHeader + "\r\n").getBytes(StandardCharsets.UTF_8));
             } else {
-                builded += header;
+                outputStream.writeBytes((header + "\r\n").getBytes(StandardCharsets.UTF_8));
             }
-            builded += "\r\n";
         }
 
-        if (!content_hearder_found && body.length != 0) {
-            builded += content_header + "\r\n";
+        if (!contentLengthFound && body.length != 0) {
+            outputStream.writeBytes((contentHeader + "\r\n").getBytes(StandardCharsets.UTF_8));
         }
 
-        builded += "\r\n"; // last row of header before body
+        outputStream.writeBytes("\r\n".getBytes(StandardCharsets.UTF_8));
+        outputStream.writeBytes(body);
 
-        if (body.length != 0) builded += new String(body);
-
-        return builded.getBytes(StandardCharsets.UTF_8);
+        return outputStream.toByteArray();
     }
+
 
     /**
      * Get the message in bytes with the changes made
@@ -957,12 +961,22 @@ public class HTTPReqRes implements Cloneable {
             new_header_1 += ":" + port;
         }
 
-        if (!headers_req.get(1).contains("Host")) {
+        int hostIndex = -1;
+        for (int i = 0; i < headers_req.size(); i++) {
+            if (headers_req.get(i).toLowerCase().contains("host")) {
+                hostIndex = i;
+                break;
+            }
+        }
+
+        if (hostIndex == -1) {
             throw new RuntimeException("could not find Host header in header");
         }
 
         headers_req.set(0, new_header_0);
         headers_req.set(1, new_header_1);
+
+
     }
 
     /**
@@ -973,44 +987,36 @@ public class HTTPReqRes implements Cloneable {
      * @return true or false, if matched or not respectively
      */
     public boolean matches_msg_type(MessageType msg_type, boolean is_request) {
-        System.out.println("Checks are:");
-        for(Check c : msg_type.checks){
-            System.out.println(c.toStringExtended());
-        }
+
         boolean matchedMessage = false;
         try {
             /* If the response message name is searched, the getByResponse will be true.
              * so messageIndex have to search for the request, and then evaluate the response
              */
             if (msg_type.getByResponse) {
-                System.out.println("-------------> First if");
                 if (!isResponse){
-                    System.out.println("-------------> return false since both request and response have to be present");
                     return false; // both request and response have to be present
                 }
-                matchedMessage =
-                        Tools.executeChecks(
-                                msg_type.checks, this, true, new ArrayList<>() // TODO: fix
+                matchedMessage = Tools.executeChecks(msg_type.checks, this, true, new ArrayList<>() // TODO: fix
                                 );
-                System.out.println("-------------> First if end");
             } else if (msg_type.getByRequest) {
-                System.out.println("-------------> Second if");
                 if (!isResponse){
-                    System.out.println("-------------> return false since both request and response have to be present");
                     return false; // both request and response have to be present
                 }
                 matchedMessage =
                         Tools.executeChecks(
                                 msg_type.checks, this, false, new ArrayList<>() // TODO: fix
                                 );
-                System.out.println("-------------> Second if end");
             } else {
-                System.out.println("-------------> Third if");
                 // this check is done to avoid matching request messages when intercepting a
                 // response
-                if (is_request != msg_type.msg_to_process_is_request) return false;
-                if (!msg_type.isRequest && !isResponse)
+                if (is_request != msg_type.msg_to_process_is_request){
+                    return false;
+                }
+                if (!msg_type.isRequest && !isResponse){
                     return false; // this message is not containing a response
+                }
+
                 matchedMessage =
                         Tools.executeChecks(
                                 msg_type.checks,
@@ -1018,12 +1024,10 @@ public class HTTPReqRes implements Cloneable {
                                 msg_type.isRequest,
                                 new ArrayList<>() // TODO: fix
                                 );
-                System.out.println("-------------> Third if end");
             }
         } catch (Exception e) {
             System.err.println(e.getMessage());
         }
-        System.out.println("return di matches_msg_type is " + matchedMessage);
         return matchedMessage;
     }
 

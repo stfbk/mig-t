@@ -67,10 +67,10 @@ class CustomOutputStream extends OutputStream {
 }
 
 /** This class contains the GUI for the plugin, also a lot of functionality methods */
-public class GUIclass extends JSplitPane {
+public class Main extends JSplitPane {
     private static final long serialVersionUID = 1L;
-    private static DefaultTableModel resultTableModel;
-    private static DefaultTableModel testTableModel;
+    protected static DefaultTableModel resultTableModel;
+    protected static DefaultTableModel testTableModel;
     final transient Object waiting = new Object();
     final String LOG_FOLDER = Constant.getZapHome() + File.separator + "logs/";
     private final String[] foundTableColNames = {
@@ -113,6 +113,7 @@ public class GUIclass extends JSplitPane {
     JButton btnExecuteTrack;
     JButton btnSaveToFile;
     JButton btndriverSelector;
+    JButton btnReadJSON;
     JTextArea txtScript;
     JTextArea txtSearch;
     JTextArea txtSessionConfig;
@@ -139,13 +140,13 @@ public class GUIclass extends JSplitPane {
     private Integer DEFAULT_PORT = 8080;
     private String DRIVER_PATH = "";
     private transient List<Test> actives;
-    private transient Map<String, Component> sessions_text;
+    Map<String, JTextArea> sessions_text;
     private transient List<Test> passives;
     private transient Thread active_ex;
     private boolean active_ex_finished = false;
 
     /** Constructor of the plugin UI */
-    public GUIclass() {
+    public Main() {
         super(JSplitPane.VERTICAL_SPLIT);
         // initialize vars
         init();
@@ -853,6 +854,7 @@ public class GUIclass extends JSplitPane {
         }
     }
 
+
     /** Function used to update the gui test results after the tests are executed */
     private void update_gui_test_results() {
         for (Test t : testSuite.getTests()) {
@@ -892,6 +894,17 @@ public class GUIclass extends JSplitPane {
         trackContainer.add(lblTrack, gbc);
 
         txtScript = new JTextArea();
+        //rimuovere dopo
+        txtScript.setText("open | http://relying-party.org:8001/oidc/rp/landing |\n" +
+                "click | xpath=/html/body/div[2]/div/div/div/div/div/div/div/div/div/div[2]/div/span[2]/a |\n" +
+                "click | xpath=/html/body/div[2]/div/div/div/div/div/div/div/div/div/div[2]/div/span[2]/div/ul/li[2]/a |\n" +
+                "type | id=id_username | user\n" +
+                "type | id=id_password | oidcuser\n" +
+                "click | xpath=/html/body/div[2]/div/div/div/div/div/div/div/div/div/div[2]/div[2]/div[1]/form/fieldset/div/div/div/div[3]/button/span[2] |\n" +
+                "click | id=agree |\n" +
+                "click | xpath=/html/body/div[2]/div/div/div/div/div/div/div/div/div/a |\n" +
+                "wait | 1000");
+
         gbc = new GridBagConstraints();
         gbc.anchor = GridBagConstraints.WEST;
         gbc.fill = GridBagConstraints.BOTH;
@@ -907,6 +920,8 @@ public class GUIclass extends JSplitPane {
                         JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
                         JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
 
+
+
         top_tabbed = new JTabbedPane();
         top_tabbed.add("main", scrollPane1);
         trackContainer.add(top_tabbed, gbc);
@@ -918,7 +933,7 @@ public class GUIclass extends JSplitPane {
 
         btndriverSelector.addActionListener(
                 actionEvent -> {
-                    int returnVal = driverSelector.showOpenDialog(GUIclass.this);
+                    int returnVal = driverSelector.showOpenDialog(Main.this);
                     if (returnVal == JFileChooser.APPROVE_OPTION) {
                         File file = driverSelector.getSelectedFile();
                         DRIVER_PATH = file.getPath();
@@ -1099,7 +1114,7 @@ public class GUIclass extends JSplitPane {
         btnSetRecording.addActionListener(
                 actionEvent -> {
                     if (btnSetRecording.isEnabled()) {
-                        int returnVal = messageSaver.showOpenDialog(GUIclass.this);
+                        int returnVal = messageSaver.showOpenDialog(Main.this);
                         if (returnVal == JFileChooser.APPROVE_OPTION) {
                             File file = messageSaver.getSelectedFile();
                             RECORD_FILE_PATH = file.getPath();
@@ -1353,7 +1368,7 @@ public class GUIclass extends JSplitPane {
                         SAVE_FILE_PATH = "";
 
                     } else {
-                        int returnVal = messageLoader.showOpenDialog(GUIclass.this);
+                        int returnVal = messageLoader.showOpenDialog(Main.this);
                         if (returnVal == JFileChooser.APPROVE_OPTION) {
                             File file = messageLoader.getSelectedFile();
                             SAVE_FILE_PATH = file.getPath();
@@ -1454,6 +1469,7 @@ public class GUIclass extends JSplitPane {
 
         txtSearch = new JTextArea();
 
+
         JScrollPane scrollPane2 =
                 new JScrollPane(
                         txtSearch,
@@ -1469,7 +1485,7 @@ public class GUIclass extends JSplitPane {
         gbc.gridheight = 3;
         inputContainer.add(scrollPane2, gbc);
 
-        JButton btnReadJSON = new JButton("Read JSON");
+        btnReadJSON = new JButton("Read JSON");
         gbc = new GridBagConstraints();
         gbc.anchor = GridBagConstraints.WEST;
         gbc.insets = new Insets(10, 10, 10, 10);
@@ -1530,6 +1546,94 @@ public class GUIclass extends JSplitPane {
         inputContainer.add(btnExecuteSuite, gbc);
         return inputContainer;
     }
+
+    private JScrollPane setup_tab_suite_result(GridBagLayout bottom_layout) {
+        resultTableModel =
+                new DefaultTableModel(foundData, testSuiteColNames) {
+                    @Override
+                    public boolean isCellEditable(int row, int column) {
+                        return false;
+                    }
+                };
+
+        resultTable =
+                new JTable(resultTableModel) {
+                    @Override
+                    public String getToolTipText(MouseEvent e) {
+                        String tip = null;
+                        Point p = e.getPoint();
+                        int rowIndex = rowAtPoint(p);
+                        int colIndex = columnAtPoint(p);
+
+                        try {
+                            tip = getValueAt(rowIndex, colIndex).toString();
+                        } catch (RuntimeException e1) {
+                            // catch null pointer exception if mouse is over an empty line
+                        }
+                        return tip;
+                    }
+                };
+
+        resultTable.setDefaultRenderer(
+                Object.class,
+                new DefaultTableCellRenderer() {
+                    @Override
+                    public Component getTableCellRendererComponent(
+                            JTable table,
+                            Object value,
+                            boolean isSelected,
+                            boolean hasFocus,
+                            int row,
+                            int column) {
+                        final Component c =
+                                super.getTableCellRendererComponent(
+                                        table, value, isSelected, hasFocus, row, column);
+                        if (value == null) return c;
+                        if ("failed".equals(value)) {
+                            c.setBackground(Color.RED);
+                        } else {
+                            c.setBackground(Color.WHITE);
+                        }
+                        return c;
+                    }
+                });
+
+        JScrollPane scrollPane =
+                new JScrollPane(
+                        resultTable,
+                        JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
+                        JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
+
+        resultTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+
+        // Adds all the test result to the result table
+        resultTable
+                .getSelectionModel()
+                .addListSelectionListener(
+                        event -> {
+                            if (resultTable.getSelectedRow() > -1) {
+
+                                int row = resultTable.getSelectedRow();
+                                // BurpSuite.getTests.get(row).getTable();
+
+                                DefaultTableModel dm = (DefaultTableModel) testTable.getModel();
+                                dm.getDataVector().removeAllElements();
+                                dm.fireTableDataChanged();
+
+                                for (String[] act : testSuite.getTests().get(row).getRows()) {
+
+                                    ((DefaultTableModel) testTable.getModel()).addRow(act);
+                                }
+                            }
+                            testTable.repaint();
+                            testTable.revalidate();
+                            resultTable.repaint();
+                            resultTable.revalidate();
+                        });
+        return scrollPane;
+
+    }
+    /*
 
     private JScrollPane setup_tab_suite_result(GridBagLayout bottom_layout) {
         resultTableModel =
@@ -1612,7 +1716,7 @@ public class GUIclass extends JSplitPane {
                         });
         return scrollPane;
     }
-
+*/
     private JSplitPane setup_tab_test_result(GridBagLayout bottom_layout) {
         // Test Result Tab
         testTableModel =
@@ -1695,37 +1799,6 @@ public class GUIclass extends JSplitPane {
 
         splitPane.setLeftComponent(scrollPane3);
 
-        //        controller = new IMessageEditorController() {
-        //            @Override
-        //            public IHttpService getHttpService() {
-        //                return new IHttpService() {
-        //                    @Override
-        //                    public String getHost() {
-        //                        return null;
-        //                    }
-        //
-        //                    @Override
-        //                    public int getPort() {
-        //                        return 0;
-        //                    }
-        //
-        //                    @Override
-        //                    public String getProtocol() {
-        //                        return null;
-        //                    }
-        //                };
-        //            }
-        //
-        //            @Override
-        //            public byte[] getRequest() {
-        //                return viewedMessage.getRequest();
-        //            }
-        //
-        //            @Override
-        //            public byte[] getResponse() {
-        //                return viewedMessage.getResponse();
-        //            }
-        //        };
         return splitPane;
     }
 

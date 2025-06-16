@@ -369,7 +369,6 @@ public class Test {
             // Save all messages seen by this operation
             if (o.log_messages != null) {
                 for (HttpMessage m : o.log_messages) {
-                    System.out.println("Hystory ID log_messages =" + m.getHistoryRef().getHistoryId());
                     if (!logged_requests.contains(m.getHistoryRef().getHistoryId())) {
                         byte[] request =
                                 concat(
@@ -448,9 +447,6 @@ public class Test {
     public boolean execute(List<HTTPReqRes> messageList, List<MessageType> msg_types)
             throws ParsingException {
 
-        System.out.println("Entrato in execute di Test");
-
-
         int i, j;
         boolean res = true;
 
@@ -461,15 +457,16 @@ public class Test {
                 MessageType msg_type =
                         MessageType.getFromList(msg_types, currentOP.getMessageType());
 
+
+
                 if (currentOP.api == null) {
                     currentOP.api = new Operation_API(vars);
                 } else {
                     currentOP.api.vars = vars;
                 }
 
-                if (messageList
-                        .get(i)
-                        .matches_msg_type(msg_type, msg_type.msg_to_process_is_request)) {
+                if (messageList.get(i).matches_msg_type(msg_type, msg_type.msg_to_process_is_request)) {
+
                     currentOP.setAPI(
                             new Operation_API(
                                     messageList.get(i), msg_type.msg_to_process_is_request));
@@ -489,8 +486,6 @@ public class Test {
                 break;
             }
         }
-
-        System.out.println("About to return --> " + res);
 
         return res;
     }

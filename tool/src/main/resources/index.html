@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MIG-T REMOTE CONTROL</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f2f2f2;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+        }
+
+        .container {
+            max-width: 400px;
+            width: 100%;
+            padding: 20px;
+            background-color: #fff;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+            text-align: center;
+        }
+
+        h1 {
+            margin-top: 0;
+            color: #333;
+        }
+
+        input[type="file"], input[type="text"], input[type="password"] {
+            display: block;
+            margin: 10px auto;
+            padding: 10px;
+            font-size: 16px;
+            border: 2px solid #ccc;
+            border-radius: 5px;
+            background-color: #f9f9f9;
+            width: calc(100% - 20px);
+        }
+
+        button {
+            background-color: #4caf50;
+            color: white;
+            padding: 10px 20px;
+            font-size: 18px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #45a049;
+        }
+
+        .output-container {
+            margin-top: 20px;
+            padding: 20px;
+            border: 2px solid #ccc;
+            border-radius: 10px;
+            background-color: #f9f9f9;
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        .output-title {
+            margin-top: 0;
+            font-size: 20px;
+            color: #333;
+        }
+
+        .output-content {
+            margin-top: 10px;
+            font-size: 16px;
+            color: #665;
+            white-space: pre-wrap;
+        }
+
+        #outputContentWrapper {
+            max-height: 200px; 
+            overflow-y: auto;
+        }
+
+        h2 {
+            font-size: 12px; 
+            color: #665;
+            font-weight: normal;
+            margin-top: 0; 
+        }
+
+        h3 {
+            font-size: 15px; 
+            color: #333;
+            font-weight: normal;
+            margin-top: 0; 
+            text-align: left;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container" id="registrationContainer" style="display: block;">
+        <h1>MIG-T REMOTE CONTROL</h1>
+        <h2>Enter username and password to access remote control of MIG-T</h2>
+        <input type="text" id="regUsername" placeholder="Username">
+        <input type="password" id="regPassword" placeholder="Password">
+        <button onclick="register()">Sign in</button>
+        <button onclick="redirectToLogin()">Log in</button>
+    </div>
+
+    <div class="container" id="login" style="display: none;">
+        <h1>MIG-T REMOTE CONTROL</h1>
+        <h2>Choose the files in .txt format to submit to MIG-T</h2>
+        <h3>Load Session:</h3>
+        <input type="file" id="fileInput1" accept=".txt">
+        <h3>Load Test: </h3>
+        <input type="file" id="fileInput2" accept=".txt">
+        <button onclick="sendMessage()">Send</button>
+    </div>
+
+    <div class="output-container">
+        <h2 class="output-title">Output</h2>
+        <div class="output-content" id="outputContentWrapper">
+            <div id="outputContent"></div>
+            <div id="downloadLink" style="display: none;"><a href="#"></a></div>
+        </div>
+    </div>
+
+    <script>
+        
+        //localStorage.clear()
+
+        function setCookie(name, value, minutes) {
+            const date = new Date();
+            date.setTime(date.getTime() + (minutes * 60 * 1000));
+            const expires = "; expires=" + date.toUTCString();
+            document.cookie = `${name}=${value || ""}${expires}; path=/; HttpOnly; SameSite=Strict`;
+        }
+        
+        function getCookie(name) {
+            const cookieName = name + "=";
+            const decodedCookie = decodeURIComponent(document.cookie);
+            const cookieArray = decodedCookie.split(';');
+            for(let i = 0; i < cookieArray.length; i++) {
+                let cookie = cookieArray[i];
+                while (cookie.charAt(0) === ' ') {
+                    cookie = cookie.substring(1);
+                }
+                if (cookie.indexOf(cookieName) === 0) {
+                    return cookie.substring(cookieName.length, cookie.length);
+                }
+            }
+            return null;
+        }
+
+        function redirectToLogin() {
+            const regUsername = document.getElementById('regUsername').value;
+            const regPassword = document.getElementById('regPassword').value;
+        
+            fetch('/users/login', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    name: regUsername,
+                    password: regPassword
+                })
+            })
+            .then(response => {
+                if (response.ok) {
+                    document.getElementById('registrationContainer').style.display = 'none';
+                    document.getElementById('login').style.display = 'block';
+                    return response.json();
+                } else {
+                    throw new Error('Authentication failed!');
+                }
+            })
+            .then(data => {
+                if (data.token) {
+                    currentToken = data.token;
+                    setCookie('currentToken', currentToken, 15);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Error authenticating user. Please try again later.');
+            });
+        }        
+
+        function register() {
+            const regUsername = document.getElementById('regUsername').value;
+            const regPassword = document.getElementById('regPassword').value;
+        
+            fetch('/users', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    name: regUsername,
+                    password: regPassword
+                })
+            })
+            .then(response => {
+                if (response.status === 201) {
+                    alert('User added successfully!');
+                } else if (response.status === 409) {
+                    //se utente esiste già, mostra un messaggio di errore
+                    alert('This username has already been registered. Please choose another username.');
+                } else {
+                    //altri casi di errore
+                    alert('Error adding user. Try later.');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Error adding user. Try later.');
+            });
+        }
+        
+    
+        
+        function sendMessage() {
+            const outputContent = document.getElementById('outputContent');
+            const downloadLink = document.getElementById('downloadLink');
+            outputContent.textContent = 'Loading...'; 
+        
+            const fileInput1 = document.getElementById('fileInput1');
+            const fileInput2 = document.getElementById('fileInput2');
+        
+            const file1Promise = readFileContent(fileInput1);
+            const file2Promise = readFileContent(fileInput2);
+        
+            Promise.all([file1Promise, file2Promise])
+                .then(fileContents => {
+                    const combinedContent = fileContents.join('&');
+                    
+                    const token = currentToken || getCookie('currentToken');
+                    if (!token) {
+                        throw new Error('Token not found!');
+                    }
+                    
+                    fetch('/messages', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${token}`
+                        },
+                        body: JSON.stringify({ msg: combinedContent })
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        outputContent.textContent = data["Test Name"] + "\n" +
+                                            data["Description"] + "\n" +
+                                            data["Result"];
+
+                        downloadLink.style.display = 'block'; 
+                        downloadLink.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(data["Details"])); 
+                        downloadResponse(data["Details"]);
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        outputContent.textContent = 'Error sending message!';
+                    });
+                })
+                .catch(error => {
+                    console.error('Error reading file content:', error);
+                    outputContent.textContent = 'Error reading file content!';
+                });
+        }
+
+        function downloadResponse(responseData) {
+            //const responseText = document.getElementById('outputContent').textContent;
+            const downloadLink = document.createElement('a');
+            downloadLink.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(responseData));
+            downloadLink.setAttribute('download', 'response.json');
+            downloadLink.textContent = 'Click here for more informations';
+            document.getElementById('downloadLink').appendChild(downloadLink);
+        }
+
+        function readFileContent(fileInput) {
+            return new Promise((resolve, reject) => {
+                const file = fileInput.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = (event) => {
+                        const content = event.target.result;
+                        resolve(content);
+                };
+                reader.onerror = (error) => {
+                    reject(error);
+                };
+                reader.readAsText(file);
+                } else {
+                    resolve(null);
+                }   
+        });
+        } 
+    </script>
+</body>
+</html>

@@ -182,8 +182,9 @@ public class Check extends Module {
 
         }
 
-        if (regex.equals("") && what.equals(""))
+        if (regex.equals("") && what.equals("")){
             throw new ParsingException("Error in parsing check");
+        }
     }
 
     public void init() {
@@ -246,12 +247,12 @@ public class Check extends Module {
      * @return the result of the check
      * @throws ParsingException if something wrong is found wrt the language
      */
+
     private boolean execute_http(HTTPReqRes message,
                                  boolean isRequest,
                                  List<Var> vars) throws ParsingException {
 
         if (use_variable) {
-            // if use_variable is set, substitute the value to check with the variable value
             Var v = Tools.getVariableByName(op_val, vars);
             op_val = v.get_value_string();
         }
@@ -275,7 +276,7 @@ public class Check extends Module {
                 msg_str = String.join("\r\n", message.getHeaders(isRequest));
                 break;
             default:
-                System.err.println("no valid \"in\" specified in check");
+                System.err.println("No valid \"in\" specified in check");
                 return false;
         }
 
@@ -286,7 +287,6 @@ public class Check extends Module {
 
         msg_str = url_decode(msg_str);
 
-        // if a regex is present, execute it instead of the rest
         if (!regex.isEmpty()) {
             return execute_regex(msg_str);
         }
@@ -298,22 +298,26 @@ public class Check extends Module {
                         "use \"check_regex instead\"");
             }
 
+
             Pattern p = this.in == CheckIn.URL ?
-                    Pattern.compile("(?<=[?&]" + Pattern.quote(this.what) + "=)[^\\r\\n&]*") :
-                    Pattern.compile("(?<=" + Pattern.quote(this.what) + ":\\s?)[^\\r\\n]*");
-            // TODO: this could be done better by using message methods
+                    Pattern.compile("(?<=\\bName=Location, Value=)[^\\r\\n\\]]*"):
+                    Pattern.compile("(?<=\\bName=" + Pattern.quote(this.what) + ", Value=)[^\\r\\n\\]]*");
+
             Matcher m = p.matcher(msg_str);
 
             applicable = true;
 
             String val = "";
-            if (m.find()) {
-                val = m.group();
-                val = val.trim();
+
+            boolean found = m.find();
+
+            if (found) {
+                val = m.group().trim();
             }
 
             return do_check(val);
         } else {
+
             applicable = true;
             if (!msg_str.contains(this.what)) {
                 if (this.op != null) {
@@ -329,6 +333,7 @@ public class Check extends Module {
         }
         return true;
     }
+
 
     private String url_decode(String string) {
         if (url_decode) {

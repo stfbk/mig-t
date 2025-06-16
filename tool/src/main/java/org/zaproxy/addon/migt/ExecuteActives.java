@@ -130,8 +130,6 @@ public class ExecuteActives implements Runnable {
                                                             || actual_test.resultSession.equals(
                                                                     sessionName)) {
                                                         actual_test.applicable = false;
-                                                        System.out.println(
-                                                                "Error position is ExecuteActives 1");
                                                     }
                                                     synchronized (waiting) {
                                                         waiting.notify();
@@ -259,7 +257,7 @@ public class ExecuteActives implements Runnable {
                         }
 
 
-                        //TODO niccolo lech
+                        //TODO nick
                         listener.onNewProcessOperation(op);
 
                         synchronized (this.waiting) {
@@ -286,7 +284,6 @@ public class ExecuteActives implements Runnable {
                             }
                         } else {
                             actual_test.applicable = false;
-                            System.out.println("Error position is ExecuteActives 2");
                             for (String key : executions.keySet()) {
                                 executions.get(key).interrupt();
                             }
@@ -297,7 +294,6 @@ public class ExecuteActives implements Runnable {
                     e.printStackTrace();
                     listener.onError(actual_test);
                     actual_test.applicable = false;
-                    System.out.println("Error position is ExecuteActives 3");
                     for (String key : executions.keySet()) {
                         executions.get(key).interrupt();
                     }

@@ -538,7 +538,6 @@ public class DecodeOperation extends Module {
                             decoded_content = decode(encodings, m.group());
                         } else {
                             applicable = false;
-                            System.out.println("Error position is DecodeOperation 1");
                         }
                         break;
                     }
@@ -548,7 +547,6 @@ public class DecodeOperation extends Module {
                         found = JsonPath.read(j, decode_target); // select what to decode
                     } catch (com.jayway.jsonpath.PathNotFoundException e) {
                         applicable = false;
-                        System.out.println("Error position is DecodeOperation 2");
                         result = false;
                         return;
                     }
