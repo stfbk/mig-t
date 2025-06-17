@@ -174,10 +174,6 @@ public class ZAPextender extends ExtensionAdaptor implements ProxyListener {
                 synchronized (mainPane.interceptedMessages) {
 
                     try {
-                        getView().getOutputPanel().append(
-                                "\n\n" + mainPane.interceptedMessages.get(mainPane.interceptedMessages.size() - 1).getHeadersString(true) +
-                                        "\n\n" + new String(mainPane.interceptedMessages.get(mainPane.interceptedMessages.size() - 1).getBody(true)));
-
 
                         mainPane.interceptedMessages.add(new HTTPReqRes(msg, messageIsRequest, msg.getHistoryRef().getHistoryId()));
 
@@ -276,9 +272,6 @@ public class ZAPextender extends ExtensionAdaptor implements ProxyListener {
                     try {
 
                         mainPane.interceptedMessages.add(new HTTPReqRes(msg, messageIsRequest, msg.getHistoryRef().getHistoryId()));
-                        getView().getOutputPanel().append(
-                                "\n\n" + mainPane.interceptedMessages.get(mainPane.interceptedMessages.size() - 1).getHeadersString(false) +
-                                        "\n\n" + new String(mainPane.interceptedMessages.get(mainPane.interceptedMessages.size() - 1).getBody(true)));
                         if (mainPane.defaultSession != null) {
                             mainPane.defaultSession.addMessage(msg, mainPane.FILTERING);
                         }
