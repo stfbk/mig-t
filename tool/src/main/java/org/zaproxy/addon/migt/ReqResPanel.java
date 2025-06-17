@@ -7,7 +7,7 @@ import org.parosproxy.paros.network.HttpMalformedHeaderException;
 
 public class ReqResPanel extends JPanel {
     private final JTextPane textPane;
-    private static final int MAX_LINE_LENGTH = 500;
+    private static final int MAX_LINE_LENGTH = 100;
     private boolean isHexView = false;
     private HTTPReqRes displayedMsg;
     public JButton toggleButton;
@@ -47,14 +47,19 @@ public class ReqResPanel extends JPanel {
     private String wrapText(String text, int maxLineLength) {
         if (text == null) return "";
         StringBuilder wrappedText = new StringBuilder();
-        int start = 0;
-        while (start < text.length()) {
-            int end = Math.min(start + maxLineLength, text.length());
-            wrappedText.append(text, start, end).append("\n");
-            start = end;
+        String[] lines = text.split("\r?\n");
+
+        for (String line : lines) {
+            while (line.length() > maxLineLength) {
+                wrappedText.append(line, 0, maxLineLength).append("\n");
+                line = line.substring(maxLineLength);
+            }
+            wrappedText.append(line).append("\n");
         }
+
         return wrappedText.toString();
     }
+
 
     private String highlightKeywords(String text) {
         String[] keywords = {"Host", "User-Agent", "Accept", "Connection", "Upgrade-Insecure-Requests", "Priority", "Accept-Language",
@@ -79,25 +84,29 @@ public class ReqResPanel extends JPanel {
         SwingUtilities.invokeLater(() -> {
             StringBuilder sb = new StringBuilder("<html><body style='font-family:monospace;'>");
 
-            if (displayedMsg.isRequest) {
-                sb.append("<b>Request:</b><br><pre>");
-                sb.append(isHexView ? wrapHexText(convertToHex(displayedMsg.Req_header), 100) : highlightKeywords(wrapText(displayedMsg.Req_header, MAX_LINE_LENGTH)));
-
-
-                if (displayedMsg.Req_body != null) {
-                    sb.append(isHexView ? wrapHexText(convertToHex(displayedMsg.Req_body), 100) : wrapText(displayedMsg.Req_body, MAX_LINE_LENGTH));
-
-                }
-            } else {
-                sb.append("<b>Response:</b><br><pre>");
-                sb.append(isHexView ? wrapHexText(convertToHex(displayedMsg.Res_header), 100) : highlightKeywords(wrapText(displayedMsg.Res_header, MAX_LINE_LENGTH)));
-
-
-                if (displayedMsg.Res_body != null) {
-                    sb.append(isHexView ? wrapHexText(convertToHex(displayedMsg.Res_body), 100) : wrapText(displayedMsg.Res_body, MAX_LINE_LENGTH));
-
-                }
+            // Request
+            sb.append("<b>Request:</b><br><pre>");
+            sb.append(isHexView
+                    ? wrapHexText(convertToHex(displayedMsg.Req_header), 100)
+                    : highlightKeywords(wrapText(displayedMsg.Req_header, MAX_LINE_LENGTH)));
+            if (displayedMsg.Req_body != null) {
+                sb.append(isHexView
+                        ? wrapHexText(convertToHex(displayedMsg.Req_body), 100)
+                        : wrapText(displayedMsg.Req_body, MAX_LINE_LENGTH));
             }
+            sb.append("</pre><br>");
+
+            // Response Section
+            sb.append("<b>Response:</b><br><pre>");
+            sb.append(isHexView
+                    ? wrapHexText(convertToHex(displayedMsg.Res_header), 100)
+                    : highlightKeywords(wrapText(displayedMsg.Res_header, MAX_LINE_LENGTH)));
+            if (displayedMsg.Res_body != null) {
+                sb.append(isHexView
+                        ? wrapHexText(convertToHex(displayedMsg.Res_body), 100)
+                        : wrapText(displayedMsg.Res_body, MAX_LINE_LENGTH));
+            }
+            sb.append("</pre>");
 
             sb.append("</body></html>");
             textPane.setText(sb.toString());
@@ -105,6 +114,7 @@ public class ReqResPanel extends JPanel {
             toggleButton.setText(isHexView ? "HEX > MSG" : "MSG > HEX");
         });
     }
+
 
     private String wrapHexText(String hexText, int maxLineLength) {
         StringBuilder wrappedText = new StringBuilder();

@@ -894,16 +894,6 @@ public class Main extends JSplitPane {
         trackContainer.add(lblTrack, gbc);
 
         txtScript = new JTextArea();
-        //rimuovere dopo
-        txtScript.setText("open | http://relying-party.org:8001/oidc/rp/landing |\n" +
-                "click | xpath=/html/body/div[2]/div/div/div/div/div/div/div/div/div/div[2]/div/span[2]/a |\n" +
-                "click | xpath=/html/body/div[2]/div/div/div/div/div/div/div/div/div/div[2]/div/span[2]/div/ul/li[2]/a |\n" +
-                "type | id=id_username | user\n" +
-                "type | id=id_password | oidcuser\n" +
-                "click | xpath=/html/body/div[2]/div/div/div/div/div/div/div/div/div/div[2]/div[2]/div[1]/form/fieldset/div/div/div/div[3]/button/span[2] |\n" +
-                "click | id=agree |\n" +
-                "click | xpath=/html/body/div[2]/div/div/div/div/div/div/div/div/div/a |\n" +
-                "wait | 1000");
 
         gbc = new GridBagConstraints();
         gbc.anchor = GridBagConstraints.WEST;
