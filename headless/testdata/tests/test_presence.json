@@ -1,0 +1,37 @@
+{
+  "test suite": {
+    "name": "Single test",
+    "description": "One test only",
+    "filter messages": true
+  },
+  "tests": [
+    {
+      "test": {
+        "name": "Entity configuration JWT alg is not none",
+        "description": "Verifica che l'header del JWT della entity configuration non usi l'algoritmo 'none'",
+        "type": "passive",
+        "sessions": ["s1"],
+        "operations": [
+          {
+            "message type": "Entity Configuration response RP",
+            "decode operations": [
+              {
+                "from": "body",
+                "decode param": "[^\\r\\n]*",
+                "type": "jwt",
+                "checks": [
+                  {
+                    "in": "header",
+                    "check": "$.alg",
+                    "is not": "none"
+                  }
+                ]
+              }
+            ]
+          }
+        ],
+        "result": "correct flow s1"
+      }
+    }
+  ]
+}
