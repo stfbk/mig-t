@@ -1,0 +1,39 @@
+{
+  "test suite": {
+    "name": "Single test",
+    "description": "One test only",
+    "filter messages": true
+  },
+  "tests": [
+    {
+      "test": {
+        "name": "Does entity configuration contain the exp parameter",
+        "description": "To accomplish this test, the Entity configuration of the interested entity is taken, the payload is decoded (Base64 encoding) and the presence of the exp parameter is checked",
+        "type": "passive",
+        "sessions": [
+          "s1"
+        ],
+        "operations": [
+          {
+            "message type": "Entity Configuration response RP",
+            "decode operations": [
+              {
+                "from": "body",
+                "decode param": "[^\\r\\n]*",
+                "type": "jwt",
+                "checks": [
+                  {
+                    "in": "payload",
+                    "check": "$.exp",
+                    "is present": "true"
+                  }
+                ]
+              }
+            ]
+          }
+        ],
+        "result": "correct flow s1"
+      }
+    }
+  ]
+}
